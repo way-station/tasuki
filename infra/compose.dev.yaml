@@ -1,6 +1,6 @@
 # Development services, used together with compose.yaml:
 #   docker compose -f infra/compose.yaml -f infra/compose.dev.yaml ...
-# Normally started by the Dev Container (app/backend/.devcontainer).
+# Normally started by the Dev Containers (app/backend/.devcontainer, app/frontend/.devcontainer).
 
 services:
   backend-dev:
@@ -23,6 +23,25 @@ services:
       mongo:
         condition: service_healthy
 
+  frontend-dev:
+    build:
+      context: ../app/frontend
+      dockerfile: ../../infra/docker/frontend/Dockerfile
+      target: dev
+    # The whole repository is mounted so git works inside the container.
+    # node_modules lives in a volume: it never touches the host and avoids slow bind-mount I/O.
+    volumes:
+      - ..:/workspaces/tasuki:cached
+      - frontend-node-modules:/workspaces/tasuki/app/frontend/node_modules
+      - pnpm-store:/pnpm/store
+    working_dir: /workspaces/tasuki/app/frontend
+    command: sleep infinity
+    # Vite dev server (pnpm dev), reachable from the host browser.
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+
 volumes:
   go-mod-cache:
   go-build-cache:
+  frontend-node-modules:
+  pnpm-store:
