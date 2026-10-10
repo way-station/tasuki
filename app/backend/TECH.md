@@ -64,8 +64,8 @@ app/backend/
 │  ├─ config/          # loads settings from environment variables
 │  ├─ server/          # HTTP routes (chi) and handlers
 │  └─ store/           # database connections (and repositories later)
-├─ Makefile
-└─ .env.example
+├─ .devcontainer/      # Dev Container definition (development happens inside the container)
+└─ Makefile
 ```
 
 - `server` depends on small interfaces (e.g. `Pinger`), not on `store` directly, so handlers can be tested without databases.
@@ -82,32 +82,58 @@ The application reads **only environment variables**; it never loads `.env` itse
 | `MONGODB_URI` | yes | — | MongoDB connection string |
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
 | `PORT` | no | `8080` | HTTP port |
-| `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/compose.yaml` only) |
-| `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/compose.yaml` only) |
+| `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
+| `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
 
 Who provides the values:
 
 | Environment | Provided by |
 | --- | --- |
-| Local, on the host (`make run`) | The `Makefile` loads `.env` and exports it |
-| Local, in Docker (`make up`) | `environment` in `infra/compose.yaml` |
+| Dev Container | `environment` in `infra/compose.dev.yaml` |
+| Production image run locally (`make up`) | `environment` in `infra/compose.yaml` |
 | Production | The hosting platform's environment variables / secrets |
 
-Never commit `.env`.
+Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compose reads it automatically. Never commit `.env`.
 
 ## Local development
 
+**No Go toolchain is needed on the host.** The host only needs Docker (and an editor). All development work happens inside the Dev Container.
+
+### Option A: Dev Container (recommended)
+
+1. If host ports 27017 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
+2. Open `app/backend` in VS Code and run **Dev Containers: Reopen in Container** (JetBrains: open `.devcontainer/devcontainer.json` via Gateway).
+3. In the container terminal:
+
 ```sh
-cd app/backend
-cp .env.example .env    # if 27017 is taken, change MONGO_PORT and MONGODB_URI
-make mongo-up           # start MongoDB and wait until it is healthy
-make run                # http://localhost:8080/health
+make run                # http://localhost:8080/health (port is forwarded to the host)
+make test
+make test-integration   # uses the MongoDB container
+make lint
 ```
 
-To run the backend itself in a container (the same image as production):
+The editor tools (gopls, golangci-lint, Delve) are installed in the container with pinned versions.
+
+### Option B: Shell only (any editor)
 
 ```sh
-make up                 # build the image and start backend + MongoDB
+cd app/backend
+make dev-up             # build and start the dev container and MongoDB
+make dev-shell          # open a shell in it, then run make test etc.
+make dev-down
+```
+
+### Where each command runs
+
+| Command | Runs on |
+| --- | --- |
+| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Inside the Dev Container |
+| `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | Host (Docker only) |
+
+### Running the production image
+
+```sh
+make up                 # build the production image and start backend + MongoDB
 make down
 ```
 
@@ -117,14 +143,17 @@ Container files live in `infra/`, separated from the application code.
 
 | File | Role |
 | --- | --- |
-| `infra/docker/backend/Dockerfile` | Builds the backend image. The build context is `app/backend`. |
+| `infra/docker/backend/Dockerfile` | Builds the backend images. Stages: `dev` (Dev Container), `build`, and the production image (default target). The build context is `app/backend`. |
 | `infra/docker/backend/Dockerfile.dockerignore` | Keeps `.env`, `bin/`, and tests out of the image |
-| `infra/compose.yaml` | Local only: runs the databases and the backend together |
+| `infra/compose.yaml` | Local only: runs the databases and the production backend image |
+| `infra/compose.dev.yaml` | Local only: adds the `backend-dev` service used by the Dev Container (repository mounted, Go caches in volumes) |
+| `infra/.env.example` | Host port settings for compose |
 
 - **One image for local and production.** The image never contains configuration; differences between environments are passed only as environment variables at runtime.
 - **Multi-stage build.** `golang` builds a static binary (`CGO_ENABLED=0`); only that binary is copied into `distroless/static` (about 12 MB), which runs as a non-root user.
 - `go.mod` / `go.sum` are copied and downloaded before the source, so dependencies are re-downloaded only when they change.
 - distroless has no shell or curl, so there is no `HEALTHCHECK` in the image. Health checks are left to the hosting platform via `GET /health`.
+- **The `dev` stage is for development only.** It adds golangci-lint, gopls, and Delve (pinned versions) on top of the same `golang` image used for the production build, so the Go version is the same in development and production.
 
 ## Testing
 
@@ -214,8 +243,8 @@ app/backend/
 │  ├─ config/          # 環境変数から設定を読む
 │  ├─ server/          # HTTP のルート（chi）とハンドラ
 │  └─ store/           # DB 接続（今後リポジトリを置く）
-├─ Makefile
-└─ .env.example
+├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
+└─ Makefile
 ```
 
 - `server` は `store` に直接依存せず、小さなインターフェース（例：`Pinger`）に依存します。これで DB なしでハンドラをテストできます
@@ -232,32 +261,58 @@ app/backend/
 | `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
 | `PORT` | — | `8080` | HTTP ポート |
-| `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/compose.yaml` のみ） |
-| `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/compose.yaml` のみ） |
+| `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
+| `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 
 値を渡すもの：
 
 | 環境 | 渡すもの |
 | --- | --- |
-| ローカル、ホストで実行（`make run`） | `Makefile` が `.env` を読んで export する |
-| ローカル、Docker で実行（`make up`） | `infra/compose.yaml` の `environment` |
+| Dev Container | `infra/compose.dev.yaml` の `environment` |
+| 本番用イメージをローカルで実行（`make up`） | `infra/compose.yaml` の `environment` |
 | 本番 | ホスティング先の環境変数・シークレットの設定 |
 
-`.env` はコミットしないでください。
+ホスト側のポートを変える場合は `infra/.env` に書きます（`infra/.env.example` をコピー）。docker compose が自動で読み込みます。`.env` はコミットしないでください。
 
 ## ローカル開発
 
+**ホストに Go は不要です。** ホストに必要なのは Docker（とエディタ）だけで、開発作業はすべて Dev Container の中で行います。
+
+### 方法 A：Dev Container（おすすめ）
+
+1. ホストの 27017 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
+2. VS Code で `app/backend` を開き、**Dev Containers: Reopen in Container** を実行する（JetBrains の場合は Gateway から `.devcontainer/devcontainer.json` を開く）
+3. コンテナのターミナルで：
+
 ```sh
-cd app/backend
-cp .env.example .env    # 27017 が使用中なら MONGO_PORT と MONGODB_URI を変更
-make mongo-up           # MongoDB を起動し、healthy になるまで待つ
-make run                # http://localhost:8080/health
+make run                # http://localhost:8080/health（ポートはホストに転送される）
+make test
+make test-integration   # MongoDB コンテナを使う
+make lint
 ```
 
-backend 自体をコンテナで動かす場合（本番と同じイメージ）：
+エディタ用のツール（gopls、golangci-lint、Delve）は、バージョンを固定してコンテナに入っています。
+
+### 方法 B：シェルだけ使う（エディタを問わない）
 
 ```sh
-make up                 # イメージをビルドし、backend と MongoDB を起動
+cd app/backend
+make dev-up             # 開発用コンテナと MongoDB をビルドして起動
+make dev-shell          # コンテナのシェルに入り、make test などを実行
+make dev-down
+```
+
+### 各コマンドの実行場所
+
+| コマンド | 実行する場所 |
+| --- | --- |
+| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Dev Container の中 |
+| `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | ホスト（Docker だけ） |
+
+### 本番用イメージを動かす
+
+```sh
+make up                 # 本番用イメージをビルドし、backend と MongoDB を起動
 make down
 ```
 
@@ -267,14 +322,17 @@ make down
 
 | ファイル | 役割 |
 | --- | --- |
-| `infra/docker/backend/Dockerfile` | backend のイメージを作る。ビルドコンテキストは `app/backend` |
+| `infra/docker/backend/Dockerfile` | backend のイメージを作る。ステージは `dev`（Dev Container）、`build`、本番用イメージ（デフォルトのターゲット）。ビルドコンテキストは `app/backend` |
 | `infra/docker/backend/Dockerfile.dockerignore` | `.env`、`bin/`、テストをイメージに入れない |
-| `infra/compose.yaml` | ローカル専用。DB と backend をまとめて起動する |
+| `infra/compose.yaml` | ローカル専用。DB と本番用の backend イメージを起動する |
+| `infra/compose.dev.yaml` | ローカル専用。Dev Container が使う `backend-dev` サービスを追加する（リポジトリをマウント、Go のキャッシュはボリューム） |
+| `infra/.env.example` | compose のホスト側ポートの設定 |
 
 - **local と本番で同じイメージを使う。** イメージに設定は入れません。環境ごとの違いは、実行時の環境変数だけで渡します
 - **マルチステージビルド。** `golang` で静的バイナリ（`CGO_ENABLED=0`）をビルドし、そのバイナリだけを `distroless/static`（約 12MB）にコピーします。実行ユーザーは root ではありません
 - ソースより先に `go.mod` / `go.sum` をコピーして依存を取得するので、依存が変わったときだけ再ダウンロードされます
 - distroless にはシェルも curl もないため、イメージに `HEALTHCHECK` は入れていません。ヘルスチェックは `GET /health` を使い、ホスティング先に任せます
+- **`dev` ステージは開発専用です。** 本番のビルドと同じ `golang` イメージに、golangci-lint、gopls、Delve（バージョン固定）を足したものです。開発と本番で Go のバージョンが揃います
 
 ## テスト
 
