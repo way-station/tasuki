@@ -1,0 +1,296 @@
+# backend — Tech Stack
+
+The tasuki backend is a single Go service. It serves the API for the frontend (`app/frontend`) and owns both databases:
+
+```
+React (Vite)  ── app/frontend
+  └─ Go (chi) ── app/backend
+       ├─ PostgreSQL  teams, members, races, attendance, running order  ← source of truth
+       └─ MongoDB     lap records, running order history, external data ← secondary
+```
+
+| Data | Store | Why |
+| --- | --- | --- |
+| Teams, members, races, attendance, running order | PostgreSQL | Relational, with constraints the DB must guarantee (one attendance per member per race, only attending members in the running order, lap limits per runner) |
+| Race-day lap records | MongoDB | One run → a variable-length array of laps. In lap-based races the number of laps differs per runner, so a nested array in one document fits naturally. Append-only |
+| Running order history | MongoDB | "Who changed the order, when, from what to what." A full snapshot per change — a typical event log |
+| External integration data (future) | MongoDB | Raw activities from Garmin / Strava have a different shape per service |
+
+## Principles (do not break these)
+
+1. **Postgres is always the source of truth.** There are no transactions across the two databases.
+2. **Reference, never copy.** MongoDB documents refer to Postgres rows only by their IDs (UUID). Do not duplicate Postgres data (member names, race info, …) into MongoDB — duplicated data always drifts.
+3. **Write summaries back to Postgres.** When a race ends, write the result summary (e.g. total time per run) back to Postgres. Atlas M0 (free tier) has no automatic backups and idle clusters may be terminated, so actual results must survive even if MongoDB data is lost.
+4. **The MVP features use Postgres only.** MongoDB-backed features (lap recording) come after the MVP.
+5. **Total time is calculated on the frontend.** The backend stores and shares data; it does not compute predicted times.
+
+## Stack
+
+| Area | Technology | Version |
+| --- | --- | --- |
+| Language | Go | 1.26 (see `go.mod`) |
+| HTTP router | `github.com/go-chi/chi/v5` | v5.3.x |
+| MongoDB driver | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
+| PostgreSQL driver | not decided yet (see below) | — |
+| Logging | `log/slog` (JSON) | stdlib |
+| Lint / format | golangci-lint v2 (`.golangci.yml`) | v2.x |
+| Container | Multi-stage build → `distroless/static` (`infra/docker/backend/Dockerfile`) | — |
+| Local DB | MongoDB in Docker (`infra/compose.yaml`) | 8.0 |
+| Production DB | Neon (PostgreSQL), MongoDB Atlas | — |
+
+### Why these choices
+
+- **Go for the whole backend**: one language and one service for the API and both databases. It also means mongo-go-driver is used in a real application and kept on its latest release; problems found here are first-hand material for bug reports and PRs to the driver.
+- **chi**: needed for routing — route groups, sub-routers, and URL parameters such as `/races/{raceID}/laps`. It is built on `net/http` (`http.Handler`), so handlers and middleware stay compatible with the standard library.
+  - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
+- **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
+
+### Not decided yet
+
+| Topic | Candidates | Decided in |
+| --- | --- | --- |
+| PostgreSQL driver | pgx v5 (the de facto standard) | Postgres setup issue |
+| How SQL is written | sqlc (generate Go from plain SQL) / pgx with hand-written queries | Postgres setup issue |
+| Migration tool | goose / golang-migrate / dbmate | Postgres setup issue |
+| API types shared with the frontend | OpenAPI → generate TypeScript types | Frontend / API design |
+| Whether MongoDB is required at startup | Required now; may become optional so the MVP can run with Postgres only | Before the MVP release |
+
+## Directory structure
+
+```
+app/backend/
+├─ cmd/server/         # entry point: config → DB connections → HTTP server, graceful shutdown
+├─ internal/
+│  ├─ config/          # loads settings from environment variables
+│  ├─ server/          # HTTP routes (chi) and handlers
+│  └─ store/           # database connections (and repositories later)
+├─ Makefile
+└─ .env.example
+```
+
+- `server` depends on small interfaces (e.g. `Pinger`), not on `store` directly, so handlers can be tested without databases.
+- Everything is under `internal/`; nothing is meant to be imported from outside this module.
+
+Module path: `github.com/way-station/tasuki/app/backend`
+
+## Environment variables
+
+The application reads **only environment variables**; it never loads `.env` itself. The same binary runs everywhere, and only the values differ.
+
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `MONGODB_URI` | yes | — | MongoDB connection string |
+| `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
+| `PORT` | no | `8080` | HTTP port |
+| `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/compose.yaml` only) |
+| `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/compose.yaml` only) |
+
+Who provides the values:
+
+| Environment | Provided by |
+| --- | --- |
+| Local, on the host (`make run`) | The `Makefile` loads `.env` and exports it |
+| Local, in Docker (`make up`) | `environment` in `infra/compose.yaml` |
+| Production | The hosting platform's environment variables / secrets |
+
+Never commit `.env`.
+
+## Local development
+
+```sh
+cd app/backend
+cp .env.example .env    # if 27017 is taken, change MONGO_PORT and MONGODB_URI
+make mongo-up           # start MongoDB and wait until it is healthy
+make run                # http://localhost:8080/health
+```
+
+To run the backend itself in a container (the same image as production):
+
+```sh
+make up                 # build the image and start backend + MongoDB
+make down
+```
+
+## Docker
+
+Container files live in `infra/`, separated from the application code.
+
+| File | Role |
+| --- | --- |
+| `infra/docker/backend/Dockerfile` | Builds the backend image. The build context is `app/backend`. |
+| `infra/docker/backend/Dockerfile.dockerignore` | Keeps `.env`, `bin/`, and tests out of the image |
+| `infra/compose.yaml` | Local only: runs the databases and the backend together |
+
+- **One image for local and production.** The image never contains configuration; differences between environments are passed only as environment variables at runtime.
+- **Multi-stage build.** `golang` builds a static binary (`CGO_ENABLED=0`); only that binary is copied into `distroless/static` (about 12 MB), which runs as a non-root user.
+- `go.mod` / `go.sum` are copied and downloaded before the source, so dependencies are re-downloaded only when they change.
+- distroless has no shell or curl, so there is no `HEALTHCHECK` in the image. Health checks are left to the hosting platform via `GET /health`.
+
+## Testing
+
+| Command | What it runs |
+| --- | --- |
+| `make test` | Unit tests (no database needed) |
+| `make test-integration` | Also runs tests with the `integration` build tag against real databases |
+| `make lint` | golangci-lint |
+
+- Unit tests replace databases with fakes through interfaces.
+- Integration tests are files named `*_integration_test.go` with `//go:build integration`, and use separate test databases (`tasuki_test`).
+
+## Endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/health` | Pings the databases. `200 {"status":"ok"}` or `503` |
+
+---
+
+<details>
+<summary>日本語</summary>
+
+# backend — 技術構成
+
+tasuki のバックエンドは Go の1つのサービスです。フロントエンド（`app/frontend`）向けの API を提供し、2つのデータベースの両方を扱います。
+
+```
+React (Vite)  ── app/frontend
+  └─ Go (chi) ── app/backend
+       ├─ PostgreSQL  チーム・メンバー・大会・出欠・走順      ← 正
+       └─ MongoDB     ラップ記録・走順履歴・外部連携データ    ← 従
+```
+
+| データ | 保存先 | 理由 |
+| --- | --- | --- |
+| チーム、メンバー、大会、出欠、走順 | PostgreSQL | 関係型で、DB で保証したい制約がある（1人1大会につき出欠は1件、走順に入れるのは出席者だけ、1人あたりの周回数の上限） |
+| 当日のラップ記録 | MongoDB | 「出走1回 → 周回ごとのラップ配列」。周回制では人ごとに周回数が違うため、可変長のネスト配列を1ドキュメントに入れるのが自然。追記型 |
+| 走順の変更履歴 | MongoDB | 「誰がいつ、どの並びからどの並びへ変えたか」。変更ごとにスナップショットを丸ごと保存する、典型的なイベントログ |
+| 外部連携データ（将来） | MongoDB | Garmin / Strava の生アクティビティは、サービスごとに形が違う |
+
+## 原則（崩さないこと）
+
+1. **正は常に Postgres。** DB をまたぐトランザクションはありません
+2. **参照のみ、複製しない。** MongoDB のドキュメントは Postgres の行を ID（UUID）で参照するだけにします。メンバー名や大会情報などを MongoDB に複製しないでください。二重管理は必ずずれます
+3. **サマリーを Postgres に書き戻す。** 大会終了時に、結果のサマリー（出走ごとの合計タイムなど）を Postgres にも書き戻します。Atlas M0（無料枠）は自動バックアップがなく、アイドル状態のクラスタは終了される可能性があるため、MongoDB のデータが消えても実績だけは残るようにします
+4. **MVP の機能は Postgres だけを使う。** MongoDB を使う機能（ラップ記録）は MVP の後に追加します
+5. **合計タイムの計算はフロントエンドで行う。** バックエンドは保存と共有だけを担当し、予想タイムは計算しません
+
+## 技術スタック
+
+| 対象 | 技術 | バージョン |
+| --- | --- | --- |
+| 言語 | Go | 1.26（`go.mod` 参照） |
+| HTTP ルーター | `github.com/go-chi/chi/v5` | v5.3.x |
+| MongoDB ドライバ | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
+| PostgreSQL ドライバ | 未決定（下記参照） | — |
+| ログ | `log/slog`（JSON） | 標準ライブラリ |
+| Lint / Format | golangci-lint v2（`.golangci.yml`） | v2.x |
+| コンテナ | マルチステージビルド → `distroless/static`（`infra/docker/backend/Dockerfile`） | — |
+| ローカル DB | Docker の MongoDB（`infra/compose.yaml`） | 8.0 |
+| 本番 DB | Neon（PostgreSQL）、MongoDB Atlas | — |
+
+### 選定理由
+
+- **バックエンドはすべて Go**：API と2つの DB を、1つの言語・1つのサービスで扱います。mongo-go-driver を実アプリで使い、最新リリースに追従し続けることにもなります。ここで見つかった問題は、そのままドライバへのバグ報告や PR の材料になります
+- **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
+  - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
+- **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います
+
+### 未決定のこと
+
+| 項目 | 候補 | 決める場所 |
+| --- | --- | --- |
+| PostgreSQL ドライバ | pgx v5（事実上の標準） | Postgres の環境構築 Issue |
+| SQL の書き方 | sqlc（素の SQL から Go を生成）／ pgx で手書き | Postgres の環境構築 Issue |
+| マイグレーションツール | goose / golang-migrate / dbmate | Postgres の環境構築 Issue |
+| フロントエンドとの API の型共有 | OpenAPI → TypeScript の型を生成 | フロントエンド／API 設計 |
+| 起動時に MongoDB を必須にするか | 今は必須。MVP を Postgres だけで動かせるよう任意にする可能性あり | MVP リリース前 |
+
+## ディレクトリ構成
+
+```
+app/backend/
+├─ cmd/server/         # エントリポイント：設定 → DB 接続 → HTTP サーバー、グレースフルシャットダウン
+├─ internal/
+│  ├─ config/          # 環境変数から設定を読む
+│  ├─ server/          # HTTP のルート（chi）とハンドラ
+│  └─ store/           # DB 接続（今後リポジトリを置く）
+├─ Makefile
+└─ .env.example
+```
+
+- `server` は `store` に直接依存せず、小さなインターフェース（例：`Pinger`）に依存します。これで DB なしでハンドラをテストできます
+- すべて `internal/` 配下です。このモジュールの外から import されることは想定していません
+
+モジュールパス：`github.com/way-station/tasuki/app/backend`
+
+## 環境変数
+
+アプリは**環境変数だけ**を読み、`.env` を自分では読み込みません。どの環境でも同じバイナリが動き、違うのは値だけです。
+
+| 名前 | 必須 | デフォルト | 説明 |
+| --- | --- | --- | --- |
+| `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
+| `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
+| `PORT` | — | `8080` | HTTP ポート |
+| `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/compose.yaml` のみ） |
+| `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/compose.yaml` のみ） |
+
+値を渡すもの：
+
+| 環境 | 渡すもの |
+| --- | --- |
+| ローカル、ホストで実行（`make run`） | `Makefile` が `.env` を読んで export する |
+| ローカル、Docker で実行（`make up`） | `infra/compose.yaml` の `environment` |
+| 本番 | ホスティング先の環境変数・シークレットの設定 |
+
+`.env` はコミットしないでください。
+
+## ローカル開発
+
+```sh
+cd app/backend
+cp .env.example .env    # 27017 が使用中なら MONGO_PORT と MONGODB_URI を変更
+make mongo-up           # MongoDB を起動し、healthy になるまで待つ
+make run                # http://localhost:8080/health
+```
+
+backend 自体をコンテナで動かす場合（本番と同じイメージ）：
+
+```sh
+make up                 # イメージをビルドし、backend と MongoDB を起動
+make down
+```
+
+## Docker
+
+コンテナ関連のファイルは、アプリのコードと分けて `infra/` に置きます。
+
+| ファイル | 役割 |
+| --- | --- |
+| `infra/docker/backend/Dockerfile` | backend のイメージを作る。ビルドコンテキストは `app/backend` |
+| `infra/docker/backend/Dockerfile.dockerignore` | `.env`、`bin/`、テストをイメージに入れない |
+| `infra/compose.yaml` | ローカル専用。DB と backend をまとめて起動する |
+
+- **local と本番で同じイメージを使う。** イメージに設定は入れません。環境ごとの違いは、実行時の環境変数だけで渡します
+- **マルチステージビルド。** `golang` で静的バイナリ（`CGO_ENABLED=0`）をビルドし、そのバイナリだけを `distroless/static`（約 12MB）にコピーします。実行ユーザーは root ではありません
+- ソースより先に `go.mod` / `go.sum` をコピーして依存を取得するので、依存が変わったときだけ再ダウンロードされます
+- distroless にはシェルも curl もないため、イメージに `HEALTHCHECK` は入れていません。ヘルスチェックは `GET /health` を使い、ホスティング先に任せます
+
+## テスト
+
+| コマンド | 内容 |
+| --- | --- |
+| `make test` | ユニットテスト（DB 不要） |
+| `make test-integration` | `integration` ビルドタグ付きのテストも含め、実際の DB に対して実行 |
+| `make lint` | golangci-lint |
+
+- ユニットテストでは、インターフェース経由で DB をフェイクに置き換えます
+- 結合テストは `*_integration_test.go` に `//go:build integration` を付けて書き、テスト用のデータベース（`tasuki_test`）を使います
+
+## エンドポイント
+
+| メソッド | パス | 説明 |
+| --- | --- | --- |
+| GET | `/health` | DB に ping します。`200 {"status":"ok"}` または `503` |
+
+</details>
