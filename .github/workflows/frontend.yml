@@ -1,0 +1,52 @@
+name: frontend
+
+on:
+  pull_request:
+    paths:
+      - "app/frontend/**"
+      - "infra/docker/frontend/**"
+      - "infra/compose*.yaml"
+      - ".github/workflows/frontend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app/frontend/**"
+      - "infra/docker/frontend/**"
+      - "infra/compose*.yaml"
+      - ".github/workflows/frontend.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: app/frontend
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Installs Node and pnpm from app/frontend/mise.toml.
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # Keep in sync with infra/docker/frontend/Dockerfile.
+          version: 2026.9.18
+          working_directory: app/frontend
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck and build
+        run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build Dev Container image
+        run: docker build --target dev -f ../../infra/docker/frontend/Dockerfile .
