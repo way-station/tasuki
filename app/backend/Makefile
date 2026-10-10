@@ -1,9 +1,11 @@
-include $(wildcard .env)
-export
+COMPOSE     := docker compose -f ../../infra/compose.yaml
+COMPOSE_DEV := $(COMPOSE) -f ../../infra/compose.dev.yaml
 
-COMPOSE := docker compose -f ../../infra/compose.yaml
+.PHONY: run build test test-integration lint fmt \
+	dev-up dev-shell dev-down up down
 
-.PHONY: run build test test-integration lint fmt mongo-up mongo-down up down
+# ---- Run inside the Dev Container ------------------------------------------
+# Environment variables (MONGODB_URI, ...) are provided by infra/compose.dev.yaml.
 
 run:
 	go run ./cmd/server
@@ -23,16 +25,21 @@ lint:
 fmt:
 	golangci-lint fmt
 
-# Start only MongoDB; run the backend on the host with `make run`.
-mongo-up:
-	$(COMPOSE) up -d --wait mongo
+# ---- Run on the host (Docker only, no Go needed) ---------------------------
 
-mongo-down:
-	$(COMPOSE) stop mongo
+# Start the development container without an editor integration, then open a shell in it.
+dev-up:
+	$(COMPOSE_DEV) up -d --build --wait mongo backend-dev
 
-# Build the backend image and start it together with MongoDB.
+dev-shell:
+	$(COMPOSE_DEV) exec backend-dev bash
+
+dev-down:
+	$(COMPOSE_DEV) down
+
+# Build the production image and start it together with MongoDB.
 up:
-	$(COMPOSE) up -d --build --wait
+	$(COMPOSE) up -d --build --wait mongo backend
 
 down:
 	$(COMPOSE) down

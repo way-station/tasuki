@@ -1,0 +1,28 @@
+# Development services, used together with compose.yaml:
+#   docker compose -f infra/compose.yaml -f infra/compose.dev.yaml ...
+# Normally started by the Dev Container (app/backend/.devcontainer).
+
+services:
+  backend-dev:
+    build:
+      context: ../app/backend
+      dockerfile: ../../infra/docker/backend/Dockerfile
+      target: dev
+    # The whole repository is mounted so git works inside the container.
+    volumes:
+      - ..:/workspaces/tasuki:cached
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    working_dir: /workspaces/tasuki/app/backend
+    command: sleep infinity
+    environment:
+      PORT: "8080"
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: tasuki
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
