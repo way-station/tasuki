@@ -1,4 +1,14 @@
 # Build context: app/backend (see infra/compose.yaml)
+#
+# Stages:
+#   dev   - development environment for the Dev Container (infra/compose.dev.yaml)
+#   build - compiles the production binary
+#   (last) production image; the default target
+
+FROM golang:1.26.1 AS dev
+COPY --from=golangci/golangci-lint:v2.14.0 /usr/bin/golangci-lint /usr/local/bin/golangci-lint
+RUN go install golang.org/x/tools/gopls@v0.23.0 \
+ && go install github.com/go-delve/delve/cmd/dlv@v1.27.2
 
 FROM golang:1.26.1 AS build
 WORKDIR /src
