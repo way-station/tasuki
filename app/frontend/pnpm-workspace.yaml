@@ -1,0 +1,9 @@
+# pnpm settings (this is a single package, not a multi-package workspace).
+#
+# Supply-chain safety:
+# - Dependency install scripts (postinstall, ...) are blocked by default in pnpm 10.
+#   Allow a package only after reviewing it, by adding it to onlyBuiltDependencies.
+# - Only install versions that have been published for at least one day,
+#   so that a hijacked release is likely to be detected and removed first.
+minimumReleaseAge: 1440
+onlyBuiltDependencies: []
