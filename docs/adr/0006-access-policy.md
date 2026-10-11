@@ -24,7 +24,7 @@ Planned features are team-wide, not per race: searching past races, analysing th
 
 | Role | Can do |
 | --- | --- |
-| Organizer | Create and edit races, build and confirm the running order, correct anyone's records, approve members |
+| Organizer | Register and edit the races the team enters, build and confirm the running order, correct anyone's records, approve members |
 | Member | Answer attendance and enter their own pace and profile for themselves only; view team data |
 
 - Organizers are configured outside the app (an environment variable listing their LINE user IDs). There is no in-app screen to grant or remove the organizer role.
@@ -84,7 +84,7 @@ tasuki はチームのメンバーの個人データを扱います。出欠、�
 
 | 役割 | できること |
 | --- | --- |
-| 幹事 | 大会の作成と編集、走順の作成と確定、全員の記録の修正、メンバーの承認 |
+| 幹事 | チームが出場する大会の登録と編集、走順の作成と確定、全員の記録の修正、メンバーの承認 |
 | メンバー | 自分の出欠、ペース、プロフィールの入力（自分の分だけ）。チームのデータの閲覧 |
 
 - 幹事はアプリの外（LINE ユーザー ID を並べた環境変数）で決める。アプリの中に、幹事の役割を付けたり外したりする画面はない
