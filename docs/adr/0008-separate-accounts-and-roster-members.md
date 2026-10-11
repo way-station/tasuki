@@ -10,7 +10,7 @@
 tasuki has two different ideas of a "person":
 
 - **Someone who logs in** (ADR-0007): identified by a LINE user ID, with a role (ADR-0006).
-- **A runner on the team roster**: has a name, expected pace, race results, and strengths. This is the data that accumulates over the years.
+- **A runner on the team roster**: belongs to a team (ADR-0005) and has a name, expected pace, race results, and strengths. This is the data that accumulates over the years.
 
 These do not always match one-to-one in time or in role:
 
@@ -26,7 +26,7 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 | Entity | Holds |
 | --- | --- |
 | Account | The login identity (LINE user ID), display name from LINE, organizer flag (from configuration) |
-| Roster member | Name, expected pace, profile, and everything related to races (attendance, running order, results) |
+| Roster member | The team it belongs to, name, expected pace, profile, and everything related to races (attendance, running order, results) |
 | Link | Which account belongs to which roster member, and whether an organizer has approved it |
 
 - Race data (attendance, running order, results) always refers to the **roster member**, never to the account.
@@ -45,6 +45,7 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 - Organizers can prepare the roster before anyone logs in.
 - A linking step with an approval state is needed, and screens that show "who am I" must join the account and the roster member.
 - Uniqueness of the link (one account ↔ one roster member) should be enforced by database constraints.
+- Accounts are not owned by a team; roster members are. Whether one account can be linked to roster members in several teams is decided when tasuki becomes a SaaS (ADR-0005).
 
 ---
 
@@ -63,7 +64,7 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 tasuki には、「人」に当たるものが2種類あります。
 
 - **ログインする人**（ADR-0007）：LINE のユーザー ID で識別され、役割を持つ（ADR-0006）
-- **チームの名簿の選手**：名前、想定ペース、大会の結果、得意な距離を持つ。何年も積み上がるのはこちらのデータ
+- **チームの名簿の選手**：チームに属し（ADR-0005）、名前、想定ペース、大会の結果、得意な距離を持つ。何年も積み上がるのはこちらのデータ
 
 この2つは、時期の面でも役割の面でも、いつも1対1で対応するとは限りません。
 
@@ -79,7 +80,7 @@ tasuki には、「人」に当たるものが2種類あります。
 | もの | 持つ情報 |
 | --- | --- |
 | アカウント | ログインの識別子（LINE のユーザー ID）、LINE の表示名、幹事かどうか（設定から） |
-| 名簿のメンバー | 名前、想定ペース、プロフィール、大会に関わるすべて（出欠、走順、結果） |
+| 名簿のメンバー | 所属するチーム、名前、想定ペース、プロフィール、大会に関わるすべて（出欠、走順、結果） |
 | 紐付け | どのアカウントがどの名簿のメンバーか、幹事が承認したかどうか |
 
 - 大会のデータ（出欠、走順、結果）は、常に**名簿のメンバー**を参照し、アカウントは参照しない
@@ -98,5 +99,6 @@ tasuki には、「人」に当たるものが2種類あります。
 - 誰もログインしていないうちから、幹事が名簿を用意できる
 - 承認の状態を持つ紐付けの手順が必要になる。「自分は誰か」を表示する画面では、アカウントと名簿のメンバーを結合する必要がある
 - 紐付けの一意性（1つのアカウント ↔ 1人の名簿のメンバー）は、データベースの制約で守る
+- アカウントはチームに属さず、名簿のメンバーがチームに属する。1つのアカウントを複数のチームの名簿のメンバーに紐付けられるかは、tasuki を SaaS にするときに決める（ADR-0005）
 
 </details>
