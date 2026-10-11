@@ -1,0 +1,27 @@
+# Labels added to pull requests based on the changed files (.github/workflows/labeler.yml).
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - app/backend/**
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - app/frontend/**
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - infra/**
+          - "**/.devcontainer/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
