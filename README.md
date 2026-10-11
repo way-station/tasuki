@@ -71,7 +71,7 @@ Contributions are welcome. Issues and pull requests are written in English, with
 - **Branches**: start with `feat/`, `fix/`, `chore/`, or `hotfix/`. Pull requests are labeled automatically from the branch name and the changed paths.
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/) in English, e.g. `feat(backend): add race endpoint`.
 - **Pull requests**: describe the change with *Summary*, *Motivation*, *What I have done*, and *Test Plans*. CI (lint, tests, builds) must pass.
-- **Design decisions**: important decisions are recorded as ADRs in `docs/adr/` (see [#8](https://github.com/way-station/tasuki/issues/8)).
+- **Design decisions**: important decisions are recorded as ADRs in [`docs/adr/`](docs/adr).
 
 Open work is tracked in [issues](https://github.com/way-station/tasuki/issues) — start with the Todo list in [#18](https://github.com/way-station/tasuki/issues/18).
 
