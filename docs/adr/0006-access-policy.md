@@ -1,6 +1,6 @@
 # ADR-0006: Access policy — team-only visibility, roles, and organizer approval
 
-- Status: Proposed
+- Status: Accepted
 - Type: business
 - Date: 2026-10-11
 - Issue: #46
@@ -60,7 +60,7 @@ Planned features are team-wide, not per race: searching past races, analysing th
 
 # ADR-0006: アクセスの方針（チーム内だけ・役割・幹事の承認）
 
-- Status: Proposed
+- Status: Accepted
 - Type: business
 - Date: 2026-10-11
 - Issue: #46

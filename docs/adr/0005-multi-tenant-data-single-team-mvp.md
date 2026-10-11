@@ -1,6 +1,6 @@
 # ADR-0005: Multi-tenant data model, single-team MVP
 
-- Status: Proposed
+- Status: Accepted
 - Type: business
 - Date: 2026-10-11
 - Issue: #45
@@ -45,7 +45,7 @@ A SaaS that serves many teams from one environment must keep each team's data st
 
 # ADR-0005: データはマルチテナント、MVP の機能は1チーム
 
-- Status: Proposed
+- Status: Accepted
 - Type: business
 - Date: 2026-10-11
 - Issue: #45

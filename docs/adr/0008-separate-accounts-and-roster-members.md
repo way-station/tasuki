@@ -1,6 +1,6 @@
 # ADR-0008: Separate accounts from roster members
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #48
@@ -54,7 +54,7 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 
 # ADR-0008: アカウントと名簿のメンバーを分ける
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #48

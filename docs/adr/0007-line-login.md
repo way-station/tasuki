@@ -1,6 +1,6 @@
 # ADR-0007: Authenticate all users with LINE Login
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #47
@@ -52,7 +52,7 @@ Organizers and members all log in with **LINE Login (OpenID Connect)**.
 
 # ADR-0007: 全員を LINE ログインで認証する
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #47

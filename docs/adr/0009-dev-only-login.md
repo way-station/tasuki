@@ -1,6 +1,6 @@
 # ADR-0009: Dev-only login for local development
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #49
@@ -46,7 +46,7 @@ Local development uses a **dev-only login** that signs in as any user without LI
 
 # ADR-0009: ローカル開発専用の仮ログイン
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #49
