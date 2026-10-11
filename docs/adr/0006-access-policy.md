@@ -44,13 +44,13 @@ Planned features are team-wide, not per race: searching past races, analysing th
 | Per-race visibility (only that race's runners see it) | Members must see a race before answering attendance; past-data search and team analysis need team-wide access |
 | Per-member invite links instead of picking a name | Organizers must create and send a link to each person individually |
 | No organizer approval | A leaked invite link or a wrong name choice links an account to someone else's records |
-| Managing organizers in the app | The team has two fixed organizers; an in-app role management feature is not worth its cost and risk |
+| Managing organizers in the app | In the single-team MVP (ADR-0005) the team has two fixed organizers; an in-app role management feature is not worth its cost and risk yet |
 
 ## Consequences
 
 - Personal data stays inside the team, and records cannot be edited by someone pretending to be another member.
 - New members wait for an organizer's approval before they can use the app; organizers need an approval screen.
-- Changing organizers requires changing configuration and redeploying.
+- Changing organizers requires changing configuration and redeploying. When tasuki becomes a SaaS (ADR-0005), organizers must be managed per team in the database, and this ADR will be superseded for that part.
 - Authorization checks are needed on every API: logged in, approved, and organizer-only where applicable.
 
 ---
@@ -104,13 +104,13 @@ tasuki はチームのメンバーの個人データを扱います。出欠、�
 | 大会ごとに見られる人を制限する（その大会の走者だけ） | メンバーは出欠を答える前に大会を見る必要がある。過去データの検索やチームの分析には、チーム全体を見られる必要がある |
 | 名前を選ぶ代わりに、メンバーごとの専用招待リンク | 幹事が1人ずつリンクを作って送る必要がある |
 | 幹事の承認なし | 招待リンクが漏れたり名前を選び間違えたりすると、アカウントが他人の記録に紐付く |
-| アプリの中で幹事を管理する | 幹事は2人で固定されている。アプリ内で役割を管理する機能は、コストとリスクに見合わない |
+| アプリの中で幹事を管理する | 1チームの MVP（ADR-0005）では幹事は2人で固定されている。アプリ内で役割を管理する機能は、今はコストとリスクに見合わない |
 
 ## Consequences（影響）
 
 - 個人データはチームの中にとどまり、他人になりすまして記録を書き換えることはできない
 - 新しいメンバーは、使い始める前に幹事の承認を待つ。幹事には承認画面が必要
-- 幹事を変えるには、設定を変えて再デプロイする
+- 幹事を変えるには、設定を変えて再デプロイする。tasuki を SaaS にするとき（ADR-0005）は、チームごとの幹事をデータベースで管理する必要があり、その部分はこの ADR を置き換える
 - すべての API で認可のチェック（ログイン済みか、承認済みか、必要に応じて幹事か）が必要になる
 
 </details>
