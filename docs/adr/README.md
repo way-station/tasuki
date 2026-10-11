@@ -11,6 +11,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0005](0005-one-team-per-deployment.md) | One team per deployment | business | Proposed |
 | [0006](0006-access-policy.md) | Access policy — team-only visibility, roles, and organizer approval | business | Proposed |
 | [0007](0007-line-login.md) | Authenticate all users with LINE Login | technical | Proposed |
+| [0008](0008-separate-accounts-and-roster-members.md) | Separate accounts from roster members | technical | Proposed |
 
 ## How to add an ADR
 
