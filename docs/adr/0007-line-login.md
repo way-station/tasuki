@@ -41,8 +41,8 @@ Organizers and members all log in with **LINE Login (OpenID Connect)**.
 
 - Logging in from the LINE app is close to one tap, and no passwords are stored by tasuki.
 - Teams that do not use LINE (for example, in English-speaking regions) cannot use tasuki as is. Adding another provider later is possible because authentication sits behind one interface.
-- Every self-hosting team (ADR-0005) must create its own LINE Developers provider and LINE Login channel, and publish it.
-- Because user IDs differ per provider, changing the LINE provider changes every user's ID. The provider must stay the same for a deployment, or accounts must be re-linked.
+- One LINE Login channel, operated by us, serves every team (ADR-0005). It must be published before anyone other than its Admins and Testers can log in, and publishing cannot be undone.
+- Because user IDs differ per provider, changing the LINE provider changes every user's ID. The provider must stay the same for the service, or accounts must be re-linked.
 - Local development cannot rely on LINE Login for arbitrary test users; see ADR-0009.
 
 ---
@@ -93,8 +93,8 @@ LINE Developers のドキュメントで確認した LINE ログインの事実�
 
 - LINE のアプリからならログインはほぼワンタップで、tasuki はパスワードを保存しない
 - LINE を使わないチーム（英語圏など）は、そのままでは tasuki を使えない。認証を1つのインターフェースの裏にまとめているので、後からほかのログイン方法を足すことはできる
-- セルフホストするチーム（ADR-0005）は、それぞれ LINE Developers のプロバイダーと LINE ログインのチャネルを作り、公開する必要がある
-- ユーザー ID はプロバイダーごとに違うので、LINE のプロバイダーを変えると全員のユーザー ID が変わる。1つのデプロイではプロバイダーを変えないか、アカウントを紐付け直す必要がある
+- 私たちが運用する1つの LINE ログインのチャネルで、すべてのチームに対応する（ADR-0005）。Admin と Tester 以外がログインするにはチャネルの公開が必要で、公開は元に戻せない
+- ユーザー ID はプロバイダーごとに違うので、LINE のプロバイダーを変えると全員のユーザー ID が変わる。サービスとしてプロバイダーを変えないか、アカウントを紐付け直す必要がある
 - ローカル開発では、任意のテストユーザーで LINE ログインを使えない。ADR-0009 を参照
 
 </details>
