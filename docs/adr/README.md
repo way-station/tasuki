@@ -8,6 +8,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | ADR | Title | Type | Status |
 | --- | --- | --- | --- |
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | technical | Accepted |
+| [0005](0005-one-team-per-deployment.md) | One team per deployment | business | Proposed |
 
 ## How to add an ADR
 
