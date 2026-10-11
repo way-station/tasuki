@@ -1,0 +1,5 @@
+# Toolchain for the frontend. This file is the single source of truth for these versions:
+# the Dev Container image installs exactly what is listed here (infra/docker/frontend/Dockerfile).
+[tools]
+node = "24.21.0"
+pnpm = "10.34.6"
