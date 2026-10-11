@@ -40,7 +40,7 @@ React (Vite)  ── app/frontend
 
 ### Why these choices
 
-- **Go for the whole backend**: one language and one service for the API and both databases. It also means mongo-go-driver is used in a real application and kept on its latest release; problems found here are first-hand material for bug reports and PRs to the driver.
+- **Go for the whole backend**: one language and one service for the API and both databases.
 - **chi**: needed for routing — route groups, sub-routers, and URL parameters such as `/races/{raceID}/laps`. It is built on `net/http` (`http.Handler`), so handlers and middleware stay compatible with the standard library.
   - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
 - **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
@@ -219,7 +219,7 @@ React (Vite)  ── app/frontend
 
 ### 選定理由
 
-- **バックエンドはすべて Go**：API と2つの DB を、1つの言語・1つのサービスで扱います。mongo-go-driver を実アプリで使い、最新リリースに追従し続けることにもなります。ここで見つかった問題は、そのままドライバへのバグ報告や PR の材料になります
+- **バックエンドはすべて Go**：API と2つの DB を、1つの言語・1つのサービスで扱います。
 - **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
   - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
 - **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います

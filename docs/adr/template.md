@@ -1,6 +1,7 @@
 # ADR-NNNN: Title
 
 - Status: Proposed
+- Type: business | technical
 - Date: YYYY-MM-DD
 - Issue: #NNN
 
@@ -31,6 +32,7 @@ What becomes easier or harder because of this decision? Include the trade-offs w
 # ADR-NNNN: タイトル
 
 - Status: Proposed
+- Type: business | technical
 - Date: YYYY-MM-DD
 - Issue: #NNN
 

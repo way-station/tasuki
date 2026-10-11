@@ -1,6 +1,7 @@
 # ADR-0001: Record architecture decisions
 
 - Status: Accepted
+- Type: technical
 - Date: 2026-10-11
 - Issue: #9
 
@@ -42,6 +43,7 @@ We will record architecture decisions as ADRs (Architecture Decision Records) in
 # ADR-0001: 設計判断を記録する
 
 - Status: Accepted
+- Type: technical
 - Date: 2026-10-11
 - Issue: #9
 
