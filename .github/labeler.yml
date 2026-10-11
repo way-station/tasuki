@@ -1,0 +1,38 @@
+# Labels added to pull requests automatically (.github/workflows/labeler.yml).
+
+# ---- Category: which part of the repository changed --------------------------
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - app/backend/**
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - app/frontend/**
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - infra/**
+          - "**/.devcontainer/**"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+
+# ---- Type: taken from the branch name prefix (e.g. feat/xxx) ----------------
+
+feat:
+  - head-branch: ["^feat/"]
+
+fix:
+  - head-branch: ["^fix/"]
+
+chore:
+  - head-branch: ["^chore/"]
+
+hotfix:
+  - head-branch: ["^hotfix/"]
