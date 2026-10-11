@@ -1,4 +1,6 @@
-# Labels added to pull requests based on the changed files (.github/workflows/labeler.yml).
+# Labels added to pull requests automatically (.github/workflows/labeler.yml).
+
+# ---- Category: which part of the repository changed --------------------------
 
 backend:
   - changed-files:
@@ -25,3 +27,17 @@ documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.md"
+
+# ---- Type: taken from the branch name prefix (e.g. feat/xxx) ----------------
+
+feat:
+  - head-branch: ["^feat/"]
+
+fix:
+  - head-branch: ["^fix/"]
+
+chore:
+  - head-branch: ["^chore/"]
+
+hotfix:
+  - head-branch: ["^hotfix/"]
