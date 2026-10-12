@@ -1,6 +1,6 @@
 # ADR-0002: PostgreSQL as the source of truth, MongoDB as a secondary store
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #10
@@ -63,7 +63,7 @@ Rules between the two stores:
 
 # ADR-0002: PostgreSQL を正、MongoDB を従のストアにする
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #10

@@ -1,6 +1,6 @@
 # ADR-0003: Monorepo layout
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #11
@@ -55,7 +55,7 @@ tasuki/
 
 # ADR-0003: モノレポの構成
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #11
