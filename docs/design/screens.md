@@ -64,34 +64,38 @@ An organizer who also runs links their account the same way as everyone else (in
 
 ### R1 Race list (home)
 
-- The first screen after login.
-- Shows every race of the team, newest registered first.
+- The first screen after login. All lists are newest registered first.
+- Organizers: every race of the team, with its name, race date, and whether the running order is confirmed.
+- Members see only their own races, in two sections:
 
-| Item | Organizer | Invited member | Other member |
-| --- | --- | --- | --- |
-| Race name | Yes | Yes | Yes |
-| Race date (in the description) | Yes | Yes | No |
-| "Invited" mark and my attendance | If linked | Yes | — |
-| Running order confirmed or not | Yes | Yes | Yes |
+| Section | Races | Shows |
+| --- | --- | --- |
+| My races | Races they answered "attending", including past races | Race name, race date, a "running order confirmed" mark once it is confirmed |
+| Invitations | Races they are invited to and have not answered, or answered "undecided" | Race name, race date, my answer |
 
+- A member never sees races they are not invited to, or races they answered "not attending".
+- An organizer who is linked to a roster member also sees their own invitations in the Invitations section.
 - Action: open a race (R2). Organizers: register a race (R3).
 
 ### R2 Race detail
 
-What each user sees:
+Who can open it: organizers, and invited members whose answer is not "not attending".
 
-| Item | Organizer | Invited member | Other member |
+| Item | Organizer | Member: not answered / undecided | Member: attending |
 | --- | --- | --- | --- |
 | Race name | Yes | Yes | Yes |
-| Description: type (distance / time), date, free text, leg distances, lap distance, time limit, target time | Yes | Yes | No |
+| Description: type (distance / time), date, free text, leg distances, lap distance, time limit, target time | Yes | Yes | Yes |
 | Deadline | Yes | No | No |
-| My attendance (answer / change) | If invited | Yes | — |
+| My attendance (answer / change) | If invited | Yes | Yes |
 | Running order draft | Yes | No | No |
-| Confirmed running order | Yes | Yes | Yes |
-| Prediction (total time or laps) | Yes, draft and confirmed | After confirmed | No |
-| Lap times of runners in this race | Yes (view only) | Own only, via L1 | No |
+| Confirmed running order | Yes | No | Yes |
+| Prediction (total time or laps) | Yes, draft and confirmed | No | After confirmed |
+| Lap times of runners in this race | Yes (view only) | No | Own only, via L1 |
 
-- Attendance: the member picks attending, not attending, or undecided, and can change it at any time.
+- Attendance: the member picks attending, not attending, or undecided.
+  - Between "attending" and "undecided" they can switch at any time.
+  - "Not attending" is final for the member: the race disappears from their screens and they cannot change the answer. The screen asks for confirmation first.
+  - A member in the entry who changes from "attending" is removed from the entry and the running order. If the running order is confirmed, their lap times for this race are deleted, their average time is recalculated, and their leg becomes empty. The screen warns about this first.
 - A confirmed running order shows a leg with nobody in it as "not decided". The prediction then leaves those legs out and says that some legs are empty.
 - Organizer actions: edit the race (R3), invitations (R4), attendance list (R5), entry (R6), running order (R7).
 - Races cannot be deleted or cancelled in the app.
@@ -118,7 +122,7 @@ What each user sees:
 ### R6 Entry (organizers)
 
 - An organizer creates the entry with a name (for example "Team A"). The MVP allows one entry per race.
-- Shows the entry's members with their current attendance. A member who changed their answer after being added stays in the entry; the screen shows their current answer so the organizer notices.
+- Shows the entry's members. A member who changes their answer from "attending" leaves the entry automatically (see R2).
 - Actions:
   - Add members whose attendance is "attending".
   - Remove a member. The member is also removed from the running order. If the running order is confirmed, their lap times for this race are deleted and their average time is recalculated.
@@ -187,14 +191,14 @@ What each user sees:
 
 1. Organizer registers the race (R3).
 2. Organizer invites members (R4).
-3. Invited members see the description on R2 and answer attendance.
+3. Invited members find the race in the Invitations section (R1), read the description on R2, and answer attendance. Races they attend move to "My races".
 4. Organizer checks the answers (R5).
 
 ### Building and confirming the running order
 
 1. Organizer creates the entry and adds attending members (R6).
 2. Organizer assigns runners to legs and checks the prediction (R7).
-3. Organizer confirms (R7). Every member sees the running order on R2; invited members also see the prediction.
+3. Organizer confirms (R7). Members who answered "attending" see the running order and the prediction on R2.
 
 ### Submitting lap times
 
@@ -205,8 +209,8 @@ What each user sees:
 
 The answers given while designing the screens change some decisions recorded elsewhere. These are updated in separate changes:
 
-- ADR-0006: organizers do not correct other people's records (remove "correct anyone's records" from the organizer role). Attendance answers are visible only to organizers. Predictions are visible to organizers, and to invited members after the running order is confirmed.
-- `docs/design/database.md`: the description also holds the race type and the race date. Members can edit and delete their own lap times. Lap times can be submitted only by runners in the confirmed running order, and are deleted when the runner is removed from it. Invitations can be cancelled, with the effects in R4. Marking a member as left cancels invitations to races dated today or later. Invite links can be used once.
+- ADR-0006: organizers do not correct other people's records (remove "correct anyone's records" from the organizer role). Members no longer see every race's name: they see only races they are invited to (until they answer "not attending"). The confirmed running order and the prediction are visible only to organizers and to members who answered "attending". Attendance answers are visible only to organizers. "Not attending" is final for the member.
+- `docs/design/database.md`: the description also holds the race type and the race date. Members can edit and delete their own lap times. Lap times can be submitted only by runners in the confirmed running order, and are deleted when the runner is removed from it. Invitations can be cancelled, with the effects in R4. Marking a member as left cancels invitations to races dated today or later. Invite links can be used once. The "Who sees what" table follows R1 and R2 (members see only races they are invited to, and the confirmed running order only when attending).
 
 ---
 
@@ -279,34 +283,38 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 ### R1 大会一覧（ホーム）
 
-- ログイン後に最初に開く画面
-- チームのすべての大会を、新しく登録した順に出す
+- ログイン後に最初に開く画面。どの一覧も新しく登録した順
+- 幹事：チームのすべての大会。大会名、開催日、走順が確定したかどうかを出す
+- メンバーは自分の大会だけを、2つの欄に分けて見る
 
-| 項目 | 幹事 | 誘われたメンバー | ほかのメンバー |
-| --- | --- | --- | --- |
-| 大会名 | 見られる | 見られる | 見られる |
-| 開催日（説明欄の中） | 見られる | 見られる | 見られない |
-| 「誘われている」印と自分の出欠 | 紐付け済みなら | 見られる | — |
-| 走順が確定したかどうか | 見られる | 見られる | 見られる |
+| 欄 | 大会 | 出すもの |
+| --- | --- | --- |
+| 参加する大会 | 「参加」と答えた大会。過去の大会も含む | 大会名、開催日、確定したら「走順確定」の印 |
+| 招待 | 誘われていて、未回答か「保留」の大会 | 大会名、開催日、自分の回答 |
 
+- メンバーには、誘われていない大会と、「不参加」と答えた大会は出ない
+- 名簿のメンバーに紐付いた幹事は、自分への招待も「招待」の欄に出る
 - 操作：大会を開く（R2）。幹事は大会を登録する（R3）
 
 ### R2 大会の詳細
 
-人ごとに見られるもの：
+開ける人：幹事と、誘われていて回答が「不参加」ではないメンバー
 
-| 項目 | 幹事 | 誘われたメンバー | ほかのメンバー |
+| 項目 | 幹事 | メンバー：未回答／保留 | メンバー：参加 |
 | --- | --- | --- | --- |
 | 大会名 | 見られる | 見られる | 見られる |
-| 説明欄：種別（距離制／時間制）、開催日、自由な文章、区ごとの距離、1周の距離、制限時間、目標タイム | 見られる | 見られる | 見られない |
+| 説明欄：種別（距離制／時間制）、開催日、自由な文章、区ごとの距離、1周の距離、制限時間、目標タイム | 見られる | 見られる | 見られる |
 | 締め切り | 見られる | 見られない | 見られない |
-| 自分の出欠（回答・変更） | 誘われていれば | 見られる | — |
+| 自分の出欠（回答・変更） | 誘われていれば | 見られる | 見られる |
 | 走順の下書き | 見られる | 見られない | 見られない |
-| 確定した走順 | 見られる | 見られる | 見られる |
-| 予想（合計タイムまたは周回数） | 見られる（下書きも確定も） | 確定した後 | 見られない |
-| この大会の走者のラップタイム | 見られる（見るだけ） | 自分の分だけ、L1 で | 見られない |
+| 確定した走順 | 見られる | 見られない | 見られる |
+| 予想（合計タイムまたは周回数） | 見られる（下書きも確定も） | 見られない | 確定した後 |
+| この大会の走者のラップタイム | 見られる（見るだけ） | 見られない | 自分の分だけ、L1 で |
 
-- 出欠：メンバーは参加、不参加、保留のどれかを選び、いつでも変えられる
+- 出欠：メンバーは参加、不参加、保留のどれかを選ぶ
+  - 「参加」と「保留」の間は、いつでも変えられる
+  - 「不参加」はメンバーにとって最後の回答。その大会はメンバーの画面から消え、回答を変えられない。先に画面で確認する
+  - エントリーに入っているメンバーが「参加」から変えると、エントリーと走順から外れる。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直され、その区は空きになる。先に画面で注意を出す
 - 確定した走順で誰も入っていない区は「未定」と出す。予想はその区を除いて計算し、空きの区があることを示す
 - 幹事の操作：大会の編集（R3）、招待（R4）、出欠の一覧（R5）、エントリー（R6）、走順（R7）
 - 大会の削除や中止はアプリではできない
@@ -333,7 +341,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 ### R6 エントリー（幹事）
 
 - 幹事が名前（例：「A チーム」）を付けてエントリーを作る。MVP では大会ごとに1つまで
-- エントリーのメンバーを、今の出欠と一緒に出す。入れた後に回答を変えたメンバーはエントリーに残る。幹事が気づけるように、今の回答を出す
+- エントリーのメンバーを出す。「参加」から回答を変えたメンバーは、自動でエントリーから外れる（R2 を参照）
 - 操作：
   - 出欠が「参加」のメンバーを入れる
   - メンバーを外す。そのメンバーは走順からも外れる。走順が確定していれば、そのメンバーのこの大会のラップタイムは消え、平均タイムは計算し直される
@@ -402,14 +410,14 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 1. 幹事が大会を登録する（R3）
 2. 幹事がメンバーを誘う（R4）
-3. 誘われたメンバーは R2 で説明欄を見て、出欠を答える
+3. 誘われたメンバーは「招待」の欄（R1）で大会を見つけ、R2 で説明欄を見て、出欠を答える。参加する大会は「参加する大会」に移る
 4. 幹事が回答を確かめる（R5）
 
 ### 走順の作成と確定
 
 1. 幹事がエントリーを作り、参加するメンバーを入れる（R6）
 2. 幹事が区に走者を入れ、予想を確かめる（R7）
-3. 幹事が確定する（R7）。メンバー全員が R2 で走順を見られ、誘われたメンバーは予想も見られる
+3. 幹事が確定する（R7）。「参加」と答えたメンバーが、R2 で走順と予想を見られる
 
 ### ラップタイムの提出
 
@@ -420,7 +428,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 画面を設計する中で決めたことで、ほかの文書に書いた決定の一部が変わる。これらは別の変更で直す。
 
-- ADR-0006：幹事はほかの人の記録を直さない（幹事の役割から「全員の記録の修正」を消す）。出欠の回答は幹事だけが見られる。予想は幹事と、走順が確定した後の誘われたメンバーが見られる
-- `docs/design/database.md`：説明欄に大会の種別と開催日も入る。メンバーは自分のラップタイムを直したり消したりできる。ラップタイムを提出できるのは確定した走順の走者だけで、走順から外れると消える。招待は取り消せて、R4 に書いたことが起きる。メンバーを退会にすると、開催日が今日以降の大会への招待を取り消す。招待リンクは1回だけ使える
+- ADR-0006：幹事はほかの人の記録を直さない（幹事の役割から「全員の記録の修正」を消す）。メンバーはすべての大会の名前を見られるのではなく、誘われた大会だけを見られる（「不参加」と答えるまで）。確定した走順と予想は、幹事と「参加」と答えたメンバーだけが見られる。出欠の回答は幹事だけが見られる。「不参加」はメンバーにとって最後の回答
+- `docs/design/database.md`：説明欄に大会の種別と開催日も入る。メンバーは自分のラップタイムを直したり消したりできる。ラップタイムを提出できるのは確定した走順の走者だけで、走順から外れると消える。招待は取り消せて、R4 に書いたことが起きる。メンバーを退会にすると、開催日が今日以降の大会への招待を取り消す。招待リンクは1回だけ使える。「誰が何を見られるか」の表は R1 と R2 に合わせる（メンバーが見られるのは誘われた大会だけで、確定した走順は参加のときだけ）
 
 </details>
