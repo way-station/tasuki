@@ -1,7 +1,7 @@
 # MVP screen design
 
 - Status: Draft
-- Issue: #64
+- Issue: #64 (ADR-0006 and the database design were aligned in #65)
 - Related: ADR-0006 (access policy), ADR-0007 (LINE Login), ADR-0008 (accounts and roster members), ADR-0010 (spec-first OpenAPI), `docs/design/database.md`
 
 This document lists tasuki's MVP screens: what each screen shows, what it lets the user do, and who can open it. Visual design is out of scope. The API is designed from this document (ADR-0010).
@@ -205,13 +205,6 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 1. After the race, a runner opens the race (R2) and then L1.
 2. The runner enters lap times per km. The average time and lap count on their profile (P1) are updated.
 
-## Changes this design requires in other documents
-
-The answers given while designing the screens change some decisions recorded elsewhere. These are updated in separate changes:
-
-- ADR-0006: organizers do not correct other people's records (remove "correct anyone's records" from the organizer role). Members no longer see every race's name: they see only races they are invited to (until they answer "not attending"). The confirmed running order and the prediction are visible only to organizers and to members who answered "attending". Attendance answers are visible only to organizers. "Not attending" is final for the member.
-- `docs/design/database.md`: the description also holds the race type and the race date. Members can edit and delete their own lap times. Lap times can be submitted only by runners in the confirmed running order, and are deleted when the runner is removed from it. Invitations can be cancelled, with the effects in R4. Marking a member as left cancels invitations to races dated today or later. Invite links can be used once. The "Who sees what" table follows R1 and R2 (members see only races they are invited to, and the confirmed running order only when attending).
-
 ---
 
 <details>
@@ -220,7 +213,7 @@ The answers given while designing the screens change some decisions recorded els
 # MVP の画面の設計
 
 - Status: Draft
-- Issue: #64
+- Issue: #64（ADR-0006 とデータベースの設計は #65 で合わせた）
 - 関連：ADR-0006（アクセスの方針）、ADR-0007（LINE ログイン）、ADR-0008（アカウントと名簿のメンバー）、ADR-0010（仕様を先に書く OpenAPI）、`docs/design/database.md`
 
 tasuki の MVP の画面を一覧にする。各画面に出すもの、できる操作、誰が開けるか。見た目のデザインは範囲外。API はこの文書から設計する（ADR-0010）。
@@ -423,12 +416,5 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 1. 大会の後、走者は大会（R2）から L1 を開く
 2. 1km ごとのラップタイムを入れる。プロフィール（P1）の平均タイムとラップ数が更新される
-
-## この設計に合わせてほかの文書で直すこと
-
-画面を設計する中で決めたことで、ほかの文書に書いた決定の一部が変わる。これらは別の変更で直す。
-
-- ADR-0006：幹事はほかの人の記録を直さない（幹事の役割から「全員の記録の修正」を消す）。メンバーはすべての大会の名前を見られるのではなく、誘われた大会だけを見られる（「不参加」と答えるまで）。確定した走順と予想は、幹事と「参加」と答えたメンバーだけが見られる。出欠の回答は幹事だけが見られる。「不参加」はメンバーにとって最後の回答
-- `docs/design/database.md`：説明欄に大会の種別と開催日も入る。メンバーは自分のラップタイムを直したり消したりできる。ラップタイムを提出できるのは確定した走順の走者だけで、走順から外れると消える。招待は取り消せて、R4 に書いたことが起きる。メンバーを退会にすると、開催日が今日以降の大会への招待を取り消す。招待リンクは1回だけ使える。「誰が何を見られるか」の表は R1 と R2 に合わせる（メンバーが見られるのは誘われた大会だけで、確定した走順は参加のときだけ）
 
 </details>
