@@ -2,15 +2,15 @@
 
 - Status: Accepted
 - Type: technical
-- Date: 2026-10-11
-- Issue: #48
+- Date: 2026-10-11 (updated 2026-10-12, #61)
+- Issue: #48, #61
 
 ## Context
 
 tasuki has two different ideas of a "person":
 
 - **Someone who logs in** (ADR-0007): identified by a LINE user ID, with a role (ADR-0006).
-- **A runner on the team roster**: belongs to a team (ADR-0005) and has a name, expected pace, race results, and strengths. This is the data that accumulates over the years.
+- **A runner on the team roster**: belongs to a team (ADR-0005) and has a name, lap times, and an average time. This is the data that accumulates over the years.
 
 These do not always match one-to-one in time or in role:
 
@@ -26,10 +26,11 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 | Entity | Holds |
 | --- | --- |
 | Account | The login identity (LINE user ID), display name from LINE, organizer flag (from configuration) |
-| Roster member | The team it belongs to, name, expected pace, profile, and everything related to races (attendance, running order, results) |
+| Roster member | The team it belongs to, name, whether they have left, average time and lap count, and everything related to races (invitations, attendance, running order, lap times) |
 | Link | Which account belongs to which roster member, and whether an organizer has approved it |
 
-- Race data (attendance, running order, results) always refers to the **roster member**, never to the account.
+- Race data (invitations, attendance, running order, lap times) always refers to the **roster member**, never to the account.
+- A link is created when a person logs in through the personal invite link an organizer made for that roster member (ADR-0006).
 - A roster member has at most one approved account, and an account belongs to at most one roster member.
 
 ## Alternatives considered
@@ -56,15 +57,15 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 
 - Status: Accepted
 - Type: technical
-- Date: 2026-10-11
-- Issue: #48
+- Date: 2026-10-11（2026-10-12 更新、#61）
+- Issue: #48, #61
 
 ## Context（背景）
 
 tasuki には、「人」に当たるものが2種類あります。
 
 - **ログインする人**（ADR-0007）：LINE のユーザー ID で識別され、役割を持つ（ADR-0006）
-- **チームの名簿の選手**：チームに属し（ADR-0005）、名前、想定ペース、大会の結果、得意な距離を持つ。何年も積み上がるのはこちらのデータ
+- **チームの名簿の選手**：チームに属し（ADR-0005）、名前、ラップタイム、平均タイムを持つ。何年も積み上がるのはこちらのデータ
 
 この2つは、時期の面でも役割の面でも、いつも1対1で対応するとは限りません。
 
@@ -80,10 +81,11 @@ tasuki には、「人」に当たるものが2種類あります。
 | もの | 持つ情報 |
 | --- | --- |
 | アカウント | ログインの識別子（LINE のユーザー ID）、LINE の表示名、幹事かどうか（設定から） |
-| 名簿のメンバー | 所属するチーム、名前、想定ペース、プロフィール、大会に関わるすべて（出欠、走順、結果） |
+| 名簿のメンバー | 所属するチーム、名前、退会したかどうか、平均タイムとラップ数、大会に関わるすべて（招待、出欠、走順、ラップタイム） |
 | 紐付け | どのアカウントがどの名簿のメンバーか、幹事が承認したかどうか |
 
-- 大会のデータ（出欠、走順、結果）は、常に**名簿のメンバー**を参照し、アカウントは参照しない
+- 大会のデータ（招待、出欠、走順、ラップタイム）は、常に**名簿のメンバー**を参照し、アカウントは参照しない
+- 紐付けは、幹事がその名簿のメンバーのために作った個人の招待リンクから、本人がログインしたときに作られる（ADR-0006）
 - 名簿のメンバーには、承認済みのアカウントが最大1つ。アカウントが属する名簿のメンバーも最大1人
 
 ## Alternatives considered（検討した他の案）
