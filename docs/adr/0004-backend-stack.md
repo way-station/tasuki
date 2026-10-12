@@ -1,6 +1,6 @@
 # ADR-0004: Backend stack — Go with chi
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #12
@@ -46,7 +46,7 @@ Reasons for Go itself: a single statically linked binary (the production image i
 
 # ADR-0004: backend の技術スタック — Go と chi
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-11
 - Issue: #12

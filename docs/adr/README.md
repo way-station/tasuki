@@ -8,14 +8,15 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | ADR | Title | Type | Status |
 | --- | --- | --- | --- |
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | technical | Accepted |
-| [0002](0002-postgresql-and-mongodb.md) | PostgreSQL as the source of truth, MongoDB as a secondary store | technical | Proposed |
-| [0003](0003-monorepo-layout.md) | Monorepo layout | technical | Proposed |
-| [0004](0004-backend-stack.md) | Backend stack — Go with chi | technical | Proposed |
+| [0002](0002-postgresql-and-mongodb.md) | PostgreSQL as the source of truth, MongoDB as a secondary store | technical | Accepted |
+| [0003](0003-monorepo-layout.md) | Monorepo layout | technical | Accepted |
+| [0004](0004-backend-stack.md) | Backend stack — Go with chi | technical | Accepted |
 | [0005](0005-multi-tenant-data-single-team-mvp.md) | Multi-tenant data model, single-team MVP | business | Accepted |
 | [0006](0006-access-policy.md) | Access policy — team-only visibility, roles, and organizer approval | business | Accepted |
 | [0007](0007-line-login.md) | Authenticate all users with LINE Login | technical | Accepted |
 | [0008](0008-separate-accounts-and-roster-members.md) | Separate accounts from roster members | technical | Accepted |
 | [0009](0009-dev-only-login.md) | Dev-only login for local development | technical | Accepted |
+| [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Accepted |
 
 ## How to add an ADR
 
