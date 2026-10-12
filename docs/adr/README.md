@@ -16,7 +16,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0007](0007-line-login.md) | Authenticate all users with LINE Login | technical | Accepted |
 | [0008](0008-separate-accounts-and-roster-members.md) | Separate accounts from roster members | technical | Accepted |
 | [0009](0009-dev-only-login.md) | Dev-only login for local development | technical | Accepted |
-| [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Proposed |
+| [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Accepted |
 
 ## How to add an ADR
 

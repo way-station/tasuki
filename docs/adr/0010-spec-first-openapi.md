@@ -1,6 +1,6 @@
 # ADR-0010: Describe the API spec-first with OpenAPI
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-12
 - Issue: #58
@@ -60,7 +60,7 @@ The API is described **spec-first** in one OpenAPI document, which is the contra
 
 # ADR-0010: API を OpenAPI で仕様優先に記述する
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-12
 - Issue: #58
