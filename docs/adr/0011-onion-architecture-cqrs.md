@@ -33,11 +33,15 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 - **Commands (writes)**: Controller → command → use case → entities loaded and saved through repository interfaces.
   - The **command** is the backend's input validation: required fields, formats (for example `MM:SS`), and ranges are checked when the command is built, before the use case runs.
   - Business rules are enforced by the entities, value objects, and domain services.
-- **Queries (reads)**: Controller → query service interface → DTO / view model. Query services read what each screen needs directly, including across PostgreSQL and MongoDB, without loading entities. What a caller may see (ADR-0006) is applied in the query.
+- **Queries (reads)**: Controller → use case → query service interface → DTO / view model. Query services read what each screen needs directly, including across PostgreSQL and MongoDB, without loading entities. What a caller may see (ADR-0006) is applied in the query.
 
 **Domain services**
 
 - Logic that belongs to the domain but not to one entity's own state is a domain service in Domain. Recalculating a member's average time from their lap times is a domain service: calculating each member's time belongs to the member's domain, and Application does not need to know how it is done.
+
+**Predictions**
+
+- The prediction (total time or laps) is calculated in Application, in the use case that reads the running order. It combines the average times of every runner in the running order, so it is calculated where the data of all runners is gathered: the use case gets the legs and the runners' average times from the query service and calculates the prediction.
 
 **Factories and encapsulation**
 
@@ -56,6 +60,7 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 | Plain struct literals instead of factories | Any package could build an invalid object; validation would be spread across callers |
 | Objects create themselves (constructors on the entity, DTO, or command) | An object would hold the command that creates it; creation is the factory's job, separate from the object |
 | Average time calculated in Application | Calculating a member's time belongs to the member's domain; Application does not need to know how it is done |
+| Prediction calculated in Domain (a domain service) | The prediction combines the times of all runners, not one member; it is calculated in Application, where all runners' times are gathered |
 
 ## Consequences
 
@@ -105,11 +110,15 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 - **コマンド（更新）**：コントローラー → コマンド → ユースケース → リポジトリのインターフェースでエンティティを読み書きする
   - **コマンド**は backend の入力の検証を担う。必須の項目、形式（例：`MM:SS`）、範囲を、コマンドを作るときに確かめ、ユースケースが動く前に断る
   - 業務のルールは、エンティティ、値オブジェクト、ドメインサービスが守る
-- **クエリ（参照）**：コントローラー → クエリサービスのインターフェース → DTO／ビューモデル。クエリサービスは、エンティティを読み込まずに、画面が必要とするものを直接読む。PostgreSQL と MongoDB をまたいでもよい。呼ぶ人が見られる範囲（ADR-0006）はクエリの中で絞る
+- **クエリ（参照）**：コントローラー → ユースケース → クエリサービスのインターフェース → DTO／ビューモデル。クエリサービスは、エンティティを読み込まずに、画面が必要とするものを直接読む。PostgreSQL と MongoDB をまたいでもよい。呼ぶ人が見られる範囲（ADR-0006）はクエリの中で絞る
 
 **ドメインサービス**
 
 - ドメインに属するが、1つのエンティティの状態には収まらない処理は、Domain のドメインサービスにする。ラップタイムからメンバーの平均タイムを計算し直す処理はドメインサービス。メンバー一人一人のタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない
+
+**予想**
+
+- 予想（合計タイムまたは周回数）は Application の、走順を読むユースケースで計算する。走順に入っている走者全員の平均タイムを組み合わせるので、全員のデータが集まる場所で計算する。ユースケースがクエリサービスから区と走者の平均タイムを受け取り、予想を計算する
 
 **ファクトリーとカプセル化**
 
@@ -128,6 +137,7 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 | ファクトリーを使わず構造体リテラルで作る | どのパッケージからでも正しくないオブジェクトを作れる。検証が呼ぶ側に散らばる |
 | オブジェクトが自分自身を作る（エンティティ、DTO、コマンドにコンストラクターを持たせる） | オブジェクトが自分を生成するコマンドを持つことになる。生成はオブジェクトとは別の、ファクトリーの役割 |
 | 平均タイムを Application で計算する | メンバーのタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない |
+| 予想を Domain（ドメインサービス）で計算する | 予想は1人ではなく走者全員のタイムを組み合わせる。全員のタイムが集まる Application で計算する |
 
 ## Consequences（影響）
 
