@@ -7,15 +7,11 @@
 
 ## Context
 
-The backend so far has two packages: `server` (routes and handlers) and `store` (database connections). That was enough for `/health`, but the MVP API (`docs/design/api.md`) brings much more:
+The backend so far has two packages: `server` (routes and handlers) and `store` (database connections). That was enough for `/health`, but the MVP API (`docs/design/api.md`) adds many endpoints, each with input to check, business rules to apply, and data to read or write.
 
-- **Business rules that chain together.** Cancelling an invitation removes the member from attendance, the entry, and the running order, and can delete their lap times and recalculate their average time. A changed attendance answer, a member marked as left, and an edited race trigger the same kind of chain (`docs/design/database.md`).
-- **Rules that must hold no matter which endpoint changes the data.** Only attending members can be in an entry, only entry members can run, a running order can be confirmed only when every leg has a runner, and times are `MM:SS` rounded half up.
-- **Reads that look different for each caller.** The same race returns different fields to organizers, attending members, and invited members (ADR-0006). Predictions are calculated for the reader, and some screens read from both PostgreSQL and MongoDB (for example a member's laps by race).
-- **Two databases** (ADR-0002): PostgreSQL as the source of truth and MongoDB for lap records and running order history.
-- **Generated code** (ADR-0010): oapi-codegen generates the server interface that handlers implement.
+We need a structure in which responsibilities do not become tangled as the API grows: where input is validated, where business rules live, and where data is accessed should each have one clear place.
 
-If these rules live in handlers or in SQL, each endpoint that touches the same data has to repeat them, and the rules cannot be tested without databases.
+This matters most for **business rules that chain together**. Cancelling an invitation removes the member from attendance, the entry, and the running order, and can delete their lap times and recalculate their average time. A changed attendance answer, a member marked as left, and an edited race trigger the same kind of chain (`docs/design/database.md`). If these rules live in handlers or in SQL, each endpoint that touches the same data has to repeat them.
 
 ## Decision
 
@@ -33,7 +29,7 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 - **Commands (writes)**: Controller → command → use case → entities loaded and saved through repository interfaces.
   - The **command** is the backend's input validation: required fields, formats (for example `MM:SS`), and ranges are checked when the command is built, before the use case runs.
   - Business rules are enforced by the entities, value objects, and domain services.
-- **Queries (reads)**: Controller → use case → query service interface → DTO / view model. Query services read what each screen needs directly, including across PostgreSQL and MongoDB, without loading entities. What a caller may see (ADR-0006) is applied in the query.
+- **Queries (reads)**: Controller → use case → query service interface → DTO / view model. Every read goes through a use case, with no exceptions, even when the use case only passes the result on. Query services read what each screen needs directly, including across PostgreSQL and MongoDB, without loading entities.
 
 **Domain services**
 
@@ -64,9 +60,9 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 
 ## Consequences
 
+- Each responsibility has one place: input validation in commands, business rules in Domain, data access in Infrastructure.
 - Business rules can be tested in Domain and Application with fake repositories, without databases.
 - Each endpoint touches more files (controller, use case or query service, command or DTO, repository), and data is mapped between layers. This is more code than calling the database from handlers.
-- Writes and reads can drift: a rule enforced on the write side (for example who can see a race) must also be applied in the query services. Tests for both sides are needed.
 - Repositories that write to both PostgreSQL and MongoDB cannot share a transaction (ADR-0002). Use cases that change both (for example deleting lap times when a runner is removed) must define the order and what happens when the second write fails; this is decided in the implementation issues.
 - The API implementation issues (#73–#79) are split by these layers.
 
@@ -84,15 +80,11 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 
 ## Context（背景）
 
-backend にはこれまで、`server`（ルートとハンドラー）と `store`（データベースの接続）の2つのパッケージしかありません。`/health` にはそれで足りましたが、MVP の API（`docs/design/api.md`）ではずっと多くのことが必要になります。
+backend にはこれまで、`server`（ルートとハンドラー）と `store`（データベースの接続）の2つのパッケージしかありません。`/health` にはそれで足りましたが、MVP の API（`docs/design/api.md`）では多くのエンドポイントが増え、それぞれに確かめる入力、当てはめる業務のルール、読み書きするデータがあります。
 
-- **連鎖する業務のルール**：招待を取り消すと、そのメンバーは出欠、エントリー、走順から外れ、ラップタイムが消えて平均タイムが計算し直されることがある。出欠の回答の変更、退会、大会の編集でも、同じような連鎖が起きる（`docs/design/database.md`）
-- **どのエンドポイントからデータを変えても守るべきルール**：エントリーに入れるのは参加のメンバーだけ、走れるのはエントリーのメンバーだけ、すべての区に走者がいるときだけ走順を確定できる、タイムは `MM:SS` で四捨五入
-- **呼ぶ人ごとに違う形の読み取り**：同じ大会でも、幹事、参加のメンバー、誘われたメンバーで返す項目が違う（ADR-0006）。予想は読む人のために計算する。PostgreSQL と MongoDB の両方から読む画面もある（例：メンバーの大会ごとのラップ）
-- **2つのデータベース**（ADR-0002）：正は PostgreSQL、ラップと走順の履歴は MongoDB
-- **生成するコード**（ADR-0010）：oapi-codegen が、ハンドラーが実装するサーバーのインターフェースを生成する
+API が増えても責務の分け方が煩雑にならない構成が必要です。入力をどこで確かめるか、業務のルールをどこに置くか、データにどこでアクセスするかが、それぞれ1か所にはっきり決まっている必要があります。
 
-これらのルールをハンドラーや SQL に置くと、同じデータに触るエンドポイントごとに繰り返すことになり、データベースなしではテストできません。
+これが特に効くのは、**連鎖する業務のルール**です。招待を取り消すと、そのメンバーは出欠、エントリー、走順から外れ、ラップタイムが消えて平均タイムが計算し直されることがあります。出欠の回答の変更、退会、大会の編集でも、同じような連鎖が起きます（`docs/design/database.md`）。これらのルールをハンドラーや SQL に置くと、同じデータに触るエンドポイントごとに繰り返すことになります。
 
 ## Decision（決定）
 
@@ -110,7 +102,7 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 - **コマンド（更新）**：コントローラー → コマンド → ユースケース → リポジトリのインターフェースでエンティティを読み書きする
   - **コマンド**は backend の入力の検証を担う。必須の項目、形式（例：`MM:SS`）、範囲を、コマンドを作るときに確かめ、ユースケースが動く前に断る
   - 業務のルールは、エンティティ、値オブジェクト、ドメインサービスが守る
-- **クエリ（参照）**：コントローラー → ユースケース → クエリサービスのインターフェース → DTO／ビューモデル。クエリサービスは、エンティティを読み込まずに、画面が必要とするものを直接読む。PostgreSQL と MongoDB をまたいでもよい。呼ぶ人が見られる範囲（ADR-0006）はクエリの中で絞る
+- **クエリ（参照）**：コントローラー → ユースケース → クエリサービスのインターフェース → DTO／ビューモデル。参照はすべてユースケースを通す。ユースケースが結果を渡すだけの場合も例外はない。クエリサービスは、エンティティを読み込まずに、画面が必要とするものを直接読む。PostgreSQL と MongoDB をまたいでもよい
 
 **ドメインサービス**
 
@@ -141,9 +133,9 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 
 ## Consequences（影響）
 
+- 責務ごとに置く場所が1つに決まる。入力の検証はコマンド、業務のルールは Domain、データへのアクセスは Infrastructure
 - 業務のルールを、偽のリポジトリを使って Domain と Application でテストでき、データベースは要らない
 - エンドポイントごとに触るファイルが増え（コントローラー、ユースケースかクエリサービス、コマンドか DTO、リポジトリ）、層の間でデータを変換する。ハンドラーからデータベースを呼ぶより、コードが多くなる
-- 更新と参照がずれることがある。更新側で守るルール（例：誰が大会を見られるか）は、クエリサービスでも当てはめる必要がある。両方のテストが必要
 - PostgreSQL と MongoDB の両方に書くリポジトリは、トランザクションを共有できない（ADR-0002）。両方を変えるユースケース（例：走者を外したときにラップタイムを消す）は、書く順番と、2つ目の書き込みが失敗したときにどうするかを決める必要がある。これは実装の Issue で決める
 - API の実装の Issue（#73〜#79）は、この層で分ける
 
