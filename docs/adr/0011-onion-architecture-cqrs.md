@@ -24,19 +24,27 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 | Layer | Contains |
 | --- | --- |
 | Presentation | **Controllers** that implement the interface generated from the OpenAPI document (ADR-0010), and **routing** (chi, ADR-0004) |
-| Application | **Use cases**, the **commands** they take as input, **DTOs / view models** they return, and **query service interfaces** |
-| Domain | **Entities**, **value objects**, **factories**, and **repository interfaces** |
+| Application | **Use cases**, **commands** (validated input), **DTOs / view models** they return, **factories** for commands and DTOs, and **query service interfaces** |
+| Domain | **Entities**, **value objects**, **domain services**, **factories** for entities, and **repository interfaces** |
 | Infrastructure | **Repositories** (implement the Domain repository interfaces) and **query services** (implement the Application query service interfaces), for PostgreSQL and MongoDB |
 
 **CQRS**
 
-- **Commands (writes)**: Controller → use case with a command → entities loaded and saved through repository interfaces. Business rules are enforced by the entities and value objects.
+- **Commands (writes)**: Controller → command → use case → entities loaded and saved through repository interfaces.
+  - The **command** is the backend's input validation: required fields, formats (for example `MM:SS`), and ranges are checked when the command is built, before the use case runs.
+  - Business rules are enforced by the entities, value objects, and domain services.
 - **Queries (reads)**: Controller → query service interface → DTO / view model. Query services read what each screen needs directly, including across PostgreSQL and MongoDB, without loading entities. What a caller may see (ADR-0006) is applied in the query.
+
+**Domain services**
+
+- Logic that belongs to the domain but not to one entity's own state is a domain service in Domain. Recalculating a member's average time from their lap times is a domain service: calculating each member's time belongs to the member's domain, and Application does not need to know how it is done.
 
 **Factories and encapsulation**
 
-- Entities and value objects keep their fields unexported. They are created only through factories, which reject invalid values (for example a lap time that is not `MM:SS`, or a race description that does not match its type), so an invalid object cannot exist.
-- State changes go through methods on the entity, not by setting fields.
+- **Entities, DTOs, and commands are created by factories**, not by themselves. An object does not hold the command that creates it; like a car assembled from parts in a factory, a factory assembles the object from its parts.
+  - Entity factories are in Domain. Command and DTO factories are in Application.
+- Factories reject invalid values (for example a lap time that is not `MM:SS`, or a race description that does not match its type), so an invalid object cannot exist.
+- Entities and value objects keep their fields unexported. State changes go through methods on the entity, not by setting fields.
 
 ## Alternatives considered
 
@@ -46,6 +54,8 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 | Layered architecture where Domain depends on Infrastructure | Business rules would depend on PostgreSQL and MongoDB details, so they could not be tested alone and a storage change would reach the rules |
 | Onion without CQRS (reads also go through repositories and entities) | Reads differ per caller and combine both databases; building them from entities means loading more than needed and mapping entities to many response shapes |
 | Plain struct literals instead of factories | Any package could build an invalid object; validation would be spread across callers |
+| Objects create themselves (constructors on the entity, DTO, or command) | An object would hold the command that creates it; creation is the factory's job, separate from the object |
+| Average time calculated in Application | Calculating a member's time belongs to the member's domain; Application does not need to know how it is done |
 
 ## Consequences
 
@@ -86,19 +96,27 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 | 層 | 入るもの |
 | --- | --- |
 | Presentation | OpenAPI の文書から生成したインターフェース（ADR-0010）を実装する**コントローラー**と、**ルーティング**（chi、ADR-0004） |
-| Application | **ユースケース**、その入力の**コマンド**、返す **DTO／ビューモデル**、**クエリサービスのインターフェース** |
-| Domain | **エンティティ**、**値オブジェクト**、**ファクトリー**、**リポジトリのインターフェース** |
+| Application | **ユースケース**、**コマンド**（検証済みの入力）、返す **DTO／ビューモデル**、コマンドと DTO の**ファクトリー**、**クエリサービスのインターフェース** |
+| Domain | **エンティティ**、**値オブジェクト**、**ドメインサービス**、エンティティの**ファクトリー**、**リポジトリのインターフェース** |
 | Infrastructure | **リポジトリ**（Domain のリポジトリのインターフェースを実装）と**クエリサービス**（Application のクエリサービスのインターフェースを実装）。PostgreSQL と MongoDB |
 
 **CQRS**
 
-- **コマンド（更新）**：コントローラー → コマンドを受け取るユースケース → リポジトリのインターフェースでエンティティを読み書きする。業務のルールはエンティティと値オブジェクトが守る
+- **コマンド（更新）**：コントローラー → コマンド → ユースケース → リポジトリのインターフェースでエンティティを読み書きする
+  - **コマンド**は backend の入力の検証を担う。必須の項目、形式（例：`MM:SS`）、範囲を、コマンドを作るときに確かめ、ユースケースが動く前に断る
+  - 業務のルールは、エンティティ、値オブジェクト、ドメインサービスが守る
 - **クエリ（参照）**：コントローラー → クエリサービスのインターフェース → DTO／ビューモデル。クエリサービスは、エンティティを読み込まずに、画面が必要とするものを直接読む。PostgreSQL と MongoDB をまたいでもよい。呼ぶ人が見られる範囲（ADR-0006）はクエリの中で絞る
+
+**ドメインサービス**
+
+- ドメインに属するが、1つのエンティティの状態には収まらない処理は、Domain のドメインサービスにする。ラップタイムからメンバーの平均タイムを計算し直す処理はドメインサービス。メンバー一人一人のタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない
 
 **ファクトリーとカプセル化**
 
-- エンティティと値オブジェクトの項目は外に公開しない。作るのはファクトリーだけで、正しくない値は断る（例：`MM:SS` でないラップタイム、種別に合わない大会の説明欄）。正しくないオブジェクトは存在できない
-- 状態の変更は、項目を直接書き換えるのではなく、エンティティのメソッドで行う
+- **エンティティ、DTO、コマンドはファクトリーが作る。** 自分自身では作らない。オブジェクトは自分を生成するコマンドを持たない。車が工場で部品を組み合わせて作られるように、ファクトリーが部品からオブジェクトを組み立てる
+  - エンティティのファクトリーは Domain、コマンドと DTO のファクトリーは Application に置く
+- ファクトリーは正しくない値を断る（例：`MM:SS` でないラップタイム、種別に合わない大会の説明欄）。正しくないオブジェクトは存在できない
+- エンティティと値オブジェクトの項目は外に公開しない。状態の変更は、項目を直接書き換えるのではなく、エンティティのメソッドで行う
 
 ## Alternatives considered（検討した他の案）
 
@@ -108,6 +126,8 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 | Domain が Infrastructure に依存するレイヤードアーキテクチャ | 業務のルールが PostgreSQL と MongoDB の詳細に依存し、単独でテストできず、保存方法の変更がルールにまで及ぶ |
 | CQRS なしのオニオン（参照もリポジトリとエンティティを通す） | 読み取りは呼ぶ人ごとに違い、2つのデータベースを組み合わせる。エンティティから組み立てると、必要以上に読み込み、エンティティを多くのレスポンスの形に変換することになる |
 | ファクトリーを使わず構造体リテラルで作る | どのパッケージからでも正しくないオブジェクトを作れる。検証が呼ぶ側に散らばる |
+| オブジェクトが自分自身を作る（エンティティ、DTO、コマンドにコンストラクターを持たせる） | オブジェクトが自分を生成するコマンドを持つことになる。生成はオブジェクトとは別の、ファクトリーの役割 |
+| 平均タイムを Application で計算する | メンバーのタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない |
 
 ## Consequences（影響）
 

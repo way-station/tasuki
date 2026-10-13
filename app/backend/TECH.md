@@ -63,8 +63,8 @@ app/backend/
 ├─ internal/
 │  ├─ config/             # loads settings from environment variables
 │  ├─ presentation/       # controllers (implement the OpenAPI-generated interface) and routing (chi)
-│  ├─ application/        # use cases, commands, DTOs / view models, query service interfaces
-│  ├─ domain/             # entities, value objects, factories, repository interfaces
+│  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
+│  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
 │  └─ infrastructure/     # repositories and query services (PostgreSQL, MongoDB), DB connections
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
@@ -72,7 +72,7 @@ app/backend/
 
 - Onion architecture with CQRS ([ADR-0011](../../docs/adr/0011-onion-architecture-cqrs.md)). Dependencies point inward: `presentation` → `application` → `domain`; `infrastructure` → `application`, `domain`. `domain` imports no other layer.
 - Writes go through use cases and repositories; reads go through query services.
-- Entities and value objects keep their fields unexported and are created through factories.
+- Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
 - The existing `server/` and `store/` packages move into these layers when the API is implemented (#73).
 
