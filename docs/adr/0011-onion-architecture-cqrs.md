@@ -35,6 +35,11 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 
 - Logic that belongs to the domain but not to one entity's own state is a domain service in Domain. Recalculating a member's average time from their lap times is a domain service: calculating each member's time belongs to the member's domain, and Application does not need to know how it is done.
 
+**Visibility (ADR-0006)**
+
+- The rules that decide what a caller may see (which races, the description, the deadline, the running order, predictions, lap times) are in Domain. Deciding what a caller may see is a selection, which is close to the domain.
+- Use cases apply these rules. Query services only run the conditions they are given and do not know what the conditions mean.
+
 **Predictions**
 
 - The prediction (total time or laps) is calculated in Application, in the use case that reads the running order. It combines the average times of every runner in the running order, so it is calculated where the data of all runners is gathered: the use case gets the legs and the runners' average times from the query service and calculates the prediction.
@@ -56,6 +61,7 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 | Plain struct literals instead of factories | Any package could build an invalid object; validation would be spread across callers |
 | Objects create themselves (constructors on the entity, DTO, or command) | An object would hold the command that creates it; creation is the factory's job, separate from the object |
 | Average time calculated in Application | Calculating a member's time belongs to the member's domain; Application does not need to know how it is done |
+| Visibility rules in query services (SQL) or in Application | Deciding what a caller may see is a selection, which is close to the domain |
 | Prediction calculated in Domain (a domain service) | The prediction combines the times of all runners, not one member; it is calculated in Application, where all runners' times are gathered |
 
 ## Consequences
@@ -108,6 +114,11 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 
 - ドメインに属するが、1つのエンティティの状態には収まらない処理は、Domain のドメインサービスにする。ラップタイムからメンバーの平均タイムを計算し直す処理はドメインサービス。メンバー一人一人のタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない
 
+**見られる範囲（ADR-0006）**
+
+- 呼ぶ人が何を見られるか（どの大会、説明欄、締め切り、走順、予想、ラップタイム）を決めるルールは Domain に置く。何を見られるかを決めるのは選別であり、ドメインに近いため
+- このルールを当てはめるのはユースケース。クエリサービスは渡された条件で取ってくるだけで、条件の意味は知らない
+
 **予想**
 
 - 予想（合計タイムまたは周回数）は Application の、走順を読むユースケースで計算する。走順に入っている走者全員の平均タイムを組み合わせるので、全員のデータが集まる場所で計算する。ユースケースがクエリサービスから区と走者の平均タイムを受け取り、予想を計算する
@@ -129,6 +140,7 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 | ファクトリーを使わず構造体リテラルで作る | どのパッケージからでも正しくないオブジェクトを作れる。検証が呼ぶ側に散らばる |
 | オブジェクトが自分自身を作る（エンティティ、DTO、コマンドにコンストラクターを持たせる） | オブジェクトが自分を生成するコマンドを持つことになる。生成はオブジェクトとは別の、ファクトリーの役割 |
 | 平均タイムを Application で計算する | メンバーのタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない |
+| 見られる範囲のルールをクエリサービス（SQL）や Application に置く | 何を見られるかを決めるのは選別であり、ドメインに近い |
 | 予想を Domain（ドメインサービス）で計算する | 予想は1人ではなく走者全員のタイムを組み合わせる。全員のタイムが集まる Application で計算する |
 
 ## Consequences（影響）
