@@ -52,7 +52,7 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 | --- | --- |
 | Keep `server` and `store` (handlers call the database directly) | The chained rules would be repeated in every handler that touches the same data, and could only be tested with databases |
 | Layered architecture where Domain depends on Infrastructure | Business rules would depend on PostgreSQL and MongoDB details, so they could not be tested alone and a storage change would reach the rules |
-| Onion without CQRS (reads also go through repositories and entities) | Reads differ per caller and combine both databases; building them from entities means loading more than needed and mapping entities to many response shapes |
+| Onion without CQRS (reads also go through repositories and entities) | One model that handles every create, read, update, and delete grows large. Splitting it into a write model (centered on business logic) and a read model (centered on displaying data) keeps the code readable and maintainable |
 | Plain struct literals instead of factories | Any package could build an invalid object; validation would be spread across callers |
 | Objects create themselves (constructors on the entity, DTO, or command) | An object would hold the command that creates it; creation is the factory's job, separate from the object |
 | Average time calculated in Application | Calculating a member's time belongs to the member's domain; Application does not need to know how it is done |
@@ -125,7 +125,7 @@ backend は、4つの層の**オニオンアーキテクチャ**にする。依�
 | --- | --- |
 | `server` と `store` のまま（ハンドラーがデータベースを直接呼ぶ） | 連鎖するルールを、同じデータに触るハンドラーごとに繰り返すことになり、データベースなしではテストできない |
 | Domain が Infrastructure に依存するレイヤードアーキテクチャ | 業務のルールが PostgreSQL と MongoDB の詳細に依存し、単独でテストできず、保存方法の変更がルールにまで及ぶ |
-| CQRS なしのオニオン（参照もリポジトリとエンティティを通す） | 読み取りは呼ぶ人ごとに違い、2つのデータベースを組み合わせる。エンティティから組み立てると、必要以上に読み込み、エンティティを多くのレスポンスの形に変換することになる |
+| CQRS なしのオニオン（参照もリポジトリとエンティティを通す） | 1つの複雑なモデルで作成・参照・更新・削除のすべてを扱うと、コードが肥大化する。書き込み用（業務のロジックが中心）と読み取り用（データの表示が中心）に分けることで、可読性と保守性を保つ |
 | ファクトリーを使わず構造体リテラルで作る | どのパッケージからでも正しくないオブジェクトを作れる。検証が呼ぶ側に散らばる |
 | オブジェクトが自分自身を作る（エンティティ、DTO、コマンドにコンストラクターを持たせる） | オブジェクトが自分を生成するコマンドを持つことになる。生成はオブジェクトとは別の、ファクトリーの役割 |
 | 平均タイムを Application で計算する | メンバーのタイムの算出はそのメンバーのドメインに属し、Application がその方法を知る必要はない |
