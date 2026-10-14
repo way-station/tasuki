@@ -59,17 +59,22 @@ React (Vite)  ── app/frontend
 
 ```
 app/backend/
-├─ cmd/server/         # entry point: config → DB connections → HTTP server, graceful shutdown
+├─ cmd/server/            # entry point: config → DB connections → HTTP server, graceful shutdown
 ├─ internal/
-│  ├─ config/          # loads settings from environment variables
-│  ├─ server/          # HTTP routes (chi) and handlers
-│  └─ store/           # database connections (and repositories later)
-├─ .devcontainer/      # Dev Container definition (development happens inside the container)
+│  ├─ config/             # loads settings from environment variables
+│  ├─ presentation/       # controllers (implement the OpenAPI-generated interface) and routing (chi)
+│  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
+│  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
+│  └─ infrastructure/     # repositories and query services (PostgreSQL, MongoDB), DB connections
+├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
 
-- `server` depends on small interfaces (e.g. `Pinger`), not on `store` directly, so handlers can be tested without databases.
+- Onion architecture with CQRS ([ADR-0011](../../docs/adr/0011-onion-architecture-cqrs.md)). Dependencies point inward: `presentation` → `application` → `domain`; `infrastructure` → `application`, `domain`. `domain` imports no other layer.
+- Writes go through use cases and repositories; reads go through query services.
+- Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
+- The existing `server/` and `store/` packages move into these layers when the API is implemented (#73).
 
 Module path: `github.com/way-station/tasuki/app/backend`
 
