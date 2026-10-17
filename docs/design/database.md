@@ -108,7 +108,7 @@ Every team-owned table belongs to a team (ADR-0005).
 | `accounts` | LINE user ID, display name |
 | `roster_members` | Team, name, left or not, average time (`MM:SS`), lap count |
 | `invite_links` | Roster member, token, expiry (one week), when it was used or made unusable |
-| `member_links` | Account, roster member, status (pending / approved / rejected) |
+| `member_links` | Account, roster member, approved (pending / approved / rejected), unlinked |
 | `races` | Team, name, description (JSON: race type, race date, text, leg distances in km, lap distance in km, time limit in minutes, deadline, target time) |
 | `race_invitations` | Race, roster member (invited) |
 | `attendances` | Race, roster member, status (attending / not attending / undecided) |
@@ -143,7 +143,8 @@ Status: draft written by Claude from the ADRs and the rules above, for the maint
 | States | `text` with a `CHECK` constraint |
 | Requires | PostgreSQL 15 or later (`ON DELETE SET NULL (column)`) |
 | Cancelled invitations | Deleted. Attendance, entry membership, and legs follow by foreign keys |
-| Unlinked accounts | Kept, with `unlinked = true`; the status stays `approved` |
+| Link states | Booleans, not a status column. `member_links.approved`: `NULL` = pending, `true` = approved, `false` = rejected |
+| Unlinked accounts | Kept, with `unlinked = true`; `approved` stays `true` |
 | Invite links | Renamed from `invitations` to `invite_links`, so they are not confused with `race_invitations` |
 
 ### Relations
@@ -220,17 +221,19 @@ CREATE TABLE member_links (
   account_id       uuid NOT NULL REFERENCES accounts (id),
   roster_member_id uuid NOT NULL REFERENCES roster_members (id),
   invite_link_id   uuid NOT NULL UNIQUE REFERENCES invite_links (id),  -- an invite link is used once
-  status           text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
-  unlinked         boolean NOT NULL DEFAULT false CHECK (NOT unlinked OR status = 'approved'),  -- only approved links are unlinked
-  decided_at       timestamptz,                        -- approved or rejected
-  created_at       timestamptz NOT NULL DEFAULT now()
+  approved         boolean,                            -- NULL = pending, true = approved, false = rejected
+  unlinked         boolean NOT NULL DEFAULT false,
+  decided_at       timestamptz,                        -- when it was approved or rejected
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  CHECK (NOT unlinked OR approved IS TRUE),            -- only approved links are unlinked
+  CHECK ((approved IS NULL) = (decided_at IS NULL))
 );
 -- One approved account per roster member, and one roster member per account (ADR-0008).
-CREATE UNIQUE INDEX member_links_one_approved_per_member  ON member_links (roster_member_id) WHERE status = 'approved' AND NOT unlinked;
-CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (account_id)       WHERE status = 'approved' AND NOT unlinked;
+CREATE UNIQUE INDEX member_links_one_approved_per_member  ON member_links (roster_member_id) WHERE approved AND NOT unlinked;
+CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (account_id)       WHERE approved AND NOT unlinked;
 -- No new invite link while a link is pending; an account waits for one roster member at a time.
-CREATE UNIQUE INDEX member_links_one_pending_per_member   ON member_links (roster_member_id) WHERE status = 'pending';
-CREATE UNIQUE INDEX member_links_one_pending_per_account  ON member_links (account_id)       WHERE status = 'pending';
+CREATE UNIQUE INDEX member_links_one_pending_per_member   ON member_links (roster_member_id) WHERE approved IS NULL;
+CREATE UNIQUE INDEX member_links_one_pending_per_account  ON member_links (account_id)       WHERE approved IS NULL;
 
 CREATE TABLE races (
   id          uuid PRIMARY KEY,
@@ -453,7 +456,7 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | `accounts` | LINE のユーザー ID、表示名 |
 | `roster_members` | チーム、名前、退会したかどうか、平均タイム（`MM:SS`）、ラップ数 |
 | `invite_links` | 名簿のメンバー、トークン、期限（1週間）、使った日時または使えなくした日時 |
-| `member_links` | アカウント、名簿のメンバー、状態（承認待ち／承認／却下） |
+| `member_links` | アカウント、名簿のメンバー、承認（承認待ち／承認／却下）、解除 |
 | `races` | チーム、大会名、説明欄（JSON：大会の種別、開催日、文章、区ごとの距離 km、1周の距離 km、制限時間 分、締め切り、目標タイム） |
 | `race_invitations` | 大会、名簿のメンバー（誘われた人） |
 | `attendances` | 大会、名簿のメンバー、状態（参加／不参加／保留） |
@@ -488,7 +491,8 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 | 状態 | `CHECK` 制約付きの `text` |
 | 必要なもの | PostgreSQL 15 以上（`ON DELETE SET NULL (列)` を使うため） |
 | 取り消した招待 | 消す。出欠、エントリーのメンバー、区は外部キーで連動する |
-| 解除した紐付け | 残す。`unlinked = true` にする。状態は `approved` のまま |
+| 紐付けの状態 | 状態の列ではなく bool で持つ。`member_links.approved`：`NULL` = 承認待ち、`true` = 承認、`false` = 却下 |
+| 解除した紐付け | 残す。`unlinked = true` にする。`approved` は `true` のまま |
 | 招待リンク | `race_invitations` と紛らわしくないよう、`invitations` を `invite_links` に名前を変える |
 
 ### リレーション
