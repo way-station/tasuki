@@ -23,11 +23,11 @@ func (f MemberFactory) New(teamID shared.TeamID, name string) (*Member, error) {
 	if name == "" {
 		return nil, shared.NewValidationError("name", "is required")
 	}
-	return &Member{id: shared.MemberID(f.ids.NewID()), teamID: teamID, name: name}, nil
+	return &Member{id: shared.MemberID(f.ids.NewID()), teamID: teamID, name: name, average: DefaultAverage()}, nil
 }
 
 // Reconstruct returns a member read from storage. Repositories use it; the values are
 // trusted because they were validated when they were stored.
-func (f MemberFactory) Reconstruct(id shared.MemberID, teamID shared.TeamID, name string, leftAt *time.Time) *Member {
-	return &Member{id: id, teamID: teamID, name: name, leftAt: leftAt}
+func (f MemberFactory) Reconstruct(id shared.MemberID, teamID shared.TeamID, name string, leftAt *time.Time, average shared.Pace, lapCount int) *Member {
+	return &Member{id: id, teamID: teamID, name: name, leftAt: leftAt, average: average, lapCount: lapCount}
 }
