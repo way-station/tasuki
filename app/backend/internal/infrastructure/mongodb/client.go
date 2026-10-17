@@ -1,5 +1,6 @@
-// Package store holds the MongoDB connection used by the backend.
-package store
+// Package mongodb holds the MongoDB connection and the MongoDB implementations of
+// the repositories and query services.
+package mongodb
 
 import (
 	"context"
@@ -10,19 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-// Store wraps the MongoDB client and the application database.
-type Store struct {
+// Client wraps the MongoDB client and the application database.
+type Client struct {
 	client *mongo.Client
 	db     *mongo.Database
 }
 
 // Connect opens a client and verifies the connection with a ping.
-func Connect(ctx context.Context, uri, database string) (*Store, error) {
+func Connect(ctx context.Context, uri, database string) (*Client, error) {
 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo: %w", err)
 	}
-	s := &Store{client: client, db: client.Database(database)}
+	s := &Client{client: client, db: client.Database(database)}
 	if err := s.Ping(ctx); err != nil {
 		_ = client.Disconnect(ctx)
 		return nil, err
@@ -31,7 +32,7 @@ func Connect(ctx context.Context, uri, database string) (*Store, error) {
 }
 
 // Ping checks that the primary is reachable.
-func (s *Store) Ping(ctx context.Context) error {
+func (s *Client) Ping(ctx context.Context) error {
 	if err := s.client.Ping(ctx, readpref.Primary()); err != nil {
 		return fmt.Errorf("ping mongo: %w", err)
 	}
@@ -39,11 +40,11 @@ func (s *Store) Ping(ctx context.Context) error {
 }
 
 // Database returns the application database handle.
-func (s *Store) Database() *mongo.Database {
+func (s *Client) Database() *mongo.Database {
 	return s.db
 }
 
 // Close disconnects the client.
-func (s *Store) Close(ctx context.Context) error {
+func (s *Client) Close(ctx context.Context) error {
 	return s.client.Disconnect(ctx)
 }

@@ -1,0 +1,41 @@
+// Package controller holds the HTTP controllers. Each controller calls a use case
+// and writes its result as the response.
+package controller
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"github.com/way-station/tasuki/app/backend/internal/application/health"
+)
+
+// HealthController serves GET /health.
+type HealthController struct {
+	check *health.CheckUseCase
+}
+
+// NewHealthController returns a HealthController that runs check.
+func NewHealthController(check *health.CheckUseCase) *HealthController {
+	return &HealthController{check: check}
+}
+
+// Get writes 200 when every store is reachable, and 503 otherwise.
+func (c *HealthController) Get(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	status := c.check.Execute(ctx)
+	if !status.Healthy() {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "error", "mongo": "unreachable"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "mongo": "ok"})
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
+}

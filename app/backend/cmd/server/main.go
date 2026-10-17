@@ -11,9 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/config"
-	"github.com/way-station/tasuki/app/backend/internal/server"
-	"github.com/way-station/tasuki/app/backend/internal/store"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
+	"github.com/way-station/tasuki/app/backend/internal/presentation"
+	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 )
 
 func main() {
@@ -35,14 +37,19 @@ func run(logger *slog.Logger) error {
 
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	db, err := store.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
+	db, err := mongodb.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
 	if err != nil {
 		return err
 	}
 
+	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), health.StatusDTOFactory{}, logger)
+	router := presentation.NewRouter(presentation.Controllers{
+		Health: controller.NewHealthController(check),
+	})
+
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           server.New(db, logger),
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
