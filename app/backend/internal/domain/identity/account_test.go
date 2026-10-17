@@ -89,25 +89,25 @@ func TestMemberLinkTransitions(t *testing.T) {
 	}
 
 	l := newLink()
-	if !isState(l.Unlink()) {
+	if !isState(l.Unlink(now)) {
 		t.Error("Unlink() of a pending link: want a StateError")
 	}
 	if err := l.Approve(now); err != nil || !l.Active() || l.Pending() {
 		t.Fatalf("Approve() = %v, active %v", err, l.Active())
 	}
-	if approved, decided := l.Approved(); !approved || !decided {
-		t.Errorf("Approved() = %v, %v, want true, true", approved, decided)
+	if at, ok := l.ApprovedAt(); !ok || !at.Equal(now) {
+		t.Errorf("ApprovedAt() = %v, %v, want %v", at, ok, now)
 	}
 	if !isState(l.Reject(now)) {
 		t.Error("Reject() of an approved link: want a StateError")
 	}
-	if err := l.Unlink(); err != nil || !l.Unlinked() || l.Active() {
+	if err := l.Unlink(now); err != nil || !l.Unlinked() || l.Active() {
 		t.Errorf("Unlink() = %v, unlinked %v, active %v", err, l.Unlinked(), l.Active())
 	}
-	if approved, _ := l.Approved(); !approved {
-		t.Error("an unlinked link stays approved")
+	if _, ok := l.ApprovedAt(); !ok {
+		t.Error("an unlinked link keeps its approval time")
 	}
-	if !isState(l.Unlink()) {
+	if !isState(l.Unlink(now)) {
 		t.Error("Unlink() twice: want a StateError")
 	}
 
@@ -115,18 +115,17 @@ func TestMemberLinkTransitions(t *testing.T) {
 	if err := r.Reject(now); err != nil || !r.Rejected() || r.Pending() {
 		t.Errorf("Reject() = %v, rejected %v", err, r.Rejected())
 	}
-	if !isState(r.Unlink()) {
+	if !isState(r.Unlink(now)) {
 		t.Error("Unlink() of a rejected link: want a StateError")
 	}
 }
 
 func TestLinkStatusService(t *testing.T) {
 	f := NewMemberLinkFactory(&seqIDs{})
-	yes, no := true, false
-	pendingLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", nil, false, at, nil) }
-	approvedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &yes, false, at, &at) }
-	rejectedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &no, false, at, &at) }
-	unlinked := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &yes, true, at, &at) }
+	pendingLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", at, nil, nil, nil) }
+	approvedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", at, &at, nil, nil) }
+	rejectedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", at, nil, &at, nil) }
+	unlinked := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", at, &at, nil, &at) }
 	earlier, later := now, now.Add(time.Hour)
 	svc := LinkStatusService{}
 
