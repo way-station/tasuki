@@ -62,10 +62,10 @@ app/backend/
 ├─ cmd/server/            # entry point: config → DB connections → HTTP server, graceful shutdown
 ├─ internal/
 │  ├─ config/             # loads settings from environment variables
-│  ├─ presentation/       # controllers (implement the OpenAPI-generated interface) and routing (chi)
+│  ├─ presentation/       # routing (chi) and controllers (`controller/`; they implement the OpenAPI-generated interface)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
-│  └─ infrastructure/     # repositories and query services (PostgreSQL, MongoDB), DB connections
+│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, PostgreSQL later)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
@@ -74,7 +74,8 @@ app/backend/
 - Writes go through use cases and repositories; reads go through query services.
 - Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
-- The existing `server/` and `store/` packages move into these layers when the API is implemented (#73).
+- Inside a layer, code is grouped per feature (for example `application/health/`).
+- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (implemented by `mongodb.HealthQueryService`).
 
 Module path: `github.com/way-station/tasuki/app/backend`
 
@@ -246,13 +247,19 @@ app/backend/
 ├─ cmd/server/         # エントリポイント：設定 → DB 接続 → HTTP サーバー、グレースフルシャットダウン
 ├─ internal/
 │  ├─ config/          # 環境変数から設定を読む
-│  ├─ server/          # HTTP のルート（chi）とハンドラ
-│  └─ store/           # DB 接続（今後リポジトリを置く）
+│  ├─ presentation/    # ルーティング（chi）とコントローラー（`controller/`。OpenAPI から生成したインターフェースを実装する）
+│  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
+│  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
+│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、PostgreSQL は後で）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
 ```
 
-- `server` は `store` に直接依存せず、小さなインターフェース（例：`Pinger`）に依存します。これで DB なしでハンドラをテストできます
+- CQRS を取り入れたオニオンアーキテクチャ（[ADR-0011](../../docs/adr/0011-onion-architecture-cqrs.md)）。依存は内側に向ける：`presentation` → `application` → `domain`、`infrastructure` → `application`、`domain`。`domain` はほかの層を import しない
+- 更新はユースケースとリポジトリを通り、参照はユースケースとクエリサービスを通る
+- エンティティ、DTO、コマンドは、自分自身ではなくファクトリーが作る。エンティティと値オブジェクトの項目は公開しない
+- 層の中は機能ごとにまとめる（例：`application/health/`）
+- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`mongodb.HealthQueryService` が実装する）
 - すべて `internal/` 配下です。このモジュールの外から import されることは想定していません
 
 モジュールパス：`github.com/way-station/tasuki/app/backend`
