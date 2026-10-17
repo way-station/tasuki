@@ -11,18 +11,18 @@ React (Vite)  ── app/frontend
 
 | Data | Store | Why |
 | --- | --- | --- |
-| Teams, members, races, attendance, running order | PostgreSQL | Relational, with constraints the DB must guarantee (one attendance per member per race, only attending members in the running order, lap limits per runner) |
-| Race-day lap records | MongoDB | One run → a variable-length array of laps. In lap-based races the number of laps differs per runner, so a nested array in one document fits naturally. Append-only |
+| Teams, members, races, attendance, entries, running order | PostgreSQL | Relational, with constraints the DB must guarantee (one attendance per member per race, only entry members in the running order) |
+| Lap records | MongoDB | Per race and roster member, a variable-length list of lap times (per km, `MM:SS`) that members add to, edit, and delete |
 | Running order history | MongoDB | "Who changed the order, when, from what to what." A full snapshot per change — a typical event log |
 | External integration data (future) | MongoDB | Raw activities from Garmin / Strava have a different shape per service |
 
 ## Principles (do not break these)
 
 1. **Postgres is always the source of truth.** There are no transactions across the two databases.
-2. **Reference, never copy.** MongoDB documents refer to Postgres rows only by their IDs (UUID). Do not duplicate Postgres data (member names, race info, …) into MongoDB — duplicated data always drifts.
-3. **Write summaries back to Postgres.** When a race ends, write the result summary (e.g. total time per run) back to Postgres. Atlas M0 (free tier) has no automatic backups and idle clusters may be terminated, so actual results must survive even if MongoDB data is lost.
-4. **The MVP features use Postgres only.** MongoDB-backed features (lap recording) come after the MVP.
-5. **Total time is calculated on the frontend.** The backend stores and shares data; it does not compute predicted times.
+2. **Reference, never copy.** MongoDB documents refer to Postgres rows only by their IDs (the ID type is decided in #68). Do not duplicate Postgres data (member names, race info, …) into MongoDB — duplicated data always drifts.
+3. **Write summaries back to Postgres.** When laps are submitted, edited, or deleted, write each member's average time and lap count back to `roster_members` in Postgres (`docs/design/database.md`). Atlas M0 (free tier) has no automatic backups and idle clusters may be terminated, so actual results must survive even if MongoDB data is lost.
+4. **The MVP uses both databases.** Lap records (`lap_records`) and running order history (`running_order_history`) are in MongoDB; everything else is in Postgres (`docs/design/database.md`).
+5. **Predictions are calculated by the backend.** The total time and the number of laps are calculated in Application (ADR-0011) and returned as results. Members may not see other members' average times (ADR-0006), so the frontend never receives the data to calculate them.
 
 ## Stack
 
@@ -52,8 +52,8 @@ React (Vite)  ── app/frontend
 | PostgreSQL driver | pgx v5 (the de facto standard) | Postgres setup issue |
 | How SQL is written | sqlc (generate Go from plain SQL) / pgx with hand-written queries | Postgres setup issue |
 | Migration tool | goose / golang-migrate / dbmate | Postgres setup issue |
-| API types shared with the frontend | OpenAPI → generate TypeScript types | Frontend / API design |
-| Whether MongoDB is required at startup | Required now; may become optional so the MVP can run with Postgres only | Before the MVP release |
+| Whether generated API code is committed | The OpenAPI document is `app/backend/api/openapi.yaml`; Go code with oapi-codegen, TypeScript types with openapi-typescript (ADR-0010) | #30 |
+| Whether MongoDB is required at startup | Required now; the MVP uses MongoDB for lap records and running order history | #26 |
 
 ## Directory structure
 
@@ -196,18 +196,18 @@ React (Vite)  ── app/frontend
 
 | データ | 保存先 | 理由 |
 | --- | --- | --- |
-| チーム、メンバー、大会、出欠、走順 | PostgreSQL | 関係型で、DB で保証したい制約がある（1人1大会につき出欠は1件、走順に入れるのは出席者だけ、1人あたりの周回数の上限） |
-| 当日のラップ記録 | MongoDB | 「出走1回 → 周回ごとのラップ配列」。周回制では人ごとに周回数が違うため、可変長のネスト配列を1ドキュメントに入れるのが自然。追記型 |
+| チーム、メンバー、大会、出欠、エントリー、走順 | PostgreSQL | 関係型で、DB で保証したい制約がある（1人1大会につき出欠は1件、走順に入れるのはエントリーのメンバーだけ） |
+| ラップの記録 | MongoDB | 大会と名簿のメンバーごとに、ラップタイム（1km あたり、`MM:SS`）の可変長の一覧。メンバーが足したり、直したり、消したりする |
 | 走順の変更履歴 | MongoDB | 「誰がいつ、どの並びからどの並びへ変えたか」。変更ごとにスナップショットを丸ごと保存する、典型的なイベントログ |
 | 外部連携データ（将来） | MongoDB | Garmin / Strava の生アクティビティは、サービスごとに形が違う |
 
 ## 原則（崩さないこと）
 
 1. **正は常に Postgres。** DB をまたぐトランザクションはありません
-2. **参照のみ、複製しない。** MongoDB のドキュメントは Postgres の行を ID（UUID）で参照するだけにします。メンバー名や大会情報などを MongoDB に複製しないでください。二重管理は必ずずれます
-3. **サマリーを Postgres に書き戻す。** 大会終了時に、結果のサマリー（出走ごとの合計タイムなど）を Postgres にも書き戻します。Atlas M0（無料枠）は自動バックアップがなく、アイドル状態のクラスタは終了される可能性があるため、MongoDB のデータが消えても実績だけは残るようにします
-4. **MVP の機能は Postgres だけを使う。** MongoDB を使う機能（ラップ記録）は MVP の後に追加します
-5. **合計タイムの計算はフロントエンドで行う。** バックエンドは保存と共有だけを担当し、予想タイムは計算しません
+2. **参照のみ、複製しない。** MongoDB のドキュメントは Postgres の行を ID で参照するだけにします（ID の型は #68 で決めます）。メンバー名や大会情報などを MongoDB に複製しないでください。二重管理は必ずずれます
+3. **サマリーを Postgres に書き戻す。** ラップが提出、修正、削除されたら、メンバーごとの平均タイムとラップ数を Postgres の `roster_members` に書き戻します（`docs/design/database.md`）。Atlas M0（無料枠）は自動バックアップがなく、アイドル状態のクラスタは終了される可能性があるため、MongoDB のデータが消えても実績だけは残るようにします
+4. **MVP は2つのデータベースの両方を使う。** ラップの記録（`lap_records`）と走順の変更履歴（`running_order_history`）は MongoDB、それ以外は Postgres に置きます（`docs/design/database.md`）
+5. **予想はバックエンドで計算する。** 合計タイムと周回数は Application（ADR-0011）で計算し、結果を返します。メンバーはほかのメンバーの平均タイムを見られない（ADR-0006）ので、フロントエンドには計算に使うデータを渡しません
 
 ## 技術スタック
 
@@ -237,8 +237,8 @@ React (Vite)  ── app/frontend
 | PostgreSQL ドライバ | pgx v5（事実上の標準） | Postgres の環境構築 Issue |
 | SQL の書き方 | sqlc（素の SQL から Go を生成）／ pgx で手書き | Postgres の環境構築 Issue |
 | マイグレーションツール | goose / golang-migrate / dbmate | Postgres の環境構築 Issue |
-| フロントエンドとの API の型共有 | OpenAPI → TypeScript の型を生成 | フロントエンド／API 設計 |
-| 起動時に MongoDB を必須にするか | 今は必須。MVP を Postgres だけで動かせるよう任意にする可能性あり | MVP リリース前 |
+| 生成した API のコードをコミットするか | OpenAPI の文書は `app/backend/api/openapi.yaml`。Go は oapi-codegen、TypeScript の型は openapi-typescript で生成する（ADR-0010） | #30 |
+| 起動時に MongoDB を必須にするか | 今は必須。MVP はラップの記録と走順の変更履歴に MongoDB を使う | #26 |
 
 ## ディレクトリ構成
 
