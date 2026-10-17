@@ -15,7 +15,7 @@ import (
 
 // teamMember returns a roster member of the team who has not left.
 func teamMember(id shared.MemberID, team shared.TeamID) *roster.Member {
-	return roster.NewMemberFactory(nil).Reconstruct(id, team, "Taro", nil)
+	return roster.NewMemberFactory(nil).Reconstruct(id, team, "Taro", nil, roster.DefaultAverage(), 0)
 }
 
 type transactionKey struct{}

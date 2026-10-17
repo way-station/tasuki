@@ -94,10 +94,10 @@ func newRosterStore() *rosterStore {
 	factory := roster.NewMemberFactory(nil)
 	return &rosterStore{
 		members: map[shared.MemberID]*roster.Member{
-			"m1": factory.Reconstruct("m1", rosterTeamID, "Taro", nil),
-			"m2": factory.Reconstruct("m2", rosterTeamID, "Jiro", nil),
-			"m3": factory.Reconstruct("m3", rosterTeamID, "Saburo", nil),
-			"m9": factory.Reconstruct("m9", "team-2", "Goro", nil),
+			"m1": factory.Reconstruct("m1", rosterTeamID, "Taro", nil, roster.DefaultAverage(), 0),
+			"m2": factory.Reconstruct("m2", rosterTeamID, "Jiro", nil, roster.DefaultAverage(), 0),
+			"m3": factory.Reconstruct("m3", rosterTeamID, "Saburo", nil, roster.DefaultAverage(), 0),
+			"m9": factory.Reconstruct("m9", "team-2", "Goro", nil, roster.DefaultAverage(), 0),
 		},
 		links:     map[shared.MemberLinkID]*identity.MemberLink{},
 		invites:   map[shared.InviteLinkID]*identity.InviteLink{},
