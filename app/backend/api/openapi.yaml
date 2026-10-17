@@ -1,0 +1,1641 @@
+openapi: 3.0.3
+info:
+  title: tasuki API
+  version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  description: |
+    The MVP API of tasuki, written from `docs/design/api.md` (ADR-0010).
+
+    Who can call an operation is given by `x-callers`:
+
+    | Value | Meaning |
+    | --- | --- |
+    | `public` | No token |
+    | `account` | Any valid token, including accounts waiting for approval or rejected |
+    | `member` | Approved link to a roster member, not left. Linked organizers are members too |
+    | `organizer` | Listed as an organizer in configuration. No link needed |
+
+    Errors use RFC 9457 `application/problem+json` with a `code`. A race the caller may not see returns `404`.
+servers:
+  - url: /
+tags:
+  - name: health
+    description: Whether the backend can reach its stores
+  - name: auth
+    description: Authentication and joining the team (A1–A4)
+  - name: races
+    description: Races (R1–R3)
+  - name: invitations
+    description: Invitations and attendance (R2, R4, R5)
+  - name: entries
+    description: Entries (R6)
+  - name: running-orders
+    description: Running orders and predictions (R2, R7)
+  - name: laps
+    description: Lap times (L1, R2)
+  - name: profile
+    description: My profile (P1)
+  - name: roster
+    description: Roster and invite links (M1, M2)
+  - name: approvals
+    description: Approving links between accounts and roster members (M3)
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Check whether the backend can reach its stores
+      security: []
+      x-callers: [public]
+      responses:
+        "200":
+          description: Every store is reachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: A store is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  # ---- Authentication and joining -------------------------------------------
+
+  /api/v1/invite-links/{token}:
+    get:
+      tags: [auth]
+      operationId: getInviteLink
+      summary: Check an invite link before login (A1)
+      security: []
+      x-callers: [public]
+      parameters:
+        - $ref: "#/components/parameters/InviteToken"
+      responses:
+        "200":
+          description: The invite link can be used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteLinkInfo"
+        "404":
+          description: "`invite_unusable`: expired, used, or replaced"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  /api/v1/auth/line/authorize:
+    post:
+      tags: [auth]
+      operationId: authorizeLine
+      summary: Start LINE Login
+      security: []
+      x-callers: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorizeRequest"
+      responses:
+        "200":
+          description: The LINE authorization URL to navigate to
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/auth/line/callback:
+    get:
+      tags: [auth]
+      operationId: lineCallback
+      summary: Finish LINE Login and redirect to the frontend
+      description: |
+        LINE redirects here. With an invite token, a pending link is created and the invite link becomes unusable.
+        Redirects to `/auth/complete?code=<one-time code>` or `/auth/complete?error=<invite_unusable|left|login_failed>`.
+      security: []
+      x-callers: [public]
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: error
+          in: query
+          required: false
+          description: Set by LINE when the login failed or was cancelled
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to the frontend
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+
+  /api/v1/auth/token:
+    post:
+      tags: [auth]
+      operationId: exchangeToken
+      summary: Exchange the one-time code for a token
+      security: []
+      x-callers: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: The access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/dev/login:
+    post:
+      tags: [auth]
+      operationId: devLogin
+      summary: Dev-only login (ADR-0009)
+      description: Registered only when `DEV_LOGIN_ENABLED=true`. Otherwise the route does not exist (`404`).
+      security: []
+      x-callers: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevLoginRequest"
+      responses:
+        "200":
+          description: The access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/session:
+    delete:
+      tags: [auth]
+      operationId: logout
+      summary: Log out
+      x-callers: [account]
+      responses:
+        "204":
+          description: The token can no longer be used
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /api/v1/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Who am I, and which screens to show
+      x-callers: [account]
+      responses:
+        "200":
+          description: The caller
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  # ---- Races -----------------------------------------------------------------
+
+  /api/v1/races:
+    get:
+      tags: [races]
+      operationId: listRaces
+      summary: List races (R1)
+      description: |
+        Organizers: every race of the team. Members: races they are invited to, except those answered "not attending".
+        Newest registered first.
+      x-callers: [member, organizer]
+      responses:
+        "200":
+          description: The races
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [races]
+      operationId: createRace
+      summary: Register a race (R3)
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RaceCreate"
+      responses:
+        "201":
+          description: The race
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Race"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/v1/races/{race_id}:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [races]
+      operationId: getRace
+      summary: Get a race (R2, R3)
+      description: The deadline and `version` are returned only to organizers.
+      x-callers: [member, organizer]
+      responses:
+        "200":
+          description: The race
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Race"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [races]
+      operationId: updateRace
+      summary: Edit a race (R3)
+      description: Changing the type or the number of legs adjusts existing running orders. A confirmed running order stays confirmed.
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RaceUpdate"
+      responses:
+        "200":
+          description: The race
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Race"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  # ---- Invitations and attendance --------------------------------------------
+
+  /api/v1/races/{race_id}/invitations:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [invitations]
+      operationId: listInvitations
+      summary: Roster members with their invitation and answer (R4, R5)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: Every roster member who has not left
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/races/{race_id}/invitations/{roster_member_id}:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+      - $ref: "#/components/parameters/RosterMemberId"
+    put:
+      tags: [invitations]
+      operationId: invite
+      summary: Invite a member (R4)
+      description: Inviting an invited member does nothing.
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Invited
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    delete:
+      tags: [invitations]
+      operationId: cancelInvitation
+      summary: Cancel an invitation (R4)
+      description: |
+        Removes the attendance answer and the entry membership, and removes the member from every leg of the running order.
+        If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated.
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Cancelled
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/races/{race_id}/attendance:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    put:
+      tags: [invitations]
+      operationId: answerAttendance
+      summary: Answer attendance (R2)
+      description: |
+        "Not attending" is final. Changing from "attending" removes the member from the entry and the running order
+        (and deletes their laps for this race if the running order is confirmed).
+      x-callers: [member]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Attendance"
+      responses:
+        "200":
+          description: The answer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attendance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Not invited, or already answered "not attending"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+
+  # ---- Entries ----------------------------------------------------------------
+
+  /api/v1/races/{race_id}/entries:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [entries]
+      operationId: listEntries
+      summary: List entries (R6)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: The entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [entries]
+      operationId: createEntry
+      summary: Create an entry (R6)
+      description: The MVP allows one entry per race. Entries cannot be renamed or deleted.
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryCreate"
+      responses:
+        "201":
+          description: The entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/races/{race_id}/entries/{entry_id}/members/{roster_member_id}:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+      - $ref: "#/components/parameters/EntryId"
+      - $ref: "#/components/parameters/RosterMemberId"
+    put:
+      tags: [entries]
+      operationId: addEntryMember
+      summary: Add a member to the entry (R6)
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Added
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    delete:
+      tags: [entries]
+      operationId: removeEntryMember
+      summary: Remove a member from the entry (R6)
+      description: |
+        Removes the member from every leg of the running order. If the running order is confirmed,
+        their laps for this race are deleted and their average time is recalculated.
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Removed
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---- Running order ---------------------------------------------------------
+
+  /api/v1/races/{race_id}/running-orders:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [running-orders]
+      operationId: listRunningOrders
+      summary: Running orders and predictions (R2, R7)
+      description: |
+        Organizers see drafts and confirmed orders; members who answered "attending" see confirmed orders only.
+        The prediction is calculated by the backend; empty legs are left out.
+      x-callers: [member, organizer]
+      responses:
+        "200":
+          description: One running order per entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningOrderList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/races/{race_id}/entries/{entry_id}/running-order:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+      - $ref: "#/components/parameters/EntryId"
+    put:
+      tags: [running-orders]
+      operationId: saveRunningOrder
+      summary: Save the running order (R7)
+      description: |
+        Distance races: exactly one leg per leg distance. Time races: one or more legs, numbered from 1 without gaps.
+        Runners must be entry members. A confirmed running order stays confirmed. Every save is one history entry.
+        In a confirmed running order, a runner whose number of legs goes down loses all their laps for this race.
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunningOrderSave"
+      responses:
+        "200":
+          description: The running order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningOrder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  /api/v1/races/{race_id}/entries/{entry_id}/running-order/confirm:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+      - $ref: "#/components/parameters/EntryId"
+    post:
+      tags: [running-orders]
+      operationId: confirmRunningOrder
+      summary: Confirm the running order (R7)
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VersionRequest"
+      responses:
+        "200":
+          description: The running order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunningOrder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
+  # ---- Lap times ---------------------------------------------------------------
+
+  /api/v1/races/{race_id}/my-laps:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [laps]
+      operationId: getMyLaps
+      summary: My laps for a race (L1)
+      description: "`404` when the caller is not a runner in a confirmed running order of this race."
+      x-callers: [member]
+      responses:
+        "200":
+          description: My laps and my average time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyLaps"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [laps]
+      operationId: submitLaps
+      summary: Submit laps (L1)
+      description: The average time uses the submission formula.
+      x-callers: [member]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LapsSubmit"
+      responses:
+        "201":
+          description: My laps and my average time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyLaps"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/races/{race_id}/my-laps/{lap_id}:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+      - $ref: "#/components/parameters/LapId"
+    patch:
+      tags: [laps]
+      operationId: editLap
+      summary: Edit a lap (L1)
+      description: The average time is recalculated from all of the member's laps.
+      x-callers: [member]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LapEdit"
+      responses:
+        "200":
+          description: My laps and my average time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyLaps"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [laps]
+      operationId: deleteLap
+      summary: Delete a lap (L1)
+      description: The average time is recalculated from all of the member's laps.
+      x-callers: [member]
+      responses:
+        "200":
+          description: My laps and my average time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyLaps"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/races/{race_id}/laps:
+    parameters:
+      - $ref: "#/components/parameters/RaceId"
+    get:
+      tags: [laps]
+      operationId: listRaceLaps
+      summary: Laps of every runner in a race (R2)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: Laps per runner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceLaps"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---- Profile -------------------------------------------------------------------
+
+  /api/v1/me/profile:
+    get:
+      tags: [profile]
+      operationId: getMyProfile
+      summary: My profile (P1)
+      x-callers: [member]
+      responses:
+        "200":
+          description: My profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ---- Roster and approvals ------------------------------------------------------
+
+  /api/v1/roster-members:
+    get:
+      tags: [roster]
+      operationId: listRosterMembers
+      summary: List roster members (M1)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: The roster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMemberList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [roster]
+      operationId: createRosterMember
+      summary: Add a roster member (M1)
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RosterMemberCreate"
+      responses:
+        "201":
+          description: The roster member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/roster-members/{roster_member_id}:
+    parameters:
+      - $ref: "#/components/parameters/RosterMemberId"
+    get:
+      tags: [roster]
+      operationId: getRosterMember
+      summary: A member's profile (M2)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: The member's profile with laps by race
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMemberDetail"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [roster]
+      operationId: updateRosterMember
+      summary: Mark as left, or undo (M1)
+      description: |
+        `left: true` cancels invitations to races dated today or later (with the effects of cancelling an invitation),
+        and the member can no longer log in. `left: false` lets them log in again; cancelled invitations do not come back.
+        Names cannot be changed.
+      x-callers: [organizer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RosterMemberUpdate"
+      responses:
+        "200":
+          description: The roster member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/roster-members/{roster_member_id}/link:
+    parameters:
+      - $ref: "#/components/parameters/RosterMemberId"
+    delete:
+      tags: [roster]
+      operationId: unlinkRosterMember
+      summary: Unlink the approved account (M1)
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Unlinked
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/roster-members/{roster_member_id}/invite-links:
+    parameters:
+      - $ref: "#/components/parameters/RosterMemberId"
+    post:
+      tags: [roster]
+      operationId: createInviteLink
+      summary: Create an invite link (M1)
+      description: The previous link becomes unusable. Not for members who have left or have an approved or pending link.
+      x-callers: [organizer]
+      responses:
+        "201":
+          description: The invite link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteLinkCreated"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/member-links:
+    get:
+      tags: [approvals]
+      operationId: listPendingMemberLinks
+      summary: Links waiting for approval (M3)
+      x-callers: [organizer]
+      responses:
+        "200":
+          description: Pending links
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberLinkList"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/member-links/{link_id}/approve:
+    parameters:
+      - $ref: "#/components/parameters/LinkId"
+    post:
+      tags: [approvals]
+      operationId: approveMemberLink
+      summary: Approve a link (M3)
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Approved
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/member-links/{link_id}/reject:
+    parameters:
+      - $ref: "#/components/parameters/LinkId"
+    post:
+      tags: [approvals]
+      operationId: rejectMemberLink
+      summary: Reject a link (M3)
+      description: Rejections are told outside the app.
+      x-callers: [organizer]
+      responses:
+        "204":
+          description: Rejected
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    RaceId:
+      name: race_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    EntryId:
+      name: entry_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    RosterMemberId:
+      name: roster_member_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    LapId:
+      name: lap_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    LinkId:
+      name: link_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    InviteToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: "`invalid_request`: malformed body or parameters"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthenticated:
+      description: "`unauthenticated`: no token, or the token is invalid or expired"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: "`forbidden`: the caller's role does not allow the operation"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: "`not_found`: does not exist, or the caller may not see it"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: "`version_conflict` or `state_conflict`"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ValidationFailed:
+      description: "`validation_failed`: the body breaks a business rule"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    # ---- Common --------------------------------------------------------------
+    Id:
+      type: string
+      description: Opaque ID (the type is decided in #68)
+    MmSs:
+      type: string
+      description: Lap time or average time per km
+      pattern: "^[0-9]{1,2}:[0-5][0-9]$"
+      example: "3:28"
+    HMmSs:
+      type: string
+      description: Total time
+      pattern: "^[0-9]+:[0-5][0-9]:[0-5][0-9]$"
+      example: "2:45:30"
+    Version:
+      type: integer
+      description: Version for concurrent edits; a changed version returns `409 version_conflict`
+      minimum: 0
+    Attendance:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/AttendanceStatus"
+    AttendanceStatus:
+      type: string
+      enum: [attending, not_attending, undecided]
+    RosterMemberRef:
+      type: object
+      required: [roster_member_id, name]
+      properties:
+        roster_member_id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+    Problem:
+      type: object
+      description: RFC 9457 problem details
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          enum:
+            - invalid_request
+            - unauthenticated
+            - forbidden
+            - not_found
+            - invite_unusable
+            - version_conflict
+            - state_conflict
+            - validation_failed
+        errors:
+          type: array
+          description: Fields that break a rule (`validation_failed`)
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+    Health:
+      type: object
+      required: [status, mongo]
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        mongo:
+          type: string
+          enum: [ok, unreachable]
+
+    # ---- Authentication and joining -------------------------------------------
+    InviteLinkInfo:
+      type: object
+      required: [team_name]
+      properties:
+        team_name:
+          type: string
+    AuthorizeRequest:
+      type: object
+      properties:
+        invite_token:
+          type: string
+          description: Included when the user came from an invite link
+    AuthorizeResponse:
+      type: object
+      required: [authorization_url]
+      properties:
+        authorization_url:
+          type: string
+    TokenRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+    Token:
+      type: object
+      required: [access_token, expires_at]
+      properties:
+        access_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    DevLoginRequest:
+      type: object
+      required: [line_user_id, display_name]
+      properties:
+        line_user_id:
+          type: string
+        display_name:
+          type: string
+    Me:
+      type: object
+      required: [display_name, is_organizer, status, roster_member]
+      properties:
+        display_name:
+          type: string
+        is_organizer:
+          type: boolean
+        status:
+          type: string
+          enum: [approved, pending, rejected, none]
+        roster_member:
+          description: Set only when `status` is `approved`
+          type: object
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RosterMemberBasic"
+    RosterMemberBasic:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+
+    # ---- Races -----------------------------------------------------------------
+    RaceType:
+      type: string
+      enum: [distance, time]
+    RaceTarget:
+      type: object
+      description: "Distance races: `total_time`. Time races: `laps`."
+      properties:
+        total_time:
+          $ref: "#/components/schemas/HMmSs"
+        laps:
+          type: integer
+          minimum: 1
+    RaceDescription:
+      type: object
+      required: [type, race_date]
+      properties:
+        type:
+          $ref: "#/components/schemas/RaceType"
+        race_date:
+          type: string
+          format: date
+        deadline:
+          type: string
+          format: date-time
+          description: Returned only to organizers; required when creating or editing
+        text:
+          type: string
+        leg_distances_km:
+          type: array
+          description: Distance races only; at least one leg
+          items:
+            type: number
+            exclusiveMinimum: true
+            minimum: 0
+        time_limit_minutes:
+          type: integer
+          description: Time races only
+          minimum: 1
+        lap_distance_km:
+          type: number
+          description: Time races only
+          exclusiveMinimum: true
+          minimum: 0
+        target:
+          $ref: "#/components/schemas/RaceTarget"
+    RaceCreate:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          $ref: "#/components/schemas/RaceDescription"
+    RaceUpdate:
+      type: object
+      required: [version, name, description]
+      properties:
+        version:
+          $ref: "#/components/schemas/Version"
+        name:
+          type: string
+          minLength: 1
+        description:
+          $ref: "#/components/schemas/RaceDescription"
+    MyAttendance:
+      type: string
+      description: "`null` = invited, not answered yet. Omitted when the caller is not invited (organizers)."
+      nullable: true
+      enum: [attending, undecided, null]
+    RaceSummary:
+      type: object
+      required: [id, name, race_date]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        race_date:
+          type: string
+          format: date
+        my_attendance:
+          $ref: "#/components/schemas/MyAttendance"
+        running_order_confirmed:
+          type: boolean
+          description: Returned to organizers and to members who answered attending
+    RaceList:
+      type: object
+      required: [races]
+      properties:
+        races:
+          type: array
+          items:
+            $ref: "#/components/schemas/RaceSummary"
+    Race:
+      type: object
+      required: [id, name, description, can_submit_laps]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        version:
+          allOf:
+            - $ref: "#/components/schemas/Version"
+          description: Organizers only
+        description:
+          $ref: "#/components/schemas/RaceDescription"
+        my_attendance:
+          $ref: "#/components/schemas/MyAttendance"
+        running_order_confirmed:
+          type: boolean
+          description: Returned to organizers and to members who answered attending
+        can_submit_laps:
+          type: boolean
+          description: True when the caller is a runner in a confirmed running order
+
+    # ---- Invitations and entries --------------------------------------------------
+    InvitationMember:
+      type: object
+      required: [roster_member_id, name, invited, attendance]
+      properties:
+        roster_member_id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        invited:
+          type: boolean
+        attendance:
+          description: "`null` when not invited or not answered yet"
+          type: string
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AttendanceStatus"
+    InvitationList:
+      type: object
+      required: [members]
+      properties:
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvitationMember"
+    EntryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+    Entry:
+      type: object
+      required: [id, name, members]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/RosterMemberRef"
+    EntryList:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entry"
+
+    # ---- Running order ---------------------------------------------------------------
+    Leg:
+      type: object
+      required: [leg_number, runner]
+      properties:
+        leg_number:
+          type: integer
+          minimum: 1
+        distance_km:
+          type: number
+          description: Distance races only
+        runner:
+          description: "`null` for an empty leg (shown as not decided)"
+          type: object
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/RosterMemberRef"
+    Prediction:
+      type: object
+      required: [total_time, laps, has_empty_legs]
+      properties:
+        total_time:
+          description: Distance races
+          type: string
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/HMmSs"
+        laps:
+          type: integer
+          description: Time races, rounded down
+          nullable: true
+        has_empty_legs:
+          type: boolean
+    RunningOrder:
+      type: object
+      required: [entry_id, entry_name, status, legs, prediction]
+      properties:
+        entry_id:
+          $ref: "#/components/schemas/Id"
+        entry_name:
+          type: string
+        status:
+          type: string
+          enum: [draft, confirmed]
+        version:
+          allOf:
+            - $ref: "#/components/schemas/Version"
+          description: Organizers only
+        legs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Leg"
+        prediction:
+          description: "`null` when no leg has a runner"
+          type: object
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Prediction"
+    RunningOrderList:
+      type: object
+      required: [running_orders]
+      properties:
+        running_orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunningOrder"
+    LegAssignment:
+      type: object
+      required: [leg_number, roster_member_id]
+      properties:
+        leg_number:
+          type: integer
+          minimum: 1
+        roster_member_id:
+          description: "`null` for an empty leg"
+          type: string
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Id"
+    RunningOrderSave:
+      type: object
+      required: [legs]
+      properties:
+        version:
+          allOf:
+            - $ref: "#/components/schemas/Version"
+          description: Omitted when creating the first draft
+        legs:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/LegAssignment"
+    VersionRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          $ref: "#/components/schemas/Version"
+
+    # ---- Lap times and profile -------------------------------------------------------
+    Lap:
+      type: object
+      required: [id, time]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        time:
+          $ref: "#/components/schemas/MmSs"
+    MyLaps:
+      type: object
+      required: [laps, average_time, lap_count]
+      properties:
+        laps:
+          type: array
+          description: In the order they were submitted
+          items:
+            $ref: "#/components/schemas/Lap"
+        average_time:
+          $ref: "#/components/schemas/MmSs"
+        lap_count:
+          type: integer
+          minimum: 0
+    LapsSubmit:
+      type: object
+      required: [times]
+      properties:
+        times:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MmSs"
+    LapEdit:
+      type: object
+      required: [time]
+      properties:
+        time:
+          $ref: "#/components/schemas/MmSs"
+    RunnerLaps:
+      type: object
+      required: [roster_member_id, name, laps]
+      properties:
+        roster_member_id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        laps:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lap"
+    RaceLaps:
+      type: object
+      required: [runners]
+      properties:
+        runners:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunnerLaps"
+    Profile:
+      type: object
+      required: [name, average_time, lap_count]
+      properties:
+        name:
+          type: string
+        average_time:
+          $ref: "#/components/schemas/MmSs"
+        lap_count:
+          type: integer
+          minimum: 0
+
+    # ---- Roster and approvals ----------------------------------------------------------
+    RosterMember:
+      type: object
+      required: [id, name, left, link_status, invite_link_expires_at]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        left:
+          type: boolean
+        link_status:
+          type: string
+          description: A rejected link shows as `none`
+          enum: [none, pending, approved]
+        invite_link_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    RosterMemberList:
+      type: object
+      required: [roster_members]
+      properties:
+        roster_members:
+          type: array
+          items:
+            $ref: "#/components/schemas/RosterMember"
+    RosterMemberCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+    RosterMemberUpdate:
+      type: object
+      required: [left]
+      properties:
+        left:
+          type: boolean
+    RaceLapsOfMember:
+      type: object
+      required: [race_id, race_name, laps]
+      properties:
+        race_id:
+          $ref: "#/components/schemas/Id"
+        race_name:
+          type: string
+        laps:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lap"
+    RosterMemberDetail:
+      type: object
+      required: [id, name, left, average_time, lap_count, laps_by_race]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        left:
+          type: boolean
+        average_time:
+          $ref: "#/components/schemas/MmSs"
+        lap_count:
+          type: integer
+          minimum: 0
+        laps_by_race:
+          type: array
+          items:
+            $ref: "#/components/schemas/RaceLapsOfMember"
+    InviteLinkCreated:
+      type: object
+      required: [url, expires_at]
+      properties:
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    MemberLink:
+      type: object
+      required: [id, line_display_name, roster_member, created_at]
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        line_display_name:
+          type: string
+        roster_member:
+          $ref: "#/components/schemas/RosterMemberBasic"
+        created_at:
+          type: string
+          format: date-time
+    MemberLinkList:
+      type: object
+      required: [links]
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberLink"
