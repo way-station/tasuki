@@ -10,12 +10,11 @@ import (
 // LinkStatus is the state of a link between an account and a roster member.
 type LinkStatus string
 
-// Link states.
+// Link states. An unlinked link keeps the approved state and has Unlinked set.
 const (
 	LinkPending  LinkStatus = "pending"
 	LinkApproved LinkStatus = "approved"
 	LinkRejected LinkStatus = "rejected"
-	LinkUnlinked LinkStatus = "unlinked"
 )
 
 // MemberLink links an account to a roster member. An organizer approves or rejects it,
@@ -26,9 +25,9 @@ type MemberLink struct {
 	memberID     shared.MemberID
 	inviteLinkID shared.InviteLinkID
 	status       LinkStatus
+	unlinked     bool
 	createdAt    time.Time
 	decidedAt    *time.Time
-	unlinkedAt   *time.Time
 }
 
 // ID returns the link's ID.
@@ -52,8 +51,12 @@ func (l *MemberLink) CreatedAt() time.Time { return l.createdAt }
 // DecidedAt returns when an organizer approved or rejected the link.
 func (l *MemberLink) DecidedAt() (time.Time, bool) { return deref(l.decidedAt) }
 
-// UnlinkedAt returns when the link was unlinked.
-func (l *MemberLink) UnlinkedAt() (time.Time, bool) { return deref(l.unlinkedAt) }
+// Unlinked reports whether an organizer unlinked the approved link.
+func (l *MemberLink) Unlinked() bool { return l.unlinked }
+
+// Active reports whether the link is approved and not unlinked: the account acts as the
+// roster member.
+func (l *MemberLink) Active() bool { return l.status == LinkApproved && !l.unlinked }
 
 // Approve approves a pending link.
 func (l *MemberLink) Approve(now time.Time) error {
@@ -75,12 +78,12 @@ func (l *MemberLink) decide(to LinkStatus, now time.Time) error {
 }
 
 // Unlink removes an approved link, for example when the person changes their LINE account.
-func (l *MemberLink) Unlink(now time.Time) error {
-	if l.status != LinkApproved {
+// The status stays approved.
+func (l *MemberLink) Unlink() error {
+	if !l.Active() {
 		return shared.NewStateError("the link is not approved")
 	}
-	l.status = LinkUnlinked
-	l.unlinkedAt = &now
+	l.unlinked = true
 	return nil
 }
 
@@ -112,8 +115,8 @@ func (f MemberLinkFactory) New(accountID shared.AccountID, invite *InviteLink, n
 }
 
 // Reconstruct returns a link read from storage.
-func (f MemberLinkFactory) Reconstruct(id shared.MemberLinkID, accountID shared.AccountID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, status LinkStatus, createdAt time.Time, decidedAt, unlinkedAt *time.Time) *MemberLink {
-	return &MemberLink{id: id, accountID: accountID, memberID: memberID, inviteLinkID: inviteLinkID, status: status, createdAt: createdAt, decidedAt: decidedAt, unlinkedAt: unlinkedAt}
+func (f MemberLinkFactory) Reconstruct(id shared.MemberLinkID, accountID shared.AccountID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, status LinkStatus, unlinked bool, createdAt time.Time, decidedAt *time.Time) *MemberLink {
+	return &MemberLink{id: id, accountID: accountID, memberID: memberID, inviteLinkID: inviteLinkID, status: status, unlinked: unlinked, createdAt: createdAt, decidedAt: decidedAt}
 }
 
 // CallerStatus is what GET /me reports about an account's link (docs/design/api.md).
@@ -131,16 +134,16 @@ const (
 type LinkStatusService struct{}
 
 // CallerStatus returns the status of an account from all of its links: approved if one is
-// approved, otherwise pending if one is pending, otherwise rejected if the latest link was
-// rejected, otherwise none.
+// approved and not unlinked, otherwise pending if one is pending, otherwise rejected if the
+// latest link was rejected, otherwise none.
 func (LinkStatusService) CallerStatus(links []*MemberLink) CallerStatus {
 	var pending bool
 	var latest *MemberLink
 	for _, l := range links {
-		switch l.status {
-		case LinkApproved:
+		switch {
+		case l.Active():
 			return CallerApproved
-		case LinkPending:
+		case l.status == LinkPending:
 			pending = true
 		}
 		if latest == nil || l.createdAt.After(latest.createdAt) {
@@ -157,14 +160,15 @@ func (LinkStatusService) CallerStatus(links []*MemberLink) CallerStatus {
 }
 
 // RosterLinkStatus returns the link state of a roster member from all of their links, for
-// roster.Member.CanIssueInviteLink and the roster list. A rejected link counts as none.
+// roster.Member.CanIssueInviteLink and the roster list. Rejected and unlinked links count as
+// none.
 func (LinkStatusService) RosterLinkStatus(links []*MemberLink) roster.LinkStatus {
 	status := roster.LinkNone
 	for _, l := range links {
-		switch l.status {
-		case LinkApproved:
+		switch {
+		case l.Active():
 			return roster.LinkApproved
-		case LinkPending:
+		case l.status == LinkPending:
 			status = roster.LinkPending
 		}
 	}
