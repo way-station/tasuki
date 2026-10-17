@@ -7,24 +7,16 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
 
-// LinkStatus is the state of a link between an account and a roster member.
-type LinkStatus string
-
-// Link states. An unlinked link keeps the approved state and has Unlinked set.
-const (
-	LinkPending  LinkStatus = "pending"
-	LinkApproved LinkStatus = "approved"
-	LinkRejected LinkStatus = "rejected"
-)
-
 // MemberLink links an account to a roster member. An organizer approves or rejects it,
-// and can unlink it after approving (ADR-0006, ADR-0008). It is created by MemberLinkFactory.
+// and can unlink it after approving (ADR-0006, ADR-0008). Its states are booleans, as in the
+// member_links table: approved is nil while pending, true when approved, false when rejected.
+// It is created by MemberLinkFactory.
 type MemberLink struct {
 	id           shared.MemberLinkID
 	accountID    shared.AccountID
 	memberID     shared.MemberID
 	inviteLinkID shared.InviteLinkID
-	status       LinkStatus
+	approved     *bool
 	unlinked     bool
 	createdAt    time.Time
 	decidedAt    *time.Time
@@ -42,9 +34,6 @@ func (l *MemberLink) MemberID() shared.MemberID { return l.memberID }
 // InviteLinkID returns the invite link that created this link.
 func (l *MemberLink) InviteLinkID() shared.InviteLinkID { return l.inviteLinkID }
 
-// Status returns the state of the link.
-func (l *MemberLink) Status() LinkStatus { return l.status }
-
 // CreatedAt returns when the person logged in through the invite link.
 func (l *MemberLink) CreatedAt() time.Time { return l.createdAt }
 
@@ -56,29 +45,44 @@ func (l *MemberLink) Unlinked() bool { return l.unlinked }
 
 // Active reports whether the link is approved and not unlinked: the account acts as the
 // roster member.
-func (l *MemberLink) Active() bool { return l.status == LinkApproved && !l.unlinked }
+func (l *MemberLink) Active() bool { return l.approved != nil && *l.approved && !l.unlinked }
+
+// Approved returns whether an organizer approved (true) or rejected (false) the link, and
+// false as the second value while it is pending.
+func (l *MemberLink) Approved() (approved, decided bool) {
+	if l.approved == nil {
+		return false, false
+	}
+	return *l.approved, true
+}
+
+// Pending reports whether the link is waiting for approval.
+func (l *MemberLink) Pending() bool { return l.approved == nil }
+
+// Rejected reports whether an organizer rejected the link.
+func (l *MemberLink) Rejected() bool { return l.approved != nil && !*l.approved }
 
 // Approve approves a pending link.
 func (l *MemberLink) Approve(now time.Time) error {
-	return l.decide(LinkApproved, now)
+	return l.decide(true, now)
 }
 
 // Reject rejects a pending link. The organizer tells the person outside the app.
 func (l *MemberLink) Reject(now time.Time) error {
-	return l.decide(LinkRejected, now)
+	return l.decide(false, now)
 }
 
-func (l *MemberLink) decide(to LinkStatus, now time.Time) error {
-	if l.status != LinkPending {
+func (l *MemberLink) decide(approved bool, now time.Time) error {
+	if !l.Pending() {
 		return shared.NewStateError("the link is not waiting for approval")
 	}
-	l.status = to
+	l.approved = &approved
 	l.decidedAt = &now
 	return nil
 }
 
 // Unlink removes an approved link, for example when the person changes their LINE account.
-// The status stays approved.
+// The link stays approved, with Unlinked set.
 func (l *MemberLink) Unlink() error {
 	if !l.Active() {
 		return shared.NewStateError("the link is not approved")
@@ -109,14 +113,13 @@ func (f MemberLinkFactory) New(accountID shared.AccountID, invite *InviteLink, n
 		accountID:    accountID,
 		memberID:     invite.memberID,
 		inviteLinkID: invite.id,
-		status:       LinkPending,
 		createdAt:    now,
 	}, nil
 }
 
-// Reconstruct returns a link read from storage.
-func (f MemberLinkFactory) Reconstruct(id shared.MemberLinkID, accountID shared.AccountID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, status LinkStatus, unlinked bool, createdAt time.Time, decidedAt *time.Time) *MemberLink {
-	return &MemberLink{id: id, accountID: accountID, memberID: memberID, inviteLinkID: inviteLinkID, status: status, unlinked: unlinked, createdAt: createdAt, decidedAt: decidedAt}
+// Reconstruct returns a link read from storage. approved is nil for a pending link.
+func (f MemberLinkFactory) Reconstruct(id shared.MemberLinkID, accountID shared.AccountID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, approved *bool, unlinked bool, createdAt time.Time, decidedAt *time.Time) *MemberLink {
+	return &MemberLink{id: id, accountID: accountID, memberID: memberID, inviteLinkID: inviteLinkID, approved: approved, unlinked: unlinked, createdAt: createdAt, decidedAt: decidedAt}
 }
 
 // CallerStatus is what GET /me reports about an account's link (docs/design/api.md).
@@ -143,7 +146,7 @@ func (LinkStatusService) CallerStatus(links []*MemberLink) CallerStatus {
 		switch {
 		case l.Active():
 			return CallerApproved
-		case l.status == LinkPending:
+		case l.Pending():
 			pending = true
 		}
 		if latest == nil || l.createdAt.After(latest.createdAt) {
@@ -153,7 +156,7 @@ func (LinkStatusService) CallerStatus(links []*MemberLink) CallerStatus {
 	switch {
 	case pending:
 		return CallerPending
-	case latest != nil && latest.status == LinkRejected:
+	case latest != nil && latest.Rejected():
 		return CallerRejected
 	}
 	return CallerNone
@@ -168,7 +171,7 @@ func (LinkStatusService) RosterLinkStatus(links []*MemberLink) roster.LinkStatus
 		switch {
 		case l.Active():
 			return roster.LinkApproved
-		case l.status == LinkPending:
+		case l.Pending():
 			status = roster.LinkPending
 		}
 	}

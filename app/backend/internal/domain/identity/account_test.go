@@ -69,7 +69,7 @@ func TestMemberLinkFactoryUsesTheInviteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if link.Status() != LinkPending || link.MemberID() != "m1" || link.InviteLinkID() != invite.ID() {
+	if !link.Pending() || link.MemberID() != "m1" || link.InviteLinkID() != invite.ID() {
 		t.Errorf("New() = %+v", link)
 	}
 	if _, err := f.New("a2", invite, now); !errors.Is(err, ErrInviteLinkUnusable) {
@@ -92,33 +92,41 @@ func TestMemberLinkTransitions(t *testing.T) {
 	if !isState(l.Unlink()) {
 		t.Error("Unlink() of a pending link: want a StateError")
 	}
-	if err := l.Approve(now); err != nil || l.Status() != LinkApproved {
-		t.Fatalf("Approve() = %v, status %s", err, l.Status())
+	if err := l.Approve(now); err != nil || !l.Active() || l.Pending() {
+		t.Fatalf("Approve() = %v, active %v", err, l.Active())
+	}
+	if approved, decided := l.Approved(); !approved || !decided {
+		t.Errorf("Approved() = %v, %v, want true, true", approved, decided)
 	}
 	if !isState(l.Reject(now)) {
 		t.Error("Reject() of an approved link: want a StateError")
 	}
-	if err := l.Unlink(); err != nil || !l.Unlinked() || l.Status() != LinkApproved || l.Active() {
-		t.Errorf("Unlink() = %v, unlinked %v, status %s", err, l.Unlinked(), l.Status())
+	if err := l.Unlink(); err != nil || !l.Unlinked() || l.Active() {
+		t.Errorf("Unlink() = %v, unlinked %v, active %v", err, l.Unlinked(), l.Active())
+	}
+	if approved, _ := l.Approved(); !approved {
+		t.Error("an unlinked link stays approved")
 	}
 	if !isState(l.Unlink()) {
 		t.Error("Unlink() twice: want a StateError")
 	}
 
 	r := newLink()
-	if err := r.Reject(now); err != nil || r.Status() != LinkRejected {
-		t.Errorf("Reject() = %v, status %s", err, r.Status())
+	if err := r.Reject(now); err != nil || !r.Rejected() || r.Pending() {
+		t.Errorf("Reject() = %v, rejected %v", err, r.Rejected())
+	}
+	if !isState(r.Unlink()) {
+		t.Error("Unlink() of a rejected link: want a StateError")
 	}
 }
 
 func TestLinkStatusService(t *testing.T) {
 	f := NewMemberLinkFactory(&seqIDs{})
-	link := func(s LinkStatus, at time.Time) *MemberLink {
-		return f.Reconstruct("l", "a1", "m1", "i", s, false, at, nil)
-	}
-	unlinked := func(at time.Time) *MemberLink {
-		return f.Reconstruct("l", "a1", "m1", "i", LinkApproved, true, at, nil)
-	}
+	yes, no := true, false
+	pendingLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", nil, false, at, nil) }
+	approvedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &yes, false, at, &at) }
+	rejectedLink := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &no, false, at, &at) }
+	unlinked := func(at time.Time) *MemberLink { return f.Reconstruct("l", "a1", "m1", "i", &yes, true, at, &at) }
 	earlier, later := now, now.Add(time.Hour)
 	svc := LinkStatusService{}
 
@@ -128,12 +136,12 @@ func TestLinkStatusService(t *testing.T) {
 		want  CallerStatus
 	}{
 		{name: "no links", want: CallerNone},
-		{name: "approved", links: []*MemberLink{link(LinkRejected, earlier), link(LinkApproved, later)}, want: CallerApproved},
-		{name: "pending", links: []*MemberLink{link(LinkPending, later)}, want: CallerPending},
-		{name: "approved after pending", links: []*MemberLink{link(LinkPending, earlier), link(LinkApproved, later)}, want: CallerApproved},
-		{name: "pending before a later rejection", links: []*MemberLink{link(LinkPending, earlier), link(LinkRejected, later)}, want: CallerPending},
-		{name: "latest rejected", links: []*MemberLink{unlinked(earlier), link(LinkRejected, later)}, want: CallerRejected},
-		{name: "latest unlinked", links: []*MemberLink{link(LinkRejected, earlier), unlinked(later)}, want: CallerNone},
+		{name: "approved", links: []*MemberLink{rejectedLink(earlier), approvedLink(later)}, want: CallerApproved},
+		{name: "pending", links: []*MemberLink{pendingLink(later)}, want: CallerPending},
+		{name: "approved after pending", links: []*MemberLink{pendingLink(earlier), approvedLink(later)}, want: CallerApproved},
+		{name: "pending before a later rejection", links: []*MemberLink{pendingLink(earlier), rejectedLink(later)}, want: CallerPending},
+		{name: "latest rejected", links: []*MemberLink{unlinked(earlier), rejectedLink(later)}, want: CallerRejected},
+		{name: "latest unlinked", links: []*MemberLink{rejectedLink(earlier), unlinked(later)}, want: CallerNone},
 	}
 	for _, tt := range callerTests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -143,13 +151,13 @@ func TestLinkStatusService(t *testing.T) {
 		})
 	}
 
-	if got := svc.RosterLinkStatus([]*MemberLink{link(LinkRejected, earlier)}); got != roster.LinkNone {
+	if got := svc.RosterLinkStatus([]*MemberLink{rejectedLink(earlier)}); got != roster.LinkNone {
 		t.Errorf("RosterLinkStatus(rejected) = %v, want LinkNone", got)
 	}
 	if got := svc.RosterLinkStatus([]*MemberLink{unlinked(earlier)}); got != roster.LinkNone {
 		t.Errorf("RosterLinkStatus(unlinked) = %v, want LinkNone", got)
 	}
-	if got := svc.RosterLinkStatus([]*MemberLink{link(LinkPending, earlier)}); got != roster.LinkPending {
+	if got := svc.RosterLinkStatus([]*MemberLink{pendingLink(earlier)}); got != roster.LinkPending {
 		t.Errorf("RosterLinkStatus(pending) = %v, want LinkPending", got)
 	}
 }
