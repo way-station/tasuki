@@ -143,7 +143,7 @@ Status: draft written by Claude from the ADRs and the rules above, for the maint
 | States | `text` with a `CHECK` constraint |
 | Requires | PostgreSQL 15 or later (`ON DELETE SET NULL (column)`) |
 | Cancelled invitations | Deleted. Attendance, entry membership, and legs follow by foreign keys |
-| Unlinked accounts | Kept, with status `unlinked` and `unlinked_at` |
+| Unlinked accounts | Kept, with `unlinked = true`; the status stays `approved` |
 | Invite links | Renamed from `invitations` to `invite_links`, so they are not confused with `race_invitations` |
 
 ### Relations
@@ -220,14 +220,14 @@ CREATE TABLE member_links (
   account_id       uuid NOT NULL REFERENCES accounts (id),
   roster_member_id uuid NOT NULL REFERENCES roster_members (id),
   invite_link_id   uuid NOT NULL UNIQUE REFERENCES invite_links (id),  -- an invite link is used once
-  status           text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected', 'unlinked')),
+  status           text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  unlinked         boolean NOT NULL DEFAULT false CHECK (NOT unlinked OR status = 'approved'),  -- only approved links are unlinked
   decided_at       timestamptz,                        -- approved or rejected
-  unlinked_at      timestamptz,
   created_at       timestamptz NOT NULL DEFAULT now()
 );
 -- One approved account per roster member, and one roster member per account (ADR-0008).
-CREATE UNIQUE INDEX member_links_one_approved_per_member  ON member_links (roster_member_id) WHERE status = 'approved';
-CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (account_id)       WHERE status = 'approved';
+CREATE UNIQUE INDEX member_links_one_approved_per_member  ON member_links (roster_member_id) WHERE status = 'approved' AND NOT unlinked;
+CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (account_id)       WHERE status = 'approved' AND NOT unlinked;
 -- No new invite link while a link is pending; an account waits for one roster member at a time.
 CREATE UNIQUE INDEX member_links_one_pending_per_member   ON member_links (roster_member_id) WHERE status = 'pending';
 CREATE UNIQUE INDEX member_links_one_pending_per_account  ON member_links (account_id)       WHERE status = 'pending';
@@ -488,7 +488,7 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 | 状態 | `CHECK` 制約付きの `text` |
 | 必要なもの | PostgreSQL 15 以上（`ON DELETE SET NULL (列)` を使うため） |
 | 取り消した招待 | 消す。出欠、エントリーのメンバー、区は外部キーで連動する |
-| 解除した紐付け | 残す。状態を `unlinked` にし、`unlinked_at` を入れる |
+| 解除した紐付け | 残す。`unlinked = true` にする。状態は `approved` のまま |
 | 招待リンク | `race_invitations` と紛らわしくないよう、`invitations` を `invite_links` に名前を変える |
 
 ### リレーション
