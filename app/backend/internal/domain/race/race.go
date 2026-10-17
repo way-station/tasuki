@@ -14,6 +14,7 @@ type Race struct {
 	name        string
 	description Description
 	version     int
+	loaded      int // the version it was read with; 0 for a new race
 }
 
 // ID returns the race's ID.
@@ -30,6 +31,10 @@ func (r *Race) Description() Description { return r.description }
 
 // Version returns the version used to detect concurrent edits.
 func (r *Race) Version() int { return r.version }
+
+// LoadedVersion returns the version the race was read with. Repositories store it only if
+// the stored version is still this one.
+func (r *Race) LoadedVersion() int { return r.loaded }
 
 // Update replaces the name and the description. It returns shared.ErrVersionConflict when
 // the race changed since the caller read version. When the type or the number of legs
@@ -77,13 +82,13 @@ func (f Factory) New(teamID shared.TeamID, name string, d Description) (*Race, e
 
 // Reconstruct returns a race read from storage.
 func (f Factory) Reconstruct(id shared.RaceID, teamID shared.TeamID, name string, d Description, version int) *Race {
-	return &Race{id: id, teamID: teamID, name: name, description: d, version: version}
+	return &Race{id: id, teamID: teamID, name: name, description: d, version: version, loaded: version}
 }
 
 // Repository stores races. Errors for missing races wrap shared.ErrNotFound.
 type Repository interface {
 	FindByID(ctx context.Context, id shared.RaceID) (*Race, error)
 	// Save inserts or updates the race. An update stores the race only if the stored
-	// version is the one before Update, and returns shared.ErrVersionConflict otherwise.
+	// version is LoadedVersion, and returns shared.ErrVersionConflict otherwise.
 	Save(ctx context.Context, r *Race) error
 }
