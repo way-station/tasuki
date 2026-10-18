@@ -17,6 +17,8 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
 | Lint | oxlint (Vite template default; to be confirmed in #5) | 1.x |
+| Routing | React Router, without data mode (ADR-0013) | 7 |
+| Server data | TanStack Query (ADR-0013) | 5 |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
 
 ### Why these choices
@@ -30,8 +32,6 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Topic | Candidates |
 | --- | --- |
 | API types shared with the backend | OpenAPI → generated TypeScript types |
-| Routing | React Router / TanStack Router |
-| Data fetching | TanStack Query |
 | Styling | Tailwind CSS / CSS Modules |
 | Lint / format | oxlint (current) / Biome / ESLint + Prettier |
 | Tests | Vitest + Testing Library |
@@ -87,6 +87,8 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
 | Lint | oxlint（Vite テンプレートのデフォルト。#5 で確定） | 1.x |
+| ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
+| サーバーのデータ | TanStack Query（ADR-0013） | 5 |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
 
 ### 選定理由
@@ -100,8 +102,6 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | 項目 | 候補 |
 | --- | --- |
 | backend との API の型共有 | OpenAPI → TypeScript の型を生成 |
-| ルーティング | React Router / TanStack Router |
-| データ取得 | TanStack Query |
 | スタイリング | Tailwind CSS / CSS Modules |
 | Lint / Format | oxlint（現状）/ Biome / ESLint + Prettier |
 | テスト | Vitest + Testing Library |
