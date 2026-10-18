@@ -41,7 +41,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 - Query keys are defined in one place, so a mutation can invalidate every query it affects.
 - When the signed-in user changes (log in, log out, `401`), the whole query cache is cleared, so data visible to one user is never shown to another. `401` is handled once, in the query and mutation caches' `onError`, not in each screen.
 - Requests that fail with a 4xx status are not retried.
-- The access token is not kept in TanStack Query. Where the frontend stores it is decided in the frontend authentication issue.
+- The session token is not handled by the frontend at all: it is an HttpOnly cookie that the browser sends (#162). Nothing about it is kept in TanStack Query.
 
 **Rules for drafts**
 
@@ -123,7 +123,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 - query key は 1 か所で定義する。mutation が影響するすべての query を invalidate できるようにするため
 - ログイン中のユーザーが変わったとき（ログイン、ログアウト、`401`）は、query のキャッシュをすべて消す。あるユーザーに見えるデータを、ほかのユーザーに出さないため。`401` は各画面ではなく、query と mutation のキャッシュの `onError` で 1 か所だけで扱う
 - 4xx で失敗したリクエストは再試行しない
-- アクセストークンは TanStack Query に入れない。frontend がどこに保存するかは、frontend の認証の Issue で決める
+- セッションのトークンは frontend では一切扱わない。ブラウザが送る HttpOnly Cookie にする（#162）。TanStack Query にも何も入れない
 
 **下書きのルール**
 
