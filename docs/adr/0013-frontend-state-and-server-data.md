@@ -27,7 +27,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 | State | Where it lives | Examples |
 | --- | --- | --- |
 | Which screen and which data is shown | **URL**, through **React Router without data mode** (no loaders or actions) | `/races/:raceId`, a selected tab |
-| Data from the backend | **TanStack Query**, for all communication with the backend, including public APIs | Race list, running order, `GET /me`, `GET /invite-links/{token}`, `POST /auth/token` |
+| Data from the backend | **TanStack Query**, for all communication with the backend, including public APIs | Race list, running order, `GET /me`, `GET /invite-links/{token}`, `POST /session` |
 | UI state inside a screen | `useState` / `useReducer` | A form's current input, whether a dialog is open |
 | UI state shared across screens | **React Context**, for this only; never data from the backend | Notifications after saving |
 | Values that can be calculated from the above | **Not stored**; calculated when rendering | Total time |
@@ -109,7 +109,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 | 状態 | 置き場所 | 例 |
 | --- | --- | --- |
 | どの画面で、どのデータを見ているか | **URL**。**data mode を使わない React Router**（loader と action は使わない） | `/races/:raceId`、選んでいるタブ |
-| backend のデータ | **TanStack Query**。公開 API も含め、backend とのやり取りはすべてこれを通す | 大会一覧、走順、`GET /me`、`GET /invite-links/{token}`、`POST /auth/token` |
+| backend のデータ | **TanStack Query**。公開 API も含め、backend とのやり取りはすべてこれを通す | 大会一覧、走順、`GET /me`、`GET /invite-links/{token}`、`POST /session` |
 | 画面の中の UI の状態 | `useState` / `useReducer` | フォームの入力中の値、ダイアログが開いているか |
 | 画面をまたぐ UI の状態 | **React Context**。これだけに使い、backend のデータは入れない | 保存した後の通知 |
 | 上から計算できる値 | **保存しない**。描画のときに計算する | 合計タイム |
