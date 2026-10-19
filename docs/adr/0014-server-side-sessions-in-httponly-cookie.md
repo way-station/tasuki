@@ -1,6 +1,6 @@
 # ADR-0014: Server-side sessions in an HttpOnly cookie
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-19
 - Issue: #165
@@ -76,7 +76,7 @@ The forces:
 
 # ADR-0014: サーバー側のセッションと HttpOnly Cookie
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-19
 - Issue: #165
