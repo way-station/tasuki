@@ -12,8 +12,8 @@ info:
 
     | Value | Meaning |
     | --- | --- |
-    | `public` | No token |
-    | `account` | Any valid token, including accounts waiting for approval or rejected |
+    | `public` | No session |
+    | `account` | Any valid session, including accounts waiting for approval or rejected |
     | `member` | Approved link to a roster member, not left. Linked organizers are members too |
     | `organizer` | Listed as an organizer in configuration. No link needed |
 
@@ -150,34 +150,6 @@ paths:
               schema:
                 type: string
 
-  /api/v1/auth/token:
-    post:
-      tags: [auth]
-      operationId: exchangeToken
-      summary: Exchange the one-time code for a session
-      security: []
-      x-callers: [public]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TokenRequest"
-      responses:
-        "200":
-          description: Logged in. The session cookie is set
-          headers:
-            Set-Cookie:
-              description: "`tasuki_session=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Session"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
   /api/v1/dev/login:
     post:
       tags: [auth]
@@ -197,7 +169,7 @@ paths:
           description: Logged in. The session cookie is set
           headers:
             Set-Cookie:
-              description: "`tasuki_session=<token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
+              description: "`tasuki_session=<session token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
               schema:
                 type: string
           content:
@@ -208,6 +180,32 @@ paths:
           $ref: "#/components/responses/BadRequest"
 
   /api/v1/session:
+    post:
+      tags: [auth]
+      operationId: createSession
+      summary: Exchange the one-time code for a session
+      security: []
+      x-callers: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: Logged in. The session cookie is set
+          headers:
+            Set-Cookie:
+              description: "`tasuki_session=<session token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
     delete:
       tags: [auth]
       operationId: logout
@@ -215,7 +213,7 @@ paths:
       x-callers: [account]
       responses:
         "204":
-          description: The token can no longer be used, and the session cookie is cleared
+          description: The session is revoked, and the session cookie is cleared
           headers:
             Set-Cookie:
               description: "`tasuki_session=; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=0`"
@@ -1035,7 +1033,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     Unauthenticated:
-      description: "`unauthenticated`: no session cookie, or its token is invalid or expired"
+      description: "`unauthenticated`: no session cookie, or the session is unknown, expired, or revoked"
       content:
         application/problem+json:
           schema:
@@ -1166,7 +1164,7 @@ components:
       properties:
         authorization_url:
           type: string
-    TokenRequest:
+    CreateSessionRequest:
       type: object
       required: [code]
       properties:
