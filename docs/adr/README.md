@@ -17,8 +17,8 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0008](0008-separate-accounts-and-roster-members.md) | Separate accounts from roster members | technical | Accepted |
 | [0009](0009-dev-only-login.md) | Dev-only login for local development | technical | Accepted |
 | [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Accepted |
-| [0011](0011-onion-architecture-cqrs.md) | Backend onion architecture with CQRS | technical | Proposed |
-| [0013](0013-frontend-state-and-server-data.md) | Frontend state and server data | technical | Proposed |
+| [0011](0011-onion-architecture-cqrs.md) | Backend onion architecture with CQRS | technical | Accepted |
+| [0013](0013-frontend-state-and-server-data.md) | Frontend state and server data | technical | Accepted |
 
 ## How to add an ADR
 
