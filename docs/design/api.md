@@ -11,7 +11,8 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Topic | Rule |
 | --- | --- |
 | Base path | `/api/v1` |
-| Authentication | `Authorization: Bearer <token>`. When the token expires, the user logs in with LINE again; there is no refresh token |
+| Authentication | The session token is carried in an HttpOnly cookie `tasuki_session` (`Secure`, `SameSite=Lax`, `Path=/api`). Scripts on the page cannot read it, so the frontend never handles the token. The frontend and the API are served from the same site. When the token expires, the user logs in with LINE again; there is no refresh token |
+| CSRF | Requests that change data (`POST`, `PUT`, `PATCH`, `DELETE`) must carry an `Origin` header equal to the frontend's origin; otherwise `403 forbidden`. With `SameSite=Lax`, this rejects requests sent from other sites |
 | Errors | RFC 9457 `application/problem+json` with an extra `code` field the frontend uses to choose what to show |
 | Hidden resources | A race (and anything under it) that the caller may not see returns `404`, the same as a race that does not exist |
 | Times | Lap times and average times: `"MM:SS"` (e.g. `"3:28"`). Total times: `"H:MM:SS"` (e.g. `"2:45:30"`) |
@@ -38,8 +39,8 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Status | `code` | When |
 | --- | --- | --- |
 | 400 | `invalid_request` | Malformed body or parameters |
-| 401 | `unauthenticated` | No token, or the token is invalid or expired |
-| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting account calling a member endpoint) |
+| 401 | `unauthenticated` | No session cookie, or its token is invalid or expired |
+| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting account calling a member endpoint), or a request that changes data has a missing or foreign `Origin` |
 | 404 | `not_found` | Does not exist, or the caller may not see it |
 | 404 | `invite_unusable` | Invite link expired, used, or replaced |
 | 409 | `version_conflict` | Someone else changed it since it was read |
@@ -53,7 +54,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | `GET /invite-links/{token}` | Public | A1 | Check an invite link before login |
 | `POST /auth/line/authorize` | Public | A1, login | Start LINE Login |
 | `GET /auth/line/callback` | Public (LINE redirects here) | — | Finish LINE Login, redirect to the frontend |
-| `POST /auth/token` | Public | — | Exchange the one-time code for a token |
+| `POST /auth/token` | Public | — | Exchange the one-time code for a session |
 | `POST /dev/login` | Public, development only | — | Dev-only login (ADR-0009) |
 | `DELETE /session` | Account | — | Log out |
 | `GET /me` | Account | All | Who am I, and which screens to show |
@@ -81,7 +82,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 ### `POST /auth/token`
 
 - Body: `{ code }`.
-- `200`: `{ access_token, expires_at }`.
+- `200`: `{ expires_at }`, and sets the session cookie (`Set-Cookie`). The token is not in the body.
 - `400 invalid_request`: unknown, expired, or used code.
 
 ### `POST /dev/login`
@@ -91,7 +92,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 ### `DELETE /session`
 
-- `204`. The token can no longer be used.
+- `204`. The token can no longer be used, and the session cookie is cleared.
 
 ### `GET /me`
 
@@ -405,7 +406,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 項目 | ルール |
 | --- | --- |
 | パスの頭 | `/api/v1` |
-| 認証 | `Authorization: Bearer <トークン>`。期限が切れたら LINE でログインし直す。リフレッシュトークンはない |
+| 認証 | セッションのトークンは HttpOnly Cookie `tasuki_session`（`Secure`、`SameSite=Lax`、`Path=/api`）で運ぶ。ページ上のスクリプトから読めないので、frontend はトークンを扱わない。frontend と API は同じサイトから出す。期限が切れたら LINE でログインし直す。リフレッシュトークンはない |
+| CSRF | データを変えるリクエスト（`POST`、`PUT`、`PATCH`、`DELETE`）は、frontend のオリジンと同じ `Origin` ヘッダーを持つ必要がある。なければ `403 forbidden`。`SameSite=Lax` と合わせて、ほかのサイトから送られたリクエストを断る |
 | エラー | RFC 9457 の `application/problem+json`。画面が出し分けるための `code` を足す |
 | 見られないもの | 見てはいけない大会（とその下のもの）は `404`。存在しない大会と同じ |
 | タイム | ラップと平均タイム：`"MM:SS"`（例：`"3:28"`）。合計タイム：`"H:MM:SS"`（例：`"2:45:30"`） |
@@ -432,8 +434,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | ステータス | `code` | いつ |
 | --- | --- | --- |
 | 400 | `invalid_request` | 本文やパラメータの形が正しくない |
-| 401 | `unauthenticated` | トークンがない、正しくない、期限切れ |
-| 403 | `forbidden` | 役割がそのエンドポイントを許さない（例：メンバーが幹事のエンドポイントを呼ぶ、承認待ちがメンバーのエンドポイントを呼ぶ） |
+| 401 | `unauthenticated` | セッションの Cookie がない、またはそのトークンが正しくない、期限切れ |
+| 403 | `forbidden` | 役割がそのエンドポイントを許さない（例：メンバーが幹事のエンドポイントを呼ぶ、承認待ちがメンバーのエンドポイントを呼ぶ）、またはデータを変えるリクエストの `Origin` がない、ほかのサイトのもの |
 | 404 | `not_found` | 存在しない、または見てはいけない |
 | 404 | `invite_unusable` | 招待リンクが期限切れ、使用済み、置き換え済み |
 | 409 | `version_conflict` | 読んだ後にほかの人が変えた |
@@ -447,7 +449,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `GET /invite-links/{token}` | 公開 | A1 | ログイン前に招待リンクを確かめる |
 | `POST /auth/line/authorize` | 公開 | A1、ログイン | LINE ログインを始める |
 | `GET /auth/line/callback` | 公開（LINE がここに戻す） | — | LINE ログインを終え、frontend に戻す |
-| `POST /auth/token` | 公開 | — | 一度きりのコードをトークンに交換する |
+| `POST /auth/token` | 公開 | — | 一度きりのコードをセッションに交換する |
 | `POST /dev/login` | 公開、開発のときだけ | — | ローカル開発専用の仮ログイン（ADR-0009） |
 | `DELETE /session` | アカウント | — | ログアウト |
 | `GET /me` | アカウント | すべて | 自分は誰か、どの画面を出すか |
@@ -475,7 +477,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 ### `POST /auth/token`
 
 - 本文：`{ code }`
-- `200`：`{ access_token, expires_at }`
+- `200`：`{ expires_at }`。セッションの Cookie を設定する（`Set-Cookie`）。本文にトークンは入れない
 - `400 invalid_request`：知らない、期限切れ、使用済みのコード
 
 ### `POST /dev/login`
@@ -485,7 +487,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 ### `DELETE /session`
 
-- `204`。そのトークンは使えなくなる
+- `204`。そのトークンは使えなくなり、セッションの Cookie を消す
 
 ### `GET /me`
 
