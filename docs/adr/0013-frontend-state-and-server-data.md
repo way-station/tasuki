@@ -1,6 +1,6 @@
 # ADR-0013: Frontend state and server data
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-18
 - Issue: #160
@@ -82,7 +82,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 
 # ADR-0013: frontend の状態とサーバーのデータ
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-18
 - Issue: #160
