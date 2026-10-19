@@ -19,6 +19,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Accepted |
 | [0011](0011-onion-architecture-cqrs.md) | Backend onion architecture with CQRS | technical | Accepted |
 | [0013](0013-frontend-state-and-server-data.md) | Frontend state and server data | technical | Accepted |
+| [0014](0014-server-side-sessions-in-httponly-cookie.md) | Server-side sessions in an HttpOnly cookie | technical | Proposed |
 
 ## How to add an ADR
 
