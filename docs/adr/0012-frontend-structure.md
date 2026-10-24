@@ -9,7 +9,7 @@
 
 Each screen of the frontend has to do several different things: call the backend, convert what the backend returns into what the screen shows, hold UI state and drafts (ADR-0013), and render.
 
-The data the backend returns is not in the shape the screens use. The API uses `snake_case` and times as strings such as `"3:28"` (`docs/design/api.md`), while the frontend calculates total times from them (`app/frontend/TECH.md`). The API types are generated from the OpenAPI document (ADR-0010), so any change to the API changes these types.
+The data the backend returns is not in the shape the screens use. The API uses `snake_case`, times as strings such as `"3:28"`, and codes for states (`docs/design/api.md`), while the screens show labels and take input in forms. The API types are generated from the OpenAPI document (ADR-0010), so any change to the API changes these types.
 
 If one component does all of these things, a change to any one of them — the API, the state, or the look — touches the same file, and the component can only be checked with a running backend.
 
@@ -106,7 +106,7 @@ src/
 
 frontend の画面は、いくつもの違うことをする必要がある：backend を呼ぶ、backend が返したものを画面に出す形に変える、UI の状態と下書きを持つ（ADR-0013）、描画する。
 
-backend が返すデータは、画面が使う形ではない。API は `snake_case` で、タイムは `"3:28"` のような文字列（`docs/design/api.md`）。一方で frontend はそこから合計タイムを計算する（`app/frontend/TECH.md`）。API の型は OpenAPI の文書から生成する（ADR-0010）ので、API が変わればこの型も変わる。
+backend が返すデータは、画面が使う形ではない。API は `snake_case` で、タイムは `"3:28"` のような文字列、状態はコード（`docs/design/api.md`）。一方で画面は、表示用の言葉を出し、フォームで入力を受け取る。API の型は OpenAPI の文書から生成する（ADR-0010）ので、API が変わればこの型も変わる。
 
 1 つのコンポーネントがこれを全部やると、API、状態、見た目のどれを変えても同じファイルに手が入り、backend を動かさないとそのコンポーネントを確かめられない。
 
