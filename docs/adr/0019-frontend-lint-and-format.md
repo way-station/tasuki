@@ -1,6 +1,6 @@
 # ADR-0019: Frontend lint and format — oxlint and oxfmt
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #179
@@ -44,7 +44,7 @@ oxlint is already in the frontend: it came with the Vite template (`app/frontend
 
 # ADR-0019: frontend の lint と format — oxlint と oxfmt
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #179
