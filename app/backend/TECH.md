@@ -31,7 +31,9 @@ React (Vite)  ── app/frontend
 | Language | Go | 1.26 (see `go.mod`) |
 | HTTP router | `github.com/go-chi/chi/v5` | v5.3.x |
 | MongoDB driver | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
-| PostgreSQL driver | not decided yet (see below) | — |
+| PostgreSQL driver | `github.com/jackc/pgx/v5` with `pgxpool`; Neon direct endpoint (ADR-0015) | v5.x |
+| SQL | sqlc (Go generated from SQL, committed) (ADR-0015) | — |
+| Migrations | golang-migrate, zero-padded versions (ADR-0015) | — |
 | Logging | `log/slog` (JSON) | stdlib |
 | Lint / format | golangci-lint v2 (`.golangci.yml`) | v2.x |
 | API code generation | oapi-codegen; generated code is committed (ADR-0017) | v2.8.0 |
@@ -50,6 +52,7 @@ React (Vite)  ── app/frontend
 
 | Topic | Candidates | Decided in |
 | --- | --- | --- |
+| Whether generated API code is committed | The OpenAPI document is `app/backend/api/openapi.yaml`; Go code with oapi-codegen, TypeScript types with openapi-typescript (ADR-0010) | #30 |
 | PostgreSQL driver | pgx v5 (the de facto standard) | Postgres setup issue |
 | How SQL is written | sqlc (generate Go from plain SQL) / pgx with hand-written queries | Postgres setup issue |
 | Migration tool | goose / golang-migrate / dbmate | Postgres setup issue |
@@ -216,7 +219,9 @@ React (Vite)  ── app/frontend
 | 言語 | Go | 1.26（`go.mod` 参照） |
 | HTTP ルーター | `github.com/go-chi/chi/v5` | v5.3.x |
 | MongoDB ドライバ | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
-| PostgreSQL ドライバ | 未決定（下記参照） | — |
+| PostgreSQL ドライバ | `github.com/jackc/pgx/v5` を `pgxpool` で。Neon には直接の接続（ADR-0015） | v5.x |
+| SQL | sqlc（SQL から Go を生成し、コミットする）（ADR-0015） | — |
+| マイグレーション | golang-migrate。バージョンはゼロで埋める（ADR-0015） | — |
 | ログ | `log/slog`（JSON） | 標準ライブラリ |
 | Lint / Format | golangci-lint v2（`.golangci.yml`） | v2.x |
 | API のコード生成 | oapi-codegen。生成したコードはコミットする（ADR-0017） | v2.8.0 |
@@ -235,6 +240,7 @@ React (Vite)  ── app/frontend
 
 | 項目 | 候補 | 決める場所 |
 | --- | --- | --- |
+| 生成した API のコードをコミットするか | OpenAPI の文書は `app/backend/api/openapi.yaml`。Go は oapi-codegen、TypeScript の型は openapi-typescript で生成する（ADR-0010） | #30 |
 | PostgreSQL ドライバ | pgx v5（事実上の標準） | Postgres の環境構築 Issue |
 | SQL の書き方 | sqlc（素の SQL から Go を生成）／ pgx で手書き | Postgres の環境構築 Issue |
 | マイグレーションツール | goose / golang-migrate / dbmate | Postgres の環境構築 Issue |
