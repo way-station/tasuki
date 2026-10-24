@@ -16,7 +16,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Build / dev server | Vite | 8 |
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
-| Lint | oxlint (Vite template default; to be confirmed in #5) | 1.x |
+| Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt pinned (pre-1.0) |
 | Routing | React Router, without data mode (ADR-0013) | 7 |
 | Server data | TanStack Query (ADR-0013) | 5 |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
@@ -33,7 +33,6 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | --- | --- |
 | API types shared with the backend | OpenAPI → generated TypeScript types |
 | Styling | Tailwind CSS / CSS Modules |
-| Lint / format | oxlint (current) / Biome / ESLint + Prettier |
 | Tests | Vitest + Testing Library |
 | Production image | depends on hosting (#7) |
 
@@ -98,7 +97,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | ビルド / 開発サーバー | Vite | 8 |
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
-| Lint | oxlint（Vite テンプレートのデフォルト。#5 で確定） | 1.x |
+| Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt は固定（1.0 より前） |
 | ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
@@ -115,7 +114,6 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | --- | --- |
 | backend との API の型共有 | OpenAPI → TypeScript の型を生成 |
 | スタイリング | Tailwind CSS / CSS Modules |
-| Lint / Format | oxlint（現状）/ Biome / ESLint + Prettier |
 | テスト | Vitest + Testing Library |
 | 本番用イメージ | ホスティング（#7）次第 |
 
