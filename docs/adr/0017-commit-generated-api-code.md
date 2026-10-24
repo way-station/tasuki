@@ -1,6 +1,6 @@
 # ADR-0017: Commit generated API code
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #177
@@ -54,7 +54,7 @@ The forces:
 
 # ADR-0017: 生成した API のコードをコミットする
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #177

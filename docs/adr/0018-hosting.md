@@ -1,6 +1,6 @@
 # ADR-0018: Hosting — one container on Cloud Run in Singapore
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #178
@@ -71,7 +71,7 @@ The forces:
 
 # ADR-0018: ホスティング — シンガポールの Cloud Run で 1 つのコンテナ
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #178

@@ -1,6 +1,6 @@
 # ADR-0015: PostgreSQL access — pgx, sqlc, and golang-migrate
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #175
@@ -72,7 +72,7 @@ The forces:
 
 # ADR-0015: PostgreSQL へのアクセス — pgx、sqlc、golang-migrate
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #175

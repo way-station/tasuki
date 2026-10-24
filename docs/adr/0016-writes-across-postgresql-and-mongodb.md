@@ -1,6 +1,6 @@
 # ADR-0016: Writes across PostgreSQL and MongoDB
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #176
@@ -68,7 +68,7 @@ If the second write fails after the first succeeded, the stores disagree: for ex
 
 # ADR-0016: PostgreSQL と MongoDB をまたぐ書き込み
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #176
