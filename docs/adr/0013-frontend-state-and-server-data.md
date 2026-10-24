@@ -16,7 +16,7 @@ Some of that state follows from earlier decisions, and it shapes how the fronten
 - **What a caller may see depends on who they are** (ADR-0006). The same request returns different data to an organizer and to a member.
 - **The token expires and there is no refresh token** (api.md). When it expires, the user logs in with LINE again, which leaves the page.
 - **Editing can take a long time.** An organizer may leave the running order editor (R7) open and stop in the middle, for example by falling asleep, until the token expires.
-- **Total times are calculated on the frontend only** (`app/frontend/TECH.md`).
+- **Predictions are calculated by the backend** (ADR-0011). The frontend only shows the total time or laps it returns.
 
 Without a rule, each screen would decide for itself where to keep data and when to fetch it again, and screens would show old data after a change.
 
@@ -30,7 +30,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 | Data from the backend | **TanStack Query**, for all communication with the backend, including public APIs | Race list, running order, `GET /me`, `GET /invite-links/{token}`, `POST /session` |
 | UI state inside a screen | `useState` / `useReducer` | A form's current input, whether a dialog is open |
 | UI state shared across screens | **React Context**, for this only; never data from the backend | Notifications after saving |
-| Values that can be calculated from the above | **Not stored**; calculated when rendering | Total time |
+| Values that can be calculated from the above | **Not stored**; calculated when rendering | Whether every leg of a draft running order has a runner |
 | Drafts of edits not yet saved | **`localStorage`**, saved on every edit | R3 race form, R7 running order, L1 lap times |
 
 **Rules for data from the backend**
@@ -98,7 +98,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 - **見られる範囲は人によって違う**（ADR-0006）。同じリクエストでも、幹事とメンバーでは返るデータが違う
 - **トークンには期限があり、リフレッシュトークンはない**（api.md）。切れたら LINE でログインし直し、そのときページを離れる
 - **編集には時間がかかることがある。** 幹事が走順の編集（R7）を開いたまま、寝落ちなどで途中で止まり、トークンが切れることがある
-- **合計タイムの計算は frontend だけで行う**（`app/frontend/TECH.md`）
+- **予想は backend が計算する**（ADR-0011）。frontend は、返ってきた合計タイムや周回数を表示するだけ
 
 ルールがないと、データをどこに置き、いつ取り直すかを画面ごとに決めることになり、変更の後に古いデータを出す画面が出る。
 
@@ -112,7 +112,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 | backend のデータ | **TanStack Query**。公開 API も含め、backend とのやり取りはすべてこれを通す | 大会一覧、走順、`GET /me`、`GET /invite-links/{token}`、`POST /session` |
 | 画面の中の UI の状態 | `useState` / `useReducer` | フォームの入力中の値、ダイアログが開いているか |
 | 画面をまたぐ UI の状態 | **React Context**。これだけに使い、backend のデータは入れない | 保存した後の通知 |
-| 上から計算できる値 | **保存しない**。描画のときに計算する | 合計タイム |
+| 上から計算できる値 | **保存しない**。描画のときに計算する | 走順の下書きで、すべての区に走者が入っているか |
 | まだ保存していない編集の下書き | **`localStorage`**。編集のたびに保存する | R3 の大会のフォーム、R7 の走順、L1 のラップタイム |
 
 **backend のデータのルール**
