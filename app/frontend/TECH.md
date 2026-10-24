@@ -37,6 +37,18 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Tests | Vitest + Testing Library |
 | Production image | depends on hosting (#7) |
 
+## Structure (ADR-0012)
+
+Each feature is split into Types, Mapper, Hooks, Container, and UI. Imports go Container → UI and Container → Hooks → Mapper → Types; Hooks call the backend through the `ApiClient` interface; the UI imports only view types.
+
+```
+src/
+  features/<feature>/     # auth, races, participation, running-orders, laps, roster
+    types/  mapper/  hooks/  container/  ui/
+  api/                    # ApiClient interface and implementation, query keys
+  shared/                 # only what more than one feature needs
+```
+
 ## Supply-chain safety (`pnpm-workspace.yaml`)
 
 - `onlyBuiltDependencies: []` — no dependency may run install scripts. Add a package only after reviewing it.
@@ -106,6 +118,18 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | Lint / Format | oxlint（現状）/ Biome / ESLint + Prettier |
 | テスト | Vitest + Testing Library |
 | 本番用イメージ | ホスティング（#7）次第 |
+
+## 構成（ADR-0012）
+
+機能ごとに Types、Mapper、Hooks、Container、UI に分ける。import は Container → UI と Container → Hooks → Mapper → Types の向き。Hooks は `ApiClient` の interface を通して backend を呼ぶ。UI は画面用の型だけを import する。
+
+```
+src/
+  features/<feature>/     # auth, races, participation, running-orders, laps, roster
+    types/  mapper/  hooks/  container/  ui/
+  api/                    # ApiClient の interface と実装、query key
+  shared/                 # 複数の機能が必要とするものだけ
+```
 
 ## サプライチェーン対策（`pnpm-workspace.yaml`）
 
