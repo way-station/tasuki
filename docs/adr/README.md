@@ -21,6 +21,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0012](0012-frontend-structure.md) | Frontend structure | technical | Accepted |
 | [0013](0013-frontend-state-and-server-data.md) | Frontend state and server data | technical | Accepted |
 | [0014](0014-server-side-sessions-in-httponly-cookie.md) | Server-side sessions in an HttpOnly cookie | technical | Accepted |
+| [0016](0016-writes-across-postgresql-and-mongodb.md) | Writes across PostgreSQL and MongoDB | technical | Proposed |
 | [0017](0017-commit-generated-api-code.md) | Commit generated API code | technical | Proposed |
 | [0019](0019-frontend-lint-and-format.md) | Frontend lint and format — oxlint and oxfmt | technical | Proposed |
 
