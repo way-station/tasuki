@@ -1,6 +1,6 @@
 # ADR-0012: Frontend structure
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #107
@@ -97,7 +97,7 @@ src/
 
 # ADR-0012: frontend の構成
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-24
 - Issue: #107
