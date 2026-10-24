@@ -4,7 +4,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 
 ## Principles
 
-1. **Total time is calculated on the frontend only.** The backend stores and shares data.
+1. **Predictions are calculated by the backend.** The frontend only shows the total time or laps it returns. Members may not see other members' average times (ADR-0006), so the frontend never receives the data to calculate them (`app/backend/TECH.md`, ADR-0011).
 2. **No Node toolchain on the host.** Development happens inside the Dev Container; the host only needs Docker and an editor.
 
 ## Stack
@@ -74,7 +74,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 
 ## 原則
 
-1. **合計タイムの計算はフロントエンドだけで行う。** backend は保存と共有だけを担当します
+1. **予想は backend が計算する。** frontend は、返ってきた合計タイムや周回数を表示するだけです。メンバーはほかのメンバーの平均タイムを見られない（ADR-0006）ので、frontend には計算に使うデータが届きません（`app/backend/TECH.md`、ADR-0011）
 2. **ホストに Node のツールチェーンを入れない。** 開発は Dev Container の中で行い、ホストに必要なのは Docker とエディタだけです
 
 ## 技術スタック
