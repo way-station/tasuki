@@ -24,6 +24,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0015](0015-postgresql-access.md) | PostgreSQL access — pgx, sqlc, and golang-migrate | technical | Proposed |
 | [0016](0016-writes-across-postgresql-and-mongodb.md) | Writes across PostgreSQL and MongoDB | technical | Proposed |
 | [0017](0017-commit-generated-api-code.md) | Commit generated API code | technical | Proposed |
+| [0018](0018-hosting.md) | Hosting — one container on Cloud Run in Singapore | technical | Proposed |
 | [0019](0019-frontend-lint-and-format.md) | Frontend lint and format — oxlint and oxfmt | technical | Proposed |
 
 ## How to add an ADR

@@ -39,7 +39,8 @@ React (Vite)  ── app/frontend
 | API code generation | oapi-codegen; generated code is committed (ADR-0017) | v2.8.0 |
 | Container | Multi-stage build → `distroless/static` (`infra/docker/backend/Dockerfile`) | — |
 | Local DB | MongoDB in Docker (`infra/compose.yaml`) | 8.0 |
-| Production DB | Neon (PostgreSQL), MongoDB Atlas | — |
+| Production DB | Neon (PostgreSQL), MongoDB Atlas — both in Singapore (ADR-0018) | — |
+| Hosting | Cloud Run, `asia-southeast1`; one container serving the API and the built frontend (ADR-0018) | — |
 
 ### Why these choices
 
@@ -227,7 +228,8 @@ React (Vite)  ── app/frontend
 | API のコード生成 | oapi-codegen。生成したコードはコミットする（ADR-0017） | v2.8.0 |
 | コンテナ | マルチステージビルド → `distroless/static`（`infra/docker/backend/Dockerfile`） | — |
 | ローカル DB | Docker の MongoDB（`infra/compose.yaml`） | 8.0 |
-| 本番 DB | Neon（PostgreSQL）、MongoDB Atlas | — |
+| 本番 DB | Neon（PostgreSQL）、MongoDB Atlas。どちらもシンガポール（ADR-0018） | — |
+| ホスティング | Cloud Run、`asia-southeast1`。API とビルドした frontend を 1 つのコンテナで出す（ADR-0018） | — |
 
 ### 選定理由
 
