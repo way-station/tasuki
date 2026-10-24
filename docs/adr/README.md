@@ -21,6 +21,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0012](0012-frontend-structure.md) | Frontend structure | technical | Accepted |
 | [0013](0013-frontend-state-and-server-data.md) | Frontend state and server data | technical | Accepted |
 | [0014](0014-server-side-sessions-in-httponly-cookie.md) | Server-side sessions in an HttpOnly cookie | technical | Accepted |
+| [0018](0018-hosting.md) | Hosting — one container on Cloud Run in Singapore | technical | Proposed |
 
 ## How to add an ADR
 
