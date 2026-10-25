@@ -30,10 +30,10 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 ## How to add an ADR
 
 1. Copy [`template.md`](template.md) to `NNNN-kebab-case-title.md`, using the next number (e.g. `0005-use-sqlc-for-queries.md`).
-2. Fill in Context, Decision, Alternatives considered, and Consequences. Set `Status: Proposed` and the `Type`.
+2. Fill in Context, Decision, Alternatives considered, and Consequences. Set `Status: Accepted` and the `Type`.
 3. Add a row to the index above.
 4. Open a pull request. Link the related issue.
-5. Once the reviewers agree, change the status to `Accepted` in the same pull request, then merge.
+5. While the pull request is open, the ADR is proposed. Merging it accepts the ADR, so the file is already `Accepted`. If the decision is not taken, close the pull request without merging.
 
 ### Changing a decision
 
@@ -50,7 +50,7 @@ Do not rewrite an accepted ADR. Write a new ADR that supersedes it, and change t
 
 | Status | Meaning |
 | --- | --- |
-| `Proposed` | Under discussion in a pull request |
+| `Proposed` | Not written in files: an ADR under discussion is an open pull request whose file already says `Accepted` |
 | `Accepted` | Merged; the current decision |
 | `Deprecated` | No longer applies, with no replacement |
 | `Superseded by ADR-NNNN` | Replaced by a newer ADR |
@@ -72,10 +72,10 @@ Do not rewrite an accepted ADR. Write a new ADR that supersedes it, and change t
 ## ADR の追加方法
 
 1. [`template.md`](template.md) を `NNNN-kebab-case-title.md` としてコピーする。番号は次の連番にする（例：`0005-use-sqlc-for-queries.md`）
-2. Context、Decision、Alternatives considered、Consequences を書く。`Status: Proposed` にし、`Type` を選ぶ
+2. Context、Decision、Alternatives considered、Consequences を書く。`Status: Accepted` にし、`Type` を選ぶ
 3. 上の一覧に行を追加する
 4. PR を作る。関連する Issue を紐付ける
-5. レビュアーの合意が取れたら、同じ PR の中で Status を `Accepted` に変えてからマージする
+5. PR が開いている間、その ADR は提案中。マージすると採用になるので、ファイルは最初から `Accepted` にしておく。採用しないときは、PR をマージせずに閉じる
 
 ### 判断を変えるとき
 
@@ -92,7 +92,7 @@ Accepted の ADR は書き換えません。置き換える新しい ADR を書�
 
 | Status | 意味 |
 | --- | --- |
-| `Proposed` | PR で議論中 |
+| `Proposed` | ファイルには書かない。議論中の ADR は、ファイルがすでに `Accepted` になっている開いた PR のこと |
 | `Accepted` | マージ済み。現在の判断 |
 | `Deprecated` | 置き換えなしで、もう適用されない |
 | `Superseded by ADR-NNNN` | 新しい ADR に置き換えられた |
