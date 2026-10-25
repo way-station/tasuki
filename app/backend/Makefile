@@ -29,7 +29,7 @@ fmt:
 
 # Start the development container without an editor integration, then open a shell in it.
 dev-up:
-	$(COMPOSE_DEV) up -d --build --wait mongo backend-dev
+	$(COMPOSE_DEV) up -d --build --wait mongo postgres backend-dev
 
 dev-shell:
 	$(COMPOSE_DEV) exec backend-dev bash
