@@ -42,8 +42,11 @@ services:
       PORT: "8080"
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DATABASE: tasuki
+      DATABASE_URL: postgres://app:tasuki@postgres:5432/tasuki?sslmode=disable
     depends_on:
       mongo:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
 volumes:
