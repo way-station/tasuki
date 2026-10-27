@@ -14,6 +14,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
 	"github.com/way-station/tasuki/app/backend/internal/presentation"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 )
@@ -41,6 +42,12 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	pg, err := postgres.Connect(connectCtx, cfg.DatabaseURL)
+	if err != nil {
+		_ = db.Close(connectCtx)
+		return err
+	}
+	defer pg.Close()
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), health.StatusDTOFactory{}, logger)
 	router := presentation.NewRouter(presentation.Controllers{
