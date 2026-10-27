@@ -49,7 +49,7 @@ func run(logger *slog.Logger) error {
 	}
 	defer pg.Close()
 
-	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), health.StatusDTOFactory{}, logger)
+	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), postgres.NewHealthQueryService(pg), health.StatusDTOFactory{}, logger)
 	router := presentation.NewRouter(presentation.Controllers{
 		Health: controller.NewHealthController(check),
 	})
