@@ -13,38 +13,38 @@ import (
 
 // Client wraps the MongoDB client and the application database.
 type Client struct {
-	client *mongo.Client
-	db     *mongo.Database
+	mongoClient *mongo.Client
+	database    *mongo.Database
 }
 
 // Connect opens a client and verifies the connection with a ping.
 func Connect(ctx context.Context, uri, database string) (*Client, error) {
-	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	mongoClient, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo: %w", err)
 	}
-	s := &Client{client: client, db: client.Database(database)}
-	if err := s.Ping(ctx); err != nil {
-		_ = client.Disconnect(ctx)
+	client := &Client{mongoClient: mongoClient, database: mongoClient.Database(database)}
+	if err := client.Ping(ctx); err != nil {
+		_ = mongoClient.Disconnect(ctx)
 		return nil, err
 	}
-	return s, nil
+	return client, nil
 }
 
 // Ping checks that the primary is reachable.
-func (s *Client) Ping(ctx context.Context) error {
-	if err := s.client.Ping(ctx, readpref.Primary()); err != nil {
+func (client *Client) Ping(ctx context.Context) error {
+	if err := client.mongoClient.Ping(ctx, readpref.Primary()); err != nil {
 		return fmt.Errorf("ping mongo: %w", err)
 	}
 	return nil
 }
 
 // Database returns the application database handle.
-func (s *Client) Database() *mongo.Database {
-	return s.db
+func (client *Client) Database() *mongo.Database {
+	return client.database
 }
 
 // Close disconnects the client.
-func (s *Client) Close(ctx context.Context) error {
-	return s.client.Disconnect(ctx)
+func (client *Client) Close(ctx context.Context) error {
+	return client.mongoClient.Disconnect(ctx)
 }

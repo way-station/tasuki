@@ -19,6 +19,6 @@ func NewHealthQueryService(client *Client) *HealthQueryService {
 }
 
 // PingMongo returns an error when MongoDB is unreachable.
-func (q *HealthQueryService) PingMongo(ctx context.Context) error {
-	return q.client.Ping(ctx)
+func (queryService *HealthQueryService) PingMongo(ctx context.Context) error {
+	return queryService.client.Ping(ctx)
 }

@@ -7,16 +7,16 @@ type StatusDTO struct {
 }
 
 // Healthy reports whether every store is reachable.
-func (d StatusDTO) Healthy() bool {
-	return d.mongoReachable && d.postgresReachable
+func (dto StatusDTO) Healthy() bool {
+	return dto.mongoReachable && dto.postgresReachable
 }
 
 // MongoReachable reports whether MongoDB is reachable.
-func (d StatusDTO) MongoReachable() bool {
-	return d.mongoReachable
+func (dto StatusDTO) MongoReachable() bool {
+	return dto.mongoReachable
 }
 
 // PostgresReachable reports whether PostgreSQL is reachable.
-func (d StatusDTO) PostgresReachable() bool {
-	return d.postgresReachable
+func (dto StatusDTO) PostgresReachable() bool {
+	return dto.postgresReachable
 }

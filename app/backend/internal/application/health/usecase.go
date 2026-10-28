@@ -21,18 +21,18 @@ func NewCheckUseCase(mongo MongoQueryService, postgres PostgresQueryService, fac
 
 // Execute runs the health check. A store failure is reported in the result, not as an error.
 // The stores are pinged at the same time, so a slow store does not use up the other's deadline.
-func (u *CheckUseCase) Execute(ctx context.Context) StatusDTO {
+func (useCase *CheckUseCase) Execute(ctx context.Context) StatusDTO {
 	var mongoErr, postgresErr error
-	var wg sync.WaitGroup
-	wg.Go(func() { mongoErr = u.mongo.PingMongo(ctx) })
-	wg.Go(func() { postgresErr = u.postgres.PingPostgres(ctx) })
-	wg.Wait()
+	var waitGroup sync.WaitGroup
+	waitGroup.Go(func() { mongoErr = useCase.mongo.PingMongo(ctx) })
+	waitGroup.Go(func() { postgresErr = useCase.postgres.PingPostgres(ctx) })
+	waitGroup.Wait()
 
 	if mongoErr != nil {
-		u.logger.ErrorContext(ctx, "health check failed", "store", "mongo", "error", mongoErr)
+		useCase.logger.ErrorContext(ctx, "health check failed", "store", "mongo", "error", mongoErr)
 	}
 	if postgresErr != nil {
-		u.logger.ErrorContext(ctx, "health check failed", "store", "postgres", "error", postgresErr)
+		useCase.logger.ErrorContext(ctx, "health check failed", "store", "postgres", "error", postgresErr)
 	}
-	return u.factory.Create(mongoErr == nil, postgresErr == nil)
+	return useCase.factory.Create(mongoErr == nil, postgresErr == nil)
 }

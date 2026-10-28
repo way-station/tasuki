@@ -10,11 +10,11 @@ import (
 
 type fakeMongoQueryService struct{ err error }
 
-func (f fakeMongoQueryService) PingMongo(context.Context) error { return f.err }
+func (fake fakeMongoQueryService) PingMongo(context.Context) error { return fake.err }
 
 type fakePostgresQueryService struct{ err error }
 
-func (f fakePostgresQueryService) PingPostgres(context.Context) error { return f.err }
+func (fake fakePostgresQueryService) PingPostgres(context.Context) error { return fake.err }
 
 func TestCheckUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -33,13 +33,13 @@ func TestCheckUseCase(t *testing.T) {
 		{name: "postgres unreachable", postgresErr: down, wantMongo: true},
 		{name: "both unreachable", mongoErr: down, postgresErr: down},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			uc := NewCheckUseCase(fakeMongoQueryService{err: tt.mongoErr}, fakePostgresQueryService{err: tt.postgresErr}, StatusDTOFactory{}, logger)
-			got := uc.Execute(context.Background())
-			if got.Healthy() != tt.wantHealthy || got.MongoReachable() != tt.wantMongo || got.PostgresReachable() != tt.wantPostgres {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			useCase := NewCheckUseCase(fakeMongoQueryService{err: testCase.mongoErr}, fakePostgresQueryService{err: testCase.postgresErr}, StatusDTOFactory{}, logger)
+			got := useCase.Execute(context.Background())
+			if got.Healthy() != testCase.wantHealthy || got.MongoReachable() != testCase.wantMongo || got.PostgresReachable() != testCase.wantPostgres {
 				t.Errorf("Execute() healthy = %v, mongo = %v, postgres = %v, want %v, %v, %v",
-					got.Healthy(), got.MongoReachable(), got.PostgresReachable(), tt.wantHealthy, tt.wantMongo, tt.wantPostgres)
+					got.Healthy(), got.MongoReachable(), got.PostgresReachable(), testCase.wantHealthy, testCase.wantMongo, testCase.wantPostgres)
 			}
 		})
 	}
