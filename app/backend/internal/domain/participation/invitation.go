@@ -18,10 +18,10 @@ type Invitation struct {
 }
 
 // RaceID returns the race.
-func (i *Invitation) RaceID() shared.RaceID { return i.raceID }
+func (invitation *Invitation) RaceID() shared.RaceID { return invitation.raceID }
 
 // MemberID returns the invited roster member.
-func (i *Invitation) MemberID() shared.MemberID { return i.memberID }
+func (invitation *Invitation) MemberID() shared.MemberID { return invitation.memberID }
 
 // InvitationFactory assembles Invitation values.
 type InvitationFactory struct{}
@@ -62,30 +62,30 @@ type Attendance struct {
 }
 
 // RaceID returns the race.
-func (a *Attendance) RaceID() shared.RaceID { return a.raceID }
+func (attendance *Attendance) RaceID() shared.RaceID { return attendance.raceID }
 
 // MemberID returns the roster member.
-func (a *Attendance) MemberID() shared.MemberID { return a.memberID }
+func (attendance *Attendance) MemberID() shared.MemberID { return attendance.memberID }
 
 // Status returns the answer.
-func (a *Attendance) Status() AttendanceStatus { return a.status }
+func (attendance *Attendance) Status() AttendanceStatus { return attendance.status }
 
 // Change replaces the answer. It returns leftAttending = true when the answer changes away
 // from "attending": the caller then removes the member from the entry and the running order.
-func (a *Attendance) Change(to AttendanceStatus) (leftAttending bool, err error) {
-	if err := validStatus(to); err != nil {
+func (attendance *Attendance) Change(newStatus AttendanceStatus) (leftAttending bool, err error) {
+	if err := validStatus(newStatus); err != nil {
 		return false, err
 	}
-	if a.status == NotAttending {
+	if attendance.status == NotAttending {
 		return false, ErrAnswerFinal
 	}
-	leftAttending = a.status == Attending && to != Attending
-	a.status = to
+	leftAttending = attendance.status == Attending && newStatus != Attending
+	attendance.status = newStatus
 	return leftAttending, nil
 }
 
-func validStatus(s AttendanceStatus) error {
-	switch s {
+func validStatus(status AttendanceStatus) error {
+	switch status {
 	case Attending, NotAttending, Undecided:
 		return nil
 	}
@@ -122,7 +122,7 @@ type InvitationRepository interface {
 	Find(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) (*Invitation, error)
 	// ListByMember returns the member's invitations, for cancelling them when the member leaves.
 	ListByMember(ctx context.Context, memberID shared.MemberID) ([]*Invitation, error)
-	Save(ctx context.Context, i *Invitation) error
+	Save(ctx context.Context, invitation *Invitation) error
 	// Delete cancels the invitation; the attendance and the entry membership are deleted with it.
 	Delete(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) error
 }
@@ -130,5 +130,5 @@ type InvitationRepository interface {
 // AttendanceRepository stores attendance answers. Errors for missing ones wrap shared.ErrNotFound.
 type AttendanceRepository interface {
 	Find(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) (*Attendance, error)
-	Save(ctx context.Context, a *Attendance) error
+	Save(ctx context.Context, attendance *Attendance) error
 }

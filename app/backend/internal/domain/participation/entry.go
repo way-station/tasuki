@@ -21,40 +21,42 @@ type Entry struct {
 }
 
 // ID returns the entry's ID.
-func (e *Entry) ID() shared.EntryID { return e.id }
+func (entry *Entry) ID() shared.EntryID { return entry.id }
 
 // RaceID returns the race.
-func (e *Entry) RaceID() shared.RaceID { return e.raceID }
+func (entry *Entry) RaceID() shared.RaceID { return entry.raceID }
 
 // Name returns the entry name.
-func (e *Entry) Name() string { return e.name }
+func (entry *Entry) Name() string { return entry.name }
 
 // Members returns the entry's members.
-func (e *Entry) Members() []shared.MemberID { return slices.Clone(e.members) }
+func (entry *Entry) Members() []shared.MemberID { return slices.Clone(entry.members) }
 
 // Has reports whether the member is in the entry.
-func (e *Entry) Has(memberID shared.MemberID) bool { return slices.Contains(e.members, memberID) }
+func (entry *Entry) Has(memberID shared.MemberID) bool {
+	return slices.Contains(entry.members, memberID)
+}
 
 // Add puts a member in the entry. Only members whose answer is "attending" can be added.
 // Adding a member who is already in the entry does nothing.
-func (e *Entry) Add(memberID shared.MemberID, answer AttendanceStatus) error {
+func (entry *Entry) Add(memberID shared.MemberID, answer AttendanceStatus) error {
 	if answer != Attending {
 		return shared.NewValidationError("roster_member_id", `the member has not answered "attending"`)
 	}
-	if !e.Has(memberID) {
-		e.members = append(e.members, memberID)
+	if !entry.Has(memberID) {
+		entry.members = append(entry.members, memberID)
 	}
 	return nil
 }
 
 // Remove takes a member out of the entry and reports whether they were in it. The caller
 // then removes them from the running order.
-func (e *Entry) Remove(memberID shared.MemberID) bool {
-	i := slices.Index(e.members, memberID)
-	if i < 0 {
+func (entry *Entry) Remove(memberID shared.MemberID) bool {
+	index := slices.Index(entry.members, memberID)
+	if index < 0 {
 		return false
 	}
-	e.members = slices.Delete(e.members, i, i+1)
+	entry.members = slices.Delete(entry.members, index, index+1)
 	return true
 }
 
@@ -70,7 +72,7 @@ func NewEntryFactory(ids shared.IDGenerator) EntryFactory {
 
 // New returns a new, empty entry of the race. existing is the number of entries the race
 // already has; the MVP allows MaxEntriesPerRace.
-func (f EntryFactory) New(raceID shared.RaceID, name string, existing int) (*Entry, error) {
+func (factory EntryFactory) New(raceID shared.RaceID, name string, existing int) (*Entry, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, shared.NewValidationError("name", "is required")
@@ -78,11 +80,11 @@ func (f EntryFactory) New(raceID shared.RaceID, name string, existing int) (*Ent
 	if existing >= MaxEntriesPerRace {
 		return nil, shared.NewStateError("the race already has an entry")
 	}
-	return &Entry{id: shared.EntryID(f.ids.NewID()), raceID: raceID, name: name}, nil
+	return &Entry{id: shared.EntryID(factory.ids.NewID()), raceID: raceID, name: name}, nil
 }
 
 // Reconstruct returns an entry read from storage.
-func (f EntryFactory) Reconstruct(id shared.EntryID, raceID shared.RaceID, name string, members []shared.MemberID) *Entry {
+func (factory EntryFactory) Reconstruct(id shared.EntryID, raceID shared.RaceID, name string, members []shared.MemberID) *Entry {
 	return &Entry{id: id, raceID: raceID, name: name, members: slices.Clone(members)}
 }
 
@@ -91,5 +93,5 @@ func (f EntryFactory) Reconstruct(id shared.EntryID, raceID shared.RaceID, name 
 type EntryRepository interface {
 	FindByID(ctx context.Context, id shared.EntryID) (*Entry, error)
 	ListByRace(ctx context.Context, raceID shared.RaceID) ([]*Entry, error)
-	Save(ctx context.Context, e *Entry) error
+	Save(ctx context.Context, entry *Entry) error
 }
