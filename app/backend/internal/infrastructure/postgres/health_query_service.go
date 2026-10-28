@@ -19,6 +19,6 @@ func NewHealthQueryService(client *Client) *HealthQueryService {
 }
 
 // PingPostgres returns an error when PostgreSQL is unreachable.
-func (q *HealthQueryService) PingPostgres(ctx context.Context) error {
-	return q.client.Ping(ctx)
+func (queryService *HealthQueryService) PingPostgres(ctx context.Context) error {
+	return queryService.client.Ping(ctx)
 }

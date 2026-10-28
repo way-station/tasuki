@@ -12,8 +12,8 @@ type ValidationError struct {
 	Message string
 }
 
-func (e *ValidationError) Error() string {
-	return fmt.Sprintf("%s: %s", e.Field, e.Message)
+func (validationErr *ValidationError) Error() string {
+	return fmt.Sprintf("%s: %s", validationErr.Field, validationErr.Message)
 }
 
 // NewValidationError returns a ValidationError for field.
@@ -27,8 +27,8 @@ type StateError struct {
 	Message string
 }
 
-func (e *StateError) Error() string {
-	return e.Message
+func (stateErr *StateError) Error() string {
+	return stateErr.Message
 }
 
 // NewStateError returns a StateError.

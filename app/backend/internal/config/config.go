@@ -33,8 +33,8 @@ func Load() (Config, error) {
 }
 
 func getenv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
 	return fallback
 }

@@ -21,28 +21,28 @@ func Connect(ctx context.Context, url string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("connect postgres: %w", err)
 	}
-	c := &Client{pool: pool}
-	if err := c.Ping(ctx); err != nil {
+	client := &Client{pool: pool}
+	if err := client.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, err
 	}
-	return c, nil
+	return client, nil
 }
 
 // Ping checks that the database is reachable.
-func (c *Client) Ping(ctx context.Context) error {
-	if err := c.pool.Ping(ctx); err != nil {
+func (client *Client) Ping(ctx context.Context) error {
+	if err := client.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("ping postgres: %w", err)
 	}
 	return nil
 }
 
 // Pool returns the connection pool.
-func (c *Client) Pool() *pgxpool.Pool {
-	return c.pool
+func (client *Client) Pool() *pgxpool.Pool {
+	return client.pool
 }
 
 // Close closes every connection in the pool. It waits for connections in use to be released.
-func (c *Client) Close() {
-	c.pool.Close()
+func (client *Client) Close() {
+	client.pool.Close()
 }

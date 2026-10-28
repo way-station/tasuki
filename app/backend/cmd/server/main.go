@@ -38,18 +38,18 @@ func run(logger *slog.Logger) error {
 
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	db, err := mongodb.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
+	mongoClient, err := mongodb.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
 	if err != nil {
 		return err
 	}
-	pg, err := postgres.Connect(connectCtx, cfg.DatabaseURL)
+	postgresClient, err := postgres.Connect(connectCtx, cfg.DatabaseURL)
 	if err != nil {
-		_ = db.Close(connectCtx)
+		_ = mongoClient.Close(connectCtx)
 		return err
 	}
-	defer pg.Close()
+	defer postgresClient.Close()
 
-	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), postgres.NewHealthQueryService(pg), health.StatusDTOFactory{}, logger)
+	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
 	router := presentation.NewRouter(presentation.Controllers{
 		Health: controller.NewHealthController(check),
 	})
@@ -80,5 +80,5 @@ func run(logger *slog.Logger) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
-	return db.Close(shutdownCtx)
+	return mongoClient.Close(shutdownCtx)
 }

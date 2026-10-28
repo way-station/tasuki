@@ -157,6 +157,21 @@ Container files live in `infra/`, separated from the application code.
 - distroless has no shell or curl, so there is no `HEALTHCHECK` in the image. Health checks are left to the hosting platform via `GET /health`.
 - **The `dev` stage is for development only.** It adds golangci-lint, gopls, and Delve (pinned versions) on top of the same `golang` image used for the production build, so the Go version is the same in development and production.
 
+## Naming
+
+Names are descriptive, including method receivers (`func (client *Client) Ping`) and table-test variables (`testCase`). Only these may be shorter:
+
+| Name | Only for |
+| --- | --- |
+| `t` | `*testing.T` |
+| `w` | `http.ResponseWriter` |
+| `i` | the index of a loop of a few lines |
+| `ok`, `id` | they are words |
+
+- `r` is not used: `req` for `*http.Request`, `router` for a router.
+- Common abbreviations of three letters or more (`ctx`, `err`, `cfg`, `req`) are fine.
+- varnamelen in golangci-lint checks this. It does not see struct fields, or a short name used only on the line after its declaration (such as the receiver of a one-line method), so reviews still check those.
+
 ## Testing
 
 | Command | What it runs |
@@ -337,6 +352,21 @@ make down
 - ソースより先に `go.mod` / `go.sum` をコピーして依存を取得するので、依存が変わったときだけ再ダウンロードされます
 - distroless にはシェルも curl もないため、イメージに `HEALTHCHECK` は入れていません。ヘルスチェックは `GET /health` を使い、ホスティング先に任せます
 - **`dev` ステージは開発専用です。** 本番のビルドと同じ `golang` イメージに、golangci-lint、gopls、Delve（バージョン固定）を足したものです。開発と本番で Go のバージョンが揃います
+
+## 命名
+
+名前は説明的にする。メソッドのレシーバ（`func (client *Client) Ping`）とテーブルテストの変数（`testCase`）も同じ。短くてよいのは次だけです。
+
+| 名前 | 使ってよいところ |
+| --- | --- |
+| `t` | `*testing.T` |
+| `w` | `http.ResponseWriter` |
+| `i` | 数行のループの添字 |
+| `ok`、`id` | 単語なので |
+
+- `r` は使わない：`*http.Request` は `req`、ルーターは `router`
+- 3 文字以上のよくある略語（`ctx`、`err`、`cfg`、`req`）はよい
+- golangci-lint の varnamelen で確かめる。構造体のフィールドと、宣言の次の行でしか使わない短い名前（1 行のメソッドのレシーバなど）は検出できないので、レビューで確かめる
 
 ## テスト
 
