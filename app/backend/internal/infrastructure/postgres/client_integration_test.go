@@ -15,29 +15,29 @@ func TestConnect(t *testing.T) {
 	if raw == "" {
 		t.Skip("DATABASE_URL is not set")
 	}
-	u, err := url.Parse(raw)
+	databaseURL, err := url.Parse(raw)
 	if err != nil {
 		t.Fatalf("parse DATABASE_URL: %v", err)
 	}
-	u.Path = "/tasuki_test"
+	databaseURL.Path = "/tasuki_test"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c, err := Connect(ctx, u.String())
+	client, err := Connect(ctx, databaseURL.String())
 	if err != nil {
 		t.Fatalf("Connect: %v", err)
 	}
-	defer c.Close()
+	defer client.Close()
 
-	if err := c.Ping(ctx); err != nil {
+	if err := client.Ping(ctx); err != nil {
 		t.Fatalf("Ping: %v", err)
 	}
-	var db string
-	if err := c.Pool().QueryRow(ctx, "SELECT current_database()").Scan(&db); err != nil {
+	var databaseName string
+	if err := client.Pool().QueryRow(ctx, "SELECT current_database()").Scan(&databaseName); err != nil {
 		t.Fatalf("current_database: %v", err)
 	}
-	if db != "tasuki_test" {
-		t.Errorf("current_database() = %q, want %q", db, "tasuki_test")
+	if databaseName != "tasuki_test" {
+		t.Errorf("current_database() = %q, want %q", databaseName, "tasuki_test")
 	}
 }
