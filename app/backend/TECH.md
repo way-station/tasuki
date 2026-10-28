@@ -75,7 +75,7 @@ app/backend/
 - Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
 - Inside a layer, code is grouped per feature (for example `application/health/`).
-- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (implemented by `mongodb.HealthQueryService`).
+- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (`health.MongoQueryService` and `health.PostgresQueryService`, implemented by `mongodb.HealthQueryService` and `postgres.HealthQueryService`).
 
 Module path: `github.com/way-station/tasuki/app/backend`
 
@@ -178,7 +178,7 @@ Container files live in `infra/`, separated from the application code.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/health` | Pings the databases. `200 {"status":"ok"}` or `503` |
+| GET | `/health` | Pings MongoDB and PostgreSQL at the same time. `200` only when both are reachable, otherwise `503`; the body says which store is unreachable (`{"status":"error","mongo":"ok","postgres":"unreachable"}`) |
 
 ---
 
@@ -261,7 +261,7 @@ app/backend/
 - 更新はユースケースとリポジトリを通り、参照はユースケースとクエリサービスを通る
 - エンティティ、DTO、コマンドは、自分自身ではなくファクトリーが作る。エンティティと値オブジェクトの項目は公開しない
 - 層の中は機能ごとにまとめる（例：`application/health/`）
-- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`mongodb.HealthQueryService` が実装する）
+- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`health.MongoQueryService` と `health.PostgresQueryService`。`mongodb.HealthQueryService` と `postgres.HealthQueryService` が実装する）
 - すべて `internal/` 配下です。このモジュールの外から import されることは想定していません
 
 モジュールパス：`github.com/way-station/tasuki/app/backend`
@@ -365,6 +365,6 @@ make down
 
 | メソッド | パス | 説明 |
 | --- | --- | --- |
-| GET | `/health` | DB に ping します。`200 {"status":"ok"}` または `503` |
+| GET | `/health` | MongoDB と PostgreSQL に同時に ping します。両方に届くときだけ `200`、それ以外は `503`。どちらに届かないかを本文で返します（`{"status":"error","mongo":"ok","postgres":"unreachable"}`） |
 
 </details>
