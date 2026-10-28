@@ -31,11 +31,11 @@ type VisibilityPolicy struct{}
 
 // For returns what the viewer may see.
 // Members see only races they are invited to, until they answer "not attending".
-func (VisibilityPolicy) For(v Viewer) Visible {
-	if v.Organizer {
+func (VisibilityPolicy) For(viewer Viewer) Visible {
+	if viewer.Organizer {
 		return Visible{Race: true, Description: true, Deadline: true, RunningOrderSummary: true}
 	}
-	switch v.Answer {
+	switch viewer.Answer {
 	case NotAnswered, Undecided:
 		return Visible{Race: true, Description: true}
 	case Attending:
