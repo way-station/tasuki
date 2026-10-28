@@ -34,92 +34,94 @@ type DescriptionParams struct {
 
 // Description is a race description: a value object that always matches its race type.
 type Description struct {
-	p DescriptionParams
+	params DescriptionParams
 }
 
 // NewDescription validates the parts and returns the description.
-func NewDescription(p DescriptionParams) (Description, error) {
-	if p.RaceDate.IsZero() {
+func NewDescription(params DescriptionParams) (Description, error) {
+	if params.RaceDate.IsZero() {
 		return Description{}, shared.NewValidationError("race_date", "is required")
 	}
-	if p.Deadline.IsZero() {
+	if params.Deadline.IsZero() {
 		return Description{}, shared.NewValidationError("deadline", "is required")
 	}
-	switch p.Type {
+	switch params.Type {
 	case Distance:
-		if len(p.LegDistancesKm) == 0 {
+		if len(params.LegDistancesKm) == 0 {
 			return Description{}, shared.NewValidationError("leg_distances_km", "needs at least one leg")
 		}
-		for _, d := range p.LegDistancesKm {
-			if d <= 0 {
+		for _, distance := range params.LegDistancesKm {
+			if distance <= 0 {
 				return Description{}, shared.NewValidationError("leg_distances_km", "must be greater than 0")
 			}
 		}
-		if p.TimeLimitMinutes != 0 || p.LapDistanceKm != 0 {
+		if params.TimeLimitMinutes != 0 || params.LapDistanceKm != 0 {
 			return Description{}, shared.NewValidationError("type", "a distance race has no time limit or lap distance")
 		}
-		if p.TargetLaps != nil {
+		if params.TargetLaps != nil {
 			return Description{}, shared.NewValidationError("target", "a distance race has a total time target")
 		}
 	case Time:
-		if p.TimeLimitMinutes <= 0 {
+		if params.TimeLimitMinutes <= 0 {
 			return Description{}, shared.NewValidationError("time_limit_minutes", "must be greater than 0")
 		}
-		if p.LapDistanceKm <= 0 {
+		if params.LapDistanceKm <= 0 {
 			return Description{}, shared.NewValidationError("lap_distance_km", "must be greater than 0")
 		}
-		if len(p.LegDistancesKm) != 0 {
+		if len(params.LegDistancesKm) != 0 {
 			return Description{}, shared.NewValidationError("type", "a time race has no leg distances")
 		}
-		if p.TargetTotalTime != nil {
+		if params.TargetTotalTime != nil {
 			return Description{}, shared.NewValidationError("target", "a time race has a laps target")
 		}
-		if p.TargetLaps != nil && *p.TargetLaps <= 0 {
+		if params.TargetLaps != nil && *params.TargetLaps <= 0 {
 			return Description{}, shared.NewValidationError("target", "laps must be greater than 0")
 		}
 	default:
 		return Description{}, shared.NewValidationError("type", "must be distance or time")
 	}
-	p.LegDistancesKm = slices.Clone(p.LegDistancesKm)
-	return Description{p: p}, nil
+	params.LegDistancesKm = slices.Clone(params.LegDistancesKm)
+	return Description{params: params}, nil
 }
 
 // Type returns the race type.
-func (d Description) Type() Type { return d.p.Type }
+func (description Description) Type() Type { return description.params.Type }
 
 // RaceDate returns the race date.
-func (d Description) RaceDate() shared.Date { return d.p.RaceDate }
+func (description Description) RaceDate() shared.Date { return description.params.RaceDate }
 
 // Deadline returns the deadline. Only organizers may see it (ADR-0006).
-func (d Description) Deadline() time.Time { return d.p.Deadline }
+func (description Description) Deadline() time.Time { return description.params.Deadline }
 
 // Text returns the free text.
-func (d Description) Text() string { return d.p.Text }
+func (description Description) Text() string { return description.params.Text }
 
 // LegDistancesKm returns the distance of each leg (distance races).
-func (d Description) LegDistancesKm() []float64 { return slices.Clone(d.p.LegDistancesKm) }
+func (description Description) LegDistancesKm() []float64 {
+	return slices.Clone(description.params.LegDistancesKm)
+}
 
 // LegCount returns the number of legs of a distance race, and 0 for a time race.
-func (d Description) LegCount() int { return len(d.p.LegDistancesKm) }
+func (description Description) LegCount() int { return len(description.params.LegDistancesKm) }
 
 // TimeLimitMinutes returns the time limit (time races).
-func (d Description) TimeLimitMinutes() int { return d.p.TimeLimitMinutes }
+func (description Description) TimeLimitMinutes() int { return description.params.TimeLimitMinutes }
 
 // LapDistanceKm returns the distance of one lap (time races).
-func (d Description) LapDistanceKm() float64 { return d.p.LapDistanceKm }
+func (description Description) LapDistanceKm() float64 { return description.params.LapDistanceKm }
 
 // TargetTotalTime returns the target total time of a distance race, if set.
-func (d Description) TargetTotalTime() (shared.TotalTime, bool) {
-	if d.p.TargetTotalTime == nil {
+func (description Description) TargetTotalTime() (shared.TotalTime, bool) {
+	if description.params.TargetTotalTime == nil {
 		return shared.TotalTime{}, false
 	}
-	return *d.p.TargetTotalTime, true
+	return *description.params.TargetTotalTime, true
 }
 
 // TargetLaps returns the target laps of a time race, if set.
-func (d Description) TargetLaps() (int, bool) {
-	if d.p.TargetLaps == nil {
+func (description Description) TargetLaps() (int, bool) {
+	if description.params.TargetLaps == nil {
 		return 0, false
 	}
-	return *d.p.TargetLaps, true
+	return *description.params.TargetLaps, true
 }
