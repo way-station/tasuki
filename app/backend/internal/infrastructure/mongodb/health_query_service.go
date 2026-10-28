@@ -6,12 +6,12 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 )
 
-// HealthQueryService implements health.QueryService with the MongoDB client.
+// HealthQueryService implements health.MongoQueryService with the MongoDB client.
 type HealthQueryService struct {
 	client *Client
 }
 
-var _ health.QueryService = (*HealthQueryService)(nil)
+var _ health.MongoQueryService = (*HealthQueryService)(nil)
 
 // NewHealthQueryService returns a HealthQueryService that uses client.
 func NewHealthQueryService(client *Client) *HealthQueryService {

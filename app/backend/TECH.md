@@ -59,7 +59,7 @@ app/backend/
 │  ├─ presentation/       # routing (chi) and controllers (`controller/`; they implement the OpenAPI-generated interface)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
-│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, PostgreSQL later)
+│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
@@ -69,7 +69,7 @@ app/backend/
 - Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
 - Inside a layer, code is grouped per feature (for example `application/health/`).
-- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (implemented by `mongodb.HealthQueryService`).
+- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (`health.MongoQueryService` and `health.PostgresQueryService`, implemented by `mongodb.HealthQueryService` and `postgres.HealthQueryService`).
 
 Module path: `github.com/way-station/tasuki/app/backend`
 
@@ -81,9 +81,11 @@ The application reads **only environment variables**; it never loads `.env` itse
 | --- | --- | --- | --- |
 | `MONGODB_URI` | yes | — | MongoDB connection string |
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string. Pool sizes go in its parameters (`pool_max_conns`, `pool_min_conns`, `pool_max_conn_lifetime`, `pool_max_conn_idle_time`; ADR-0015) |
 | `PORT` | no | `8080` | HTTP port |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
+| `POSTGRES_PORT` | no | `5432` | Host port of the PostgreSQL container (`infra/.env`, compose only) |
 
 Who provides the values:
 
@@ -101,7 +103,7 @@ Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compo
 
 ### Option A: Dev Container (recommended)
 
-1. If host ports 27017 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
+1. If host ports 27017 / 5432 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
 2. Open `app/backend` in VS Code and run **Dev Containers: Reopen in Container** (JetBrains: open `.devcontainer/devcontainer.json` via Gateway).
 3. In the container terminal:
 
@@ -170,7 +172,7 @@ Container files live in `infra/`, separated from the application code.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/health` | Pings the databases. `200 {"status":"ok"}` or `503` |
+| GET | `/health` | Pings MongoDB and PostgreSQL at the same time. `200` only when both are reachable, otherwise `503`; the body says which store is unreachable (`{"status":"error","mongo":"ok","postgres":"unreachable"}`) |
 
 ---
 
@@ -238,7 +240,7 @@ app/backend/
 │  ├─ presentation/    # ルーティング（chi）とコントローラー（`controller/`。OpenAPI から生成したインターフェースを実装する）
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
-│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、PostgreSQL は後で）
+│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
 ```
@@ -247,7 +249,7 @@ app/backend/
 - 更新はユースケースとリポジトリを通り、参照はユースケースとクエリサービスを通る
 - エンティティ、DTO、コマンドは、自分自身ではなくファクトリーが作る。エンティティと値オブジェクトの項目は公開しない
 - 層の中は機能ごとにまとめる（例：`application/health/`）
-- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`mongodb.HealthQueryService` が実装する）
+- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`health.MongoQueryService` と `health.PostgresQueryService`。`mongodb.HealthQueryService` と `postgres.HealthQueryService` が実装する）
 - すべて `internal/` 配下です。このモジュールの外から import されることは想定していません
 
 モジュールパス：`github.com/way-station/tasuki/app/backend`
@@ -260,9 +262,11 @@ app/backend/
 | --- | --- | --- | --- |
 | `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
+| `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列。プールの大きさはそのパラメータで指定する（`pool_max_conns`、`pool_min_conns`、`pool_max_conn_lifetime`、`pool_max_conn_idle_time`、ADR-0015） |
 | `PORT` | — | `8080` | HTTP ポート |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
+| `POSTGRES_PORT` | — | `5432` | PostgreSQL コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 
 値を渡すもの：
 
@@ -280,7 +284,7 @@ app/backend/
 
 ### 方法 A：Dev Container（おすすめ）
 
-1. ホストの 27017 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
+1. ホストの 27017 / 5432 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
 2. VS Code で `app/backend` を開き、**Dev Containers: Reopen in Container** を実行する（JetBrains の場合は Gateway から `.devcontainer/devcontainer.json` を開く）
 3. コンテナのターミナルで：
 
@@ -349,6 +353,6 @@ make down
 
 | メソッド | パス | 説明 |
 | --- | --- | --- |
-| GET | `/health` | DB に ping します。`200 {"status":"ok"}` または `503` |
+| GET | `/health` | MongoDB と PostgreSQL に同時に ping します。両方に届くときだけ `200`、それ以外は `503`。どちらに届かないかを本文で返します（`{"status":"error","mongo":"ok","postgres":"unreachable"}`） |
 
 </details>
