@@ -46,6 +46,10 @@ jobs:
     services:
       mongo:
         image: mongo:8.0
+        # mongo:8.0 refuses to start on Linux 6.19–7.0.13 (SERVER-121912), which the runner
+        # images use since 2026-10-25. Keeping rseq on in glibc avoids the TCMalloc bug.
+        env:
+          GLIBC_TUNABLES: glibc.pthread.rseq=1
         ports:
           - 27017:27017
         options: >-
