@@ -20,39 +20,41 @@ type HistoryEntry struct {
 }
 
 // RunningOrderID returns the running order.
-func (h *HistoryEntry) RunningOrderID() shared.RunningOrderID { return h.runningOrderID }
+func (historyEntry *HistoryEntry) RunningOrderID() shared.RunningOrderID {
+	return historyEntry.runningOrderID
+}
 
 // RaceID returns the race.
-func (h *HistoryEntry) RaceID() shared.RaceID { return h.raceID }
+func (historyEntry *HistoryEntry) RaceID() shared.RaceID { return historyEntry.raceID }
 
 // EntryID returns the entry.
-func (h *HistoryEntry) EntryID() shared.EntryID { return h.entryID }
+func (historyEntry *HistoryEntry) EntryID() shared.EntryID { return historyEntry.entryID }
 
 // ChangedBy returns the organizer's account.
-func (h *HistoryEntry) ChangedBy() shared.AccountID { return h.changedBy }
+func (historyEntry *HistoryEntry) ChangedBy() shared.AccountID { return historyEntry.changedBy }
 
 // ChangedAt returns when the running order was saved.
-func (h *HistoryEntry) ChangedAt() time.Time { return h.changedAt }
+func (historyEntry *HistoryEntry) ChangedAt() time.Time { return historyEntry.changedAt }
 
 // Status returns the state after the save.
-func (h *HistoryEntry) Status() Status { return h.status }
+func (historyEntry *HistoryEntry) Status() Status { return historyEntry.status }
 
 // Legs returns the legs after the save.
-func (h *HistoryEntry) Legs() []Leg { return append([]Leg(nil), h.legs...) }
+func (historyEntry *HistoryEntry) Legs() []Leg { return append([]Leg(nil), historyEntry.legs...) }
 
 // HistoryFactory assembles HistoryEntry values.
 type HistoryFactory struct{}
 
 // Snapshot returns the history entry for the running order as it is now.
-func (HistoryFactory) Snapshot(o *RunningOrder, raceID shared.RaceID, by shared.AccountID, at time.Time) *HistoryEntry {
+func (HistoryFactory) Snapshot(runningOrder *RunningOrder, raceID shared.RaceID, changedBy shared.AccountID, changedAt time.Time) *HistoryEntry {
 	return &HistoryEntry{
-		runningOrderID: o.id,
+		runningOrderID: runningOrder.id,
 		raceID:         raceID,
-		entryID:        o.entryID,
-		changedBy:      by,
-		changedAt:      at,
-		status:         o.status,
-		legs:           o.Legs(),
+		entryID:        runningOrder.entryID,
+		changedBy:      changedBy,
+		changedAt:      changedAt,
+		status:         runningOrder.status,
+		legs:           runningOrder.Legs(),
 	}
 }
 
@@ -61,12 +63,12 @@ type Repository interface {
 	FindByEntry(ctx context.Context, entryID shared.EntryID) (*RunningOrder, error)
 	// Save inserts or updates the running order. An update stores it only if the stored
 	// version is LoadedVersion, and returns shared.ErrVersionConflict otherwise.
-	Save(ctx context.Context, o *RunningOrder) error
+	Save(ctx context.Context, runningOrder *RunningOrder) error
 }
 
 // HistoryRepository appends history entries.
 type HistoryRepository interface {
-	Append(ctx context.Context, h *HistoryEntry) error
+	Append(ctx context.Context, historyEntry *HistoryEntry) error
 }
 
 // Viewer is who is looking at a running order.
@@ -80,9 +82,9 @@ type VisibilityPolicy struct{}
 
 // CanSee reports whether the viewer may see a running order in the given state:
 // drafts only organizers; confirmed ones organizers and members who answered "attending".
-func (VisibilityPolicy) CanSee(v Viewer, s Status) bool {
-	if v.Organizer {
+func (VisibilityPolicy) CanSee(viewer Viewer, status Status) bool {
+	if viewer.Organizer {
 		return true
 	}
-	return s == Confirmed && v.Attending
+	return status == Confirmed && viewer.Attending
 }

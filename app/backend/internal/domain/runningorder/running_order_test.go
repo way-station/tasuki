@@ -17,86 +17,89 @@ var members = []shared.MemberID{"a", "b", "c"}
 func runner(id shared.MemberID) *shared.MemberID { return &id }
 
 func assign(runners ...*shared.MemberID) []Assignment {
-	as := make([]Assignment, len(runners))
-	for i, r := range runners {
-		as[i] = Assignment{Number: i + 1, Runner: r}
+	assignments := make([]Assignment, len(runners))
+	for i, runnerID := range runners {
+		assignments[i] = Assignment{Number: i + 1, Runner: runnerID}
 	}
-	return as
+	return assignments
 }
 
-func runners(o *RunningOrder) []string {
+func runners(runningOrder *RunningOrder) []string {
 	var got []string
-	for _, l := range o.Legs() {
-		r, ok := l.Runner()
+	for _, leg := range runningOrder.Legs() {
+		runnerID, ok := leg.Runner()
 		if !ok {
-			r = "-"
+			runnerID = "-"
 		}
-		got = append(got, string(r))
+		got = append(got, string(runnerID))
 	}
 	return got
 }
 
-func isValidation(err error) bool { var ve *shared.ValidationError; return errors.As(err, &ve) }
+func isValidation(err error) bool {
+	var validationErr *shared.ValidationError
+	return errors.As(err, &validationErr)
+}
 
-func newConfirmed(t *testing.T, shape Shape, as []Assignment) *RunningOrder {
+func newConfirmed(t *testing.T, shape Shape, assignments []Assignment) *RunningOrder {
 	t.Helper()
-	o, err := NewFactory(fixedIDs{}).New("e1", as, shape, members)
+	runningOrder, err := NewFactory(fixedIDs{}).New("e1", assignments, shape, members)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := o.Confirm(0); err != nil {
+	if err := runningOrder.Confirm(0); err != nil {
 		t.Fatal(err)
 	}
-	return o
+	return runningOrder
 }
 
 func TestNewValidatesLegs(t *testing.T) {
-	f := NewFactory(fixedIDs{})
+	factory := NewFactory(fixedIDs{})
 	distance3 := Shape{LegCount: 3}
 	time := Shape{TimeBased: true}
 
 	tests := []struct {
-		name    string
-		shape   Shape
-		as      []Assignment
-		wantErr bool
+		name        string
+		shape       Shape
+		assignments []Assignment
+		wantErr     bool
 	}{
-		{name: "distance, all legs", shape: distance3, as: assign(runner("a"), nil, runner("a"))},
-		{name: "distance, too few legs", shape: distance3, as: assign(runner("a")), wantErr: true},
-		{name: "time, any number of legs", shape: time, as: assign(runner("a"), runner("b"), runner("a"), runner("c"))},
+		{name: "distance, all legs", shape: distance3, assignments: assign(runner("a"), nil, runner("a"))},
+		{name: "distance, too few legs", shape: distance3, assignments: assign(runner("a")), wantErr: true},
+		{name: "time, any number of legs", shape: time, assignments: assign(runner("a"), runner("b"), runner("a"), runner("c"))},
 		{name: "time, no legs", shape: time, wantErr: true},
-		{name: "gap in numbers", shape: time, as: []Assignment{{Number: 1}, {Number: 3}}, wantErr: true},
-		{name: "runner not in the entry", shape: time, as: assign(runner("z")), wantErr: true},
+		{name: "gap in numbers", shape: time, assignments: []Assignment{{Number: 1}, {Number: 3}}, wantErr: true},
+		{name: "runner not in the entry", shape: time, assignments: assign(runner("z")), wantErr: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := f.New("e1", tt.as, tt.shape, members)
-			if tt.wantErr != isValidation(err) {
-				t.Errorf("New() error = %v, want a ValidationError: %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := factory.New("e1", testCase.assignments, testCase.shape, members)
+			if testCase.wantErr != isValidation(err) {
+				t.Errorf("New() error = %v, want a ValidationError: %v", err, testCase.wantErr)
 			}
 		})
 	}
 }
 
 func TestConfirm(t *testing.T) {
-	o, err := NewFactory(fixedIDs{}).New("e1", assign(runner("a"), nil), Shape{LegCount: 2}, members)
+	runningOrder, err := NewFactory(fixedIDs{}).New("e1", assign(runner("a"), nil), Shape{LegCount: 2}, members)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := o.Confirm(0); !isValidation(err) {
+	if err := runningOrder.Confirm(0); !isValidation(err) {
 		t.Errorf("Confirm() with an empty leg = %v, want a ValidationError", err)
 	}
-	if _, err := o.Replace(assign(runner("a"), runner("b")), Shape{LegCount: 2}, members, 0); err != nil {
+	if _, err := runningOrder.Replace(assign(runner("a"), runner("b")), Shape{LegCount: 2}, members, 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := o.Confirm(0); !errors.Is(err, shared.ErrVersionConflict) {
+	if err := runningOrder.Confirm(0); !errors.Is(err, shared.ErrVersionConflict) {
 		t.Errorf("Confirm(stale version) = %v, want ErrVersionConflict", err)
 	}
-	if err := o.Confirm(1); err != nil || o.Status() != Confirmed {
-		t.Errorf("Confirm() = %v, status %s", err, o.Status())
+	if err := runningOrder.Confirm(1); err != nil || runningOrder.Status() != Confirmed {
+		t.Errorf("Confirm() = %v, status %s", err, runningOrder.Status())
 	}
-	var se *shared.StateError
-	if err := o.Confirm(2); !errors.As(err, &se) {
+	var stateErr *shared.StateError
+	if err := runningOrder.Confirm(2); !errors.As(err, &stateErr) {
 		t.Errorf("Confirm() twice = %v, want a StateError", err)
 	}
 }
@@ -112,17 +115,17 @@ func TestReplaceLapLoss(t *testing.T) {
 		{name: "fewer legs loses laps", next: assign(runner("a"), runner("b"), runner("b")), wantLost: []shared.MemberID{"a"}},
 		{name: "removed runner loses laps", next: assign(runner("a"), runner("a"), nil), wantLost: []shared.MemberID{"b"}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := newConfirmed(t, shape, assign(runner("a"), runner("a"), runner("b")))
-			lost, err := o.Replace(tt.next, shape, members, o.Version())
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			runningOrder := newConfirmed(t, shape, assign(runner("a"), runner("a"), runner("b")))
+			lost, err := runningOrder.Replace(testCase.next, shape, members, runningOrder.Version())
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !slices.Equal(lost, tt.wantLost) {
-				t.Errorf("lost = %v, want %v", lost, tt.wantLost)
+			if !slices.Equal(lost, testCase.wantLost) {
+				t.Errorf("lost = %v, want %v", lost, testCase.wantLost)
 			}
-			if o.Status() != Confirmed {
+			if runningOrder.Status() != Confirmed {
 				t.Error("a confirmed running order must stay confirmed")
 			}
 		})
@@ -135,52 +138,52 @@ func TestReplaceLapLoss(t *testing.T) {
 }
 
 func TestAdjustTo(t *testing.T) {
-	o := newConfirmed(t, Shape{LegCount: 3}, assign(runner("a"), runner("b"), runner("c")))
-	lost := o.AdjustTo(Shape{LegCount: 2})
-	if got := runners(o); !slices.Equal(got, []string{"a", "b"}) || !slices.Equal(lost, []shared.MemberID{"c"}) {
+	runningOrder := newConfirmed(t, Shape{LegCount: 3}, assign(runner("a"), runner("b"), runner("c")))
+	lost := runningOrder.AdjustTo(Shape{LegCount: 2})
+	if got := runners(runningOrder); !slices.Equal(got, []string{"a", "b"}) || !slices.Equal(lost, []shared.MemberID{"c"}) {
 		t.Errorf("fewer legs: legs %v, lost %v", got, lost)
 	}
-	lost = o.AdjustTo(Shape{LegCount: 4})
-	if got := runners(o); !slices.Equal(got, []string{"a", "b", "-", "-"}) || lost != nil {
+	lost = runningOrder.AdjustTo(Shape{LegCount: 4})
+	if got := runners(runningOrder); !slices.Equal(got, []string{"a", "b", "-", "-"}) || lost != nil {
 		t.Errorf("more legs: legs %v, lost %v", got, lost)
 	}
-	if lost := o.AdjustTo(Shape{TimeBased: true}); lost != nil || len(o.Legs()) != 4 {
+	if lost := runningOrder.AdjustTo(Shape{TimeBased: true}); lost != nil || len(runningOrder.Legs()) != 4 {
 		t.Error("distance → time keeps the legs")
 	}
-	if !o.HasEmptyLegs() || o.Status() != Confirmed {
+	if !runningOrder.HasEmptyLegs() || runningOrder.Status() != Confirmed {
 		t.Error("the order stays confirmed with empty legs")
 	}
 }
 
 func TestRemoveRunner(t *testing.T) {
-	o := newConfirmed(t, Shape{TimeBased: true}, assign(runner("a"), runner("b"), runner("a")))
-	lost := o.RemoveRunner("a")
-	if got := runners(o); !slices.Equal(got, []string{"-", "b", "-"}) || !slices.Equal(lost, []shared.MemberID{"a"}) {
+	runningOrder := newConfirmed(t, Shape{TimeBased: true}, assign(runner("a"), runner("b"), runner("a")))
+	lost := runningOrder.RemoveRunner("a")
+	if got := runners(runningOrder); !slices.Equal(got, []string{"-", "b", "-"}) || !slices.Equal(lost, []shared.MemberID{"a"}) {
 		t.Errorf("legs %v, lost %v", got, lost)
 	}
-	if lost := o.RemoveRunner("z"); lost != nil {
+	if lost := runningOrder.RemoveRunner("z"); lost != nil {
 		t.Errorf("removing a non-runner: lost %v", lost)
 	}
 }
 
 func TestLoadedVersion(t *testing.T) {
-	o := NewFactory(fixedIDs{}).Reconstruct("o1", "e1", Confirmed, 4, assign(runner("a"), runner("b")))
-	o.RemoveRunner("a")
-	o.AdjustTo(Shape{LegCount: 3})
-	if o.Version() != 6 || o.LoadedVersion() != 4 {
-		t.Errorf("Version() = %d, LoadedVersion() = %d, want 6 and 4", o.Version(), o.LoadedVersion())
+	runningOrder := NewFactory(fixedIDs{}).Reconstruct("o1", "e1", Confirmed, 4, assign(runner("a"), runner("b")))
+	runningOrder.RemoveRunner("a")
+	runningOrder.AdjustTo(Shape{LegCount: 3})
+	if runningOrder.Version() != 6 || runningOrder.LoadedVersion() != 4 {
+		t.Errorf("Version() = %d, LoadedVersion() = %d, want 6 and 4", runningOrder.Version(), runningOrder.LoadedVersion())
 	}
 }
 
 func TestVisibilityPolicy(t *testing.T) {
-	p := VisibilityPolicy{}
-	if !p.CanSee(Viewer{Organizer: true}, Draft) {
+	policy := VisibilityPolicy{}
+	if !policy.CanSee(Viewer{Organizer: true}, Draft) {
 		t.Error("organizers see drafts")
 	}
-	if p.CanSee(Viewer{Attending: true}, Draft) {
+	if policy.CanSee(Viewer{Attending: true}, Draft) {
 		t.Error("members do not see drafts")
 	}
-	if !p.CanSee(Viewer{Attending: true}, Confirmed) || p.CanSee(Viewer{}, Confirmed) {
+	if !policy.CanSee(Viewer{Attending: true}, Confirmed) || policy.CanSee(Viewer{}, Confirmed) {
 		t.Error("only attending members see confirmed orders")
 	}
 }

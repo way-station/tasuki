@@ -30,14 +30,14 @@ type Leg struct {
 }
 
 // Number returns the leg number, from 1.
-func (l Leg) Number() int { return l.number }
+func (leg Leg) Number() int { return leg.number }
 
 // Runner returns the runner, and false for an empty leg.
-func (l Leg) Runner() (shared.MemberID, bool) {
-	if l.runner == nil {
+func (leg Leg) Runner() (shared.MemberID, bool) {
+	if leg.runner == nil {
 		return "", false
 	}
-	return *l.runner, true
+	return *leg.runner, true
 }
 
 // Assignment is a leg as an organizer sends it: a leg number and a runner, or nil for empty.
@@ -57,154 +57,154 @@ type RunningOrder struct {
 }
 
 // ID returns the running order's ID.
-func (o *RunningOrder) ID() shared.RunningOrderID { return o.id }
+func (runningOrder *RunningOrder) ID() shared.RunningOrderID { return runningOrder.id }
 
 // EntryID returns the entry.
-func (o *RunningOrder) EntryID() shared.EntryID { return o.entryID }
+func (runningOrder *RunningOrder) EntryID() shared.EntryID { return runningOrder.entryID }
 
 // Status returns draft or confirmed.
-func (o *RunningOrder) Status() Status { return o.status }
+func (runningOrder *RunningOrder) Status() Status { return runningOrder.status }
 
 // Version returns the version used to detect concurrent edits.
-func (o *RunningOrder) Version() int { return o.version }
+func (runningOrder *RunningOrder) Version() int { return runningOrder.version }
 
 // LoadedVersion returns the version the running order was read with. Repositories store it
 // only if the stored version is still this one.
-func (o *RunningOrder) LoadedVersion() int { return o.loaded }
+func (runningOrder *RunningOrder) LoadedVersion() int { return runningOrder.loaded }
 
 // Legs returns the legs in order.
-func (o *RunningOrder) Legs() []Leg { return slices.Clone(o.legs) }
+func (runningOrder *RunningOrder) Legs() []Leg { return slices.Clone(runningOrder.legs) }
 
 // HasEmptyLegs reports whether some leg has no runner.
-func (o *RunningOrder) HasEmptyLegs() bool {
-	return slices.ContainsFunc(o.legs, func(l Leg) bool { return l.runner == nil })
+func (runningOrder *RunningOrder) HasEmptyLegs() bool {
+	return slices.ContainsFunc(runningOrder.legs, func(leg Leg) bool { return leg.runner == nil })
 }
 
 // Replace sets all the legs, as an organizer saves them. A confirmed running order stays
 // confirmed. It returns the runners who lose their laps for the race: in a confirmed running
 // order, the runners whose number of legs went down. Moving a runner to another leg keeps
 // their laps.
-func (o *RunningOrder) Replace(as []Assignment, shape Shape, entryMembers []shared.MemberID, version int) ([]shared.MemberID, error) {
-	if version != o.version {
+func (runningOrder *RunningOrder) Replace(assignments []Assignment, shape Shape, entryMembers []shared.MemberID, version int) ([]shared.MemberID, error) {
+	if version != runningOrder.version {
 		return nil, shared.ErrVersionConflict
 	}
-	legs, err := buildLegs(as, shape, entryMembers)
+	legs, err := buildLegs(assignments, shape, entryMembers)
 	if err != nil {
 		return nil, err
 	}
-	return o.setLegs(legs), nil
+	return runningOrder.setLegs(legs), nil
 }
 
 // Confirm confirms the running order. Every leg needs a runner.
-func (o *RunningOrder) Confirm(version int) error {
-	if version != o.version {
+func (runningOrder *RunningOrder) Confirm(version int) error {
+	if version != runningOrder.version {
 		return shared.ErrVersionConflict
 	}
-	if o.status == Confirmed {
+	if runningOrder.status == Confirmed {
 		return shared.NewStateError("the running order is already confirmed")
 	}
-	if o.HasEmptyLegs() {
+	if runningOrder.HasEmptyLegs() {
 		return shared.NewValidationError("legs", "every leg needs a runner")
 	}
-	o.status = Confirmed
-	o.version++
+	runningOrder.status = Confirmed
+	runningOrder.version++
 	return nil
 }
 
 // AdjustTo changes the legs after the race type or the number of legs changed. A distance
 // race drops the last legs or adds empty legs at the end; a time race keeps the legs.
 // It returns the runners who lose their laps, as Replace does.
-func (o *RunningOrder) AdjustTo(shape Shape) []shared.MemberID {
-	if shape.TimeBased || len(o.legs) == shape.LegCount {
+func (runningOrder *RunningOrder) AdjustTo(shape Shape) []shared.MemberID {
+	if shape.TimeBased || len(runningOrder.legs) == shape.LegCount {
 		return nil
 	}
-	legs := slices.Clone(o.legs)
+	legs := slices.Clone(runningOrder.legs)
 	if len(legs) > shape.LegCount {
 		legs = legs[:shape.LegCount]
 	}
-	for n := len(legs) + 1; n <= shape.LegCount; n++ {
-		legs = append(legs, Leg{number: n})
+	for number := len(legs) + 1; number <= shape.LegCount; number++ {
+		legs = append(legs, Leg{number: number})
 	}
-	return o.setLegs(legs)
+	return runningOrder.setLegs(legs)
 }
 
 // RemoveRunner empties every leg the member runs, when they leave the entry. It returns
 // the runners who lose their laps, as Replace does.
-func (o *RunningOrder) RemoveRunner(memberID shared.MemberID) []shared.MemberID {
-	legs := slices.Clone(o.legs)
-	for i, l := range legs {
-		if l.runner != nil && *l.runner == memberID {
+func (runningOrder *RunningOrder) RemoveRunner(memberID shared.MemberID) []shared.MemberID {
+	legs := slices.Clone(runningOrder.legs)
+	for i, leg := range legs {
+		if leg.runner != nil && *leg.runner == memberID {
 			legs[i].runner = nil
 		}
 	}
-	return o.setLegs(legs)
+	return runningOrder.setLegs(legs)
 }
 
 // setLegs replaces the legs and returns, for a confirmed running order, the runners whose
 // number of legs went down. The version goes up when anything changed.
-func (o *RunningOrder) setLegs(legs []Leg) []shared.MemberID {
-	if slices.EqualFunc(o.legs, legs, sameLeg) {
+func (runningOrder *RunningOrder) setLegs(legs []Leg) []shared.MemberID {
+	if slices.EqualFunc(runningOrder.legs, legs, sameLeg) {
 		return nil
 	}
 	var lost []shared.MemberID
-	if o.status == Confirmed {
-		before, after := countLegs(o.legs), countLegs(legs)
-		for _, l := range o.legs {
-			if l.runner == nil {
+	if runningOrder.status == Confirmed {
+		before, after := countLegs(runningOrder.legs), countLegs(legs)
+		for _, leg := range runningOrder.legs {
+			if leg.runner == nil {
 				continue
 			}
-			id := *l.runner
+			id := *leg.runner
 			if after[id] < before[id] && !slices.Contains(lost, id) {
 				lost = append(lost, id)
 			}
 		}
 	}
-	o.legs = legs
-	o.version++
+	runningOrder.legs = legs
+	runningOrder.version++
 	return lost
 }
 
-func sameLeg(a, b Leg) bool {
-	if a.number != b.number || (a.runner == nil) != (b.runner == nil) {
+func sameLeg(first, second Leg) bool {
+	if first.number != second.number || (first.runner == nil) != (second.runner == nil) {
 		return false
 	}
-	return a.runner == nil || *a.runner == *b.runner
+	return first.runner == nil || *first.runner == *second.runner
 }
 
 func countLegs(legs []Leg) map[shared.MemberID]int {
-	n := map[shared.MemberID]int{}
-	for _, l := range legs {
-		if l.runner != nil {
-			n[*l.runner]++
+	counts := map[shared.MemberID]int{}
+	for _, leg := range legs {
+		if leg.runner != nil {
+			counts[*leg.runner]++
 		}
 	}
-	return n
+	return counts
 }
 
 // buildLegs validates the assignments: distance races have exactly one leg per leg
 // distance; time races have one or more legs; legs are numbered from 1 without gaps; runners
 // are entry members.
-func buildLegs(as []Assignment, shape Shape, entryMembers []shared.MemberID) ([]Leg, error) {
-	if !shape.TimeBased && len(as) != shape.LegCount {
+func buildLegs(assignments []Assignment, shape Shape, entryMembers []shared.MemberID) ([]Leg, error) {
+	if !shape.TimeBased && len(assignments) != shape.LegCount {
 		return nil, shared.NewValidationError("legs", "a distance race needs one leg per leg distance")
 	}
-	if len(as) == 0 {
+	if len(assignments) == 0 {
 		return nil, shared.NewValidationError("legs", "needs at least one leg")
 	}
-	legs := make([]Leg, len(as))
-	for i, a := range as {
-		if a.Number != i+1 {
+	legs := make([]Leg, len(assignments))
+	for i, assignment := range assignments {
+		if assignment.Number != i+1 {
 			return nil, shared.NewValidationError("legs", "legs must be numbered from 1 without gaps")
 		}
 		var runner *shared.MemberID
-		if a.Runner != nil {
-			if !slices.Contains(entryMembers, *a.Runner) {
+		if assignment.Runner != nil {
+			if !slices.Contains(entryMembers, *assignment.Runner) {
 				return nil, shared.NewValidationError("legs", "runners must be members of the entry")
 			}
-			id := *a.Runner
+			id := *assignment.Runner
 			runner = &id
 		}
-		legs[i] = Leg{number: a.Number, runner: runner}
+		legs[i] = Leg{number: assignment.Number, runner: runner}
 	}
 	return legs, nil
 }
@@ -220,24 +220,24 @@ func NewFactory(ids shared.IDGenerator) Factory {
 }
 
 // New returns the first draft of an entry's running order.
-func (f Factory) New(entryID shared.EntryID, as []Assignment, shape Shape, entryMembers []shared.MemberID) (*RunningOrder, error) {
-	legs, err := buildLegs(as, shape, entryMembers)
+func (factory Factory) New(entryID shared.EntryID, assignments []Assignment, shape Shape, entryMembers []shared.MemberID) (*RunningOrder, error) {
+	legs, err := buildLegs(assignments, shape, entryMembers)
 	if err != nil {
 		return nil, err
 	}
-	return &RunningOrder{id: shared.RunningOrderID(f.ids.NewID()), entryID: entryID, status: Draft, legs: legs}, nil
+	return &RunningOrder{id: shared.RunningOrderID(factory.ids.NewID()), entryID: entryID, status: Draft, legs: legs}, nil
 }
 
 // Reconstruct returns a running order read from storage.
-func (f Factory) Reconstruct(id shared.RunningOrderID, entryID shared.EntryID, status Status, version int, legs []Assignment) *RunningOrder {
-	ls := make([]Leg, len(legs))
-	for i, a := range legs {
+func (factory Factory) Reconstruct(id shared.RunningOrderID, entryID shared.EntryID, status Status, version int, legs []Assignment) *RunningOrder {
+	restored := make([]Leg, len(legs))
+	for i, assignment := range legs {
 		var runner *shared.MemberID
-		if a.Runner != nil {
-			id := *a.Runner
+		if assignment.Runner != nil {
+			id := *assignment.Runner
 			runner = &id
 		}
-		ls[i] = Leg{number: a.Number, runner: runner}
+		restored[i] = Leg{number: assignment.Number, runner: runner}
 	}
-	return &RunningOrder{id: id, entryID: entryID, status: status, version: version, loaded: version, legs: ls}
+	return &RunningOrder{id: id, entryID: entryID, status: status, version: version, loaded: version, legs: restored}
 }
