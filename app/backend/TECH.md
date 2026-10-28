@@ -65,7 +65,7 @@ app/backend/
 │  ├─ presentation/       # routing (chi) and controllers (`controller/`; they implement the OpenAPI-generated interface)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
-│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, PostgreSQL later)
+│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
@@ -87,7 +87,7 @@ The application reads **only environment variables**; it never loads `.env` itse
 | --- | --- | --- | --- |
 | `MONGODB_URI` | yes | — | MongoDB connection string |
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
-| `DATABASE_URL` | yes | — | PostgreSQL connection string |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string. Pool sizes go in its parameters (`pool_max_conns`, `pool_min_conns`, `pool_max_conn_lifetime`, `pool_max_conn_idle_time`; ADR-0015) |
 | `PORT` | no | `8080` | HTTP port |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
@@ -252,7 +252,7 @@ app/backend/
 │  ├─ presentation/    # ルーティング（chi）とコントローラー（`controller/`。OpenAPI から生成したインターフェースを実装する）
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
-│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、PostgreSQL は後で）
+│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
 ```
@@ -274,7 +274,7 @@ app/backend/
 | --- | --- | --- | --- |
 | `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
-| `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列 |
+| `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列。プールの大きさはそのパラメータで指定する（`pool_max_conns`、`pool_min_conns`、`pool_max_conn_lifetime`、`pool_max_conn_idle_time`、ADR-0015） |
 | `PORT` | — | `8080` | HTTP ポート |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
