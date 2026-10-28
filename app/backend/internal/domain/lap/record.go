@@ -23,13 +23,13 @@ type Lap struct {
 }
 
 // ID returns the lap's ID.
-func (l Lap) ID() shared.LapID { return l.id }
+func (lap Lap) ID() shared.LapID { return lap.id }
 
 // Time returns the lap time per km.
-func (l Lap) Time() shared.Pace { return l.time }
+func (lap Lap) Time() shared.Pace { return lap.time }
 
 // SubmittedAt returns when the lap was submitted.
-func (l Lap) SubmittedAt() time.Time { return l.submittedAt }
+func (lap Lap) SubmittedAt() time.Time { return lap.submittedAt }
 
 // Factory assembles Lap values.
 type Factory struct {
@@ -42,13 +42,13 @@ func NewFactory(ids shared.IDGenerator) Factory {
 }
 
 // New returns a lap submitted at now.
-func (f Factory) New(t shared.Pace, now time.Time) Lap {
-	return Lap{id: shared.LapID(f.ids.NewID()), time: t, submittedAt: now}
+func (factory Factory) New(lapTime shared.Pace, now time.Time) Lap {
+	return Lap{id: shared.LapID(factory.ids.NewID()), time: lapTime, submittedAt: now}
 }
 
 // Reconstruct returns a lap read from storage.
-func (f Factory) Reconstruct(id shared.LapID, t shared.Pace, submittedAt time.Time) Lap {
-	return Lap{id: id, time: t, submittedAt: submittedAt}
+func (factory Factory) Reconstruct(id shared.LapID, lapTime shared.Pace, submittedAt time.Time) Lap {
+	return Lap{id: id, time: lapTime, submittedAt: submittedAt}
 }
 
 // Record is a member's laps for one race, in submission order. It is created by RecordFactory.
@@ -59,52 +59,52 @@ type Record struct {
 }
 
 // RaceID returns the race.
-func (r *Record) RaceID() shared.RaceID { return r.raceID }
+func (record *Record) RaceID() shared.RaceID { return record.raceID }
 
 // MemberID returns the runner.
-func (r *Record) MemberID() shared.MemberID { return r.memberID }
+func (record *Record) MemberID() shared.MemberID { return record.memberID }
 
 // Laps returns the laps in submission order.
-func (r *Record) Laps() []Lap { return slices.Clone(r.laps) }
+func (record *Record) Laps() []Lap { return slices.Clone(record.laps) }
 
 // Times returns the lap times in submission order.
-func (r *Record) Times() []shared.Pace {
-	ts := make([]shared.Pace, len(r.laps))
-	for i, l := range r.laps {
-		ts[i] = l.time
+func (record *Record) Times() []shared.Pace {
+	times := make([]shared.Pace, len(record.laps))
+	for i, lap := range record.laps {
+		times[i] = lap.time
 	}
-	return ts
+	return times
 }
 
 // Add appends newly submitted laps.
-func (r *Record) Add(laps ...Lap) {
-	r.laps = append(r.laps, laps...)
+func (record *Record) Add(laps ...Lap) {
+	record.laps = append(record.laps, laps...)
 }
 
 // Edit replaces the time of a lap. It returns an error wrapping shared.ErrNotFound when the
 // record has no such lap.
-func (r *Record) Edit(id shared.LapID, t shared.Pace) error {
-	i := r.index(id)
-	if i < 0 {
+func (record *Record) Edit(id shared.LapID, lapTime shared.Pace) error {
+	position := record.index(id)
+	if position < 0 {
 		return shared.ErrNotFound
 	}
-	r.laps[i].time = t
+	record.laps[position].time = lapTime
 	return nil
 }
 
 // Delete removes a lap. It returns an error wrapping shared.ErrNotFound when the record has
 // no such lap.
-func (r *Record) Delete(id shared.LapID) error {
-	i := r.index(id)
-	if i < 0 {
+func (record *Record) Delete(id shared.LapID) error {
+	position := record.index(id)
+	if position < 0 {
 		return shared.ErrNotFound
 	}
-	r.laps = slices.Delete(r.laps, i, i+1)
+	record.laps = slices.Delete(record.laps, position, position+1)
 	return nil
 }
 
-func (r *Record) index(id shared.LapID) int {
-	return slices.IndexFunc(r.laps, func(l Lap) bool { return l.id == id })
+func (record *Record) index(id shared.LapID) int {
+	return slices.IndexFunc(record.laps, func(lap Lap) bool { return lap.id == id })
 }
 
 // RecordFactory assembles Record values.
@@ -145,7 +145,7 @@ type Repository interface {
 	Find(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) (*Record, error)
 	// ListByMember returns the member's records for every race, for recalculating the average.
 	ListByMember(ctx context.Context, memberID shared.MemberID) ([]*Record, error)
-	Save(ctx context.Context, r *Record) error
+	Save(ctx context.Context, record *Record) error
 	// Delete removes the member's laps for the race, when they are removed from a confirmed
 	// running order.
 	Delete(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) error
