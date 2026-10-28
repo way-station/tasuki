@@ -49,12 +49,6 @@ React (Vite)  ── app/frontend
   - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
 - **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
 
-### Not decided yet
-
-| Topic | Candidates | Decided in |
-| --- | --- | --- |
-| Whether MongoDB is required at startup | Required now; the MVP uses MongoDB for lap records and running order history | #26 |
-
 ## Directory structure
 
 ```
@@ -233,12 +227,6 @@ React (Vite)  ── app/frontend
 - **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
   - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
 - **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います
-
-### 未決定のこと
-
-| 項目 | 候補 | 決める場所 |
-| --- | --- | --- |
-| 起動時に MongoDB を必須にするか | 今は必須。MVP はラップの記録と走順の変更履歴に MongoDB を使う | #26 |
 
 ## ディレクトリ構成
 
