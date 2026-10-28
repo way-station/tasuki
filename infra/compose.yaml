@@ -3,6 +3,10 @@ name: tasuki
 services:
   mongo:
     image: mongo:8.0
+    # mongo:8.0 refuses to start on Linux 6.19–7.0.13 (SERVER-121912). Keeping rseq on in
+    # glibc avoids the TCMalloc bug, so a newer Docker Desktop kernel does not break it.
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
