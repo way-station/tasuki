@@ -37,9 +37,9 @@ dev-shell:
 dev-down:
 	$(COMPOSE_DEV) down
 
-# Build the production image and start it together with MongoDB.
+# Build the production image and start it together with MongoDB and PostgreSQL.
 up:
-	$(COMPOSE) up -d --build --wait mongo backend
+	$(COMPOSE) up -d --build --wait mongo postgres backend
 
 down:
 	$(COMPOSE) down

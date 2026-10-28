@@ -87,9 +87,11 @@ The application reads **only environment variables**; it never loads `.env` itse
 | --- | --- | --- | --- |
 | `MONGODB_URI` | yes | — | MongoDB connection string |
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string |
 | `PORT` | no | `8080` | HTTP port |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
+| `POSTGRES_PORT` | no | `5432` | Host port of the PostgreSQL container (`infra/.env`, compose only) |
 
 Who provides the values:
 
@@ -107,7 +109,7 @@ Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compo
 
 ### Option A: Dev Container (recommended)
 
-1. If host ports 27017 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
+1. If host ports 27017 / 5432 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
 2. Open `app/backend` in VS Code and run **Dev Containers: Reopen in Container** (JetBrains: open `.devcontainer/devcontainer.json` via Gateway).
 3. In the container terminal:
 
@@ -272,9 +274,11 @@ app/backend/
 | --- | --- | --- | --- |
 | `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
+| `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列 |
 | `PORT` | — | `8080` | HTTP ポート |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
+| `POSTGRES_PORT` | — | `5432` | PostgreSQL コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 
 値を渡すもの：
 
@@ -292,7 +296,7 @@ app/backend/
 
 ### 方法 A：Dev Container（おすすめ）
 
-1. ホストの 27017 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
+1. ホストの 27017 / 5432 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
 2. VS Code で `app/backend` を開き、**Dev Containers: Reopen in Container** を実行する（JetBrains の場合は Gateway から `.devcontainer/devcontainer.json` を開く）
 3. コンテナのターミナルで：
 
