@@ -19,43 +19,43 @@ type Member struct {
 }
 
 // ID returns the member's ID.
-func (m *Member) ID() shared.MemberID { return m.id }
+func (member *Member) ID() shared.MemberID { return member.id }
 
 // TeamID returns the team the member belongs to.
-func (m *Member) TeamID() shared.TeamID { return m.teamID }
+func (member *Member) TeamID() shared.TeamID { return member.teamID }
 
 // Name returns the member's name. Names cannot be changed.
-func (m *Member) Name() string { return m.name }
+func (member *Member) Name() string { return member.name }
 
 // Average returns the average time per km. AverageService keeps it up to date.
-func (m *Member) Average() shared.Pace { return m.average }
+func (member *Member) Average() shared.Pace { return member.average }
 
 // LapCount returns the number of laps counted in the average. The default average is not
 // counted.
-func (m *Member) LapCount() int { return m.lapCount }
+func (member *Member) LapCount() int { return member.lapCount }
 
 // Left reports whether the member has left.
-func (m *Member) Left() bool { return m.leftAt != nil }
+func (member *Member) Left() bool { return member.leftAt != nil }
 
 // LeftAt returns when the member left, and false if they have not left.
-func (m *Member) LeftAt() (time.Time, bool) {
-	if m.leftAt == nil {
+func (member *Member) LeftAt() (time.Time, bool) {
+	if member.leftAt == nil {
 		return time.Time{}, false
 	}
-	return *m.leftAt, true
+	return *member.leftAt, true
 }
 
 // Leave marks the member as left. Marking a left member again does nothing.
-func (m *Member) Leave(now time.Time) {
-	if m.leftAt != nil {
+func (member *Member) Leave(now time.Time) {
+	if member.leftAt != nil {
 		return
 	}
-	m.leftAt = &now
+	member.leftAt = &now
 }
 
 // Rejoin undoes Leave. Cancelled invitations do not come back.
-func (m *Member) Rejoin() {
-	m.leftAt = nil
+func (member *Member) Rejoin() {
+	member.leftAt = nil
 }
 
 // LinkStatus is the state of the link between a roster member and an account,
@@ -71,9 +71,9 @@ const (
 
 // CanIssueInviteLink returns a StateError when an invite link may not be created for the
 // member: they have left, or they already have an approved or pending link.
-func (m *Member) CanIssueInviteLink(link LinkStatus) error {
+func (member *Member) CanIssueInviteLink(link LinkStatus) error {
 	switch {
-	case m.Left():
+	case member.Left():
 		return shared.NewStateError("the member has left")
 	case link == LinkApproved:
 		return shared.NewStateError("the member already has an approved account")

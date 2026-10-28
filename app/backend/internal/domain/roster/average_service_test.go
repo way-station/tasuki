@@ -6,17 +6,17 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
 
-func paces(t *testing.T, ss ...string) []shared.Pace {
+func paces(t *testing.T, texts ...string) []shared.Pace {
 	t.Helper()
-	ps := make([]shared.Pace, len(ss))
-	for i, s := range ss {
-		p, err := shared.ParsePace(s)
+	parsed := make([]shared.Pace, len(texts))
+	for i, text := range texts {
+		lapPace, err := shared.ParsePace(text)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ps[i] = p
+		parsed[i] = lapPace
 	}
-	return ps
+	return parsed
 }
 
 func memberWith(t *testing.T, average string, lapCount int) *Member {
@@ -25,9 +25,9 @@ func memberWith(t *testing.T, average string, lapCount int) *Member {
 }
 
 func TestNewMemberHasTheDefaultAverage(t *testing.T) {
-	m := newMember(t)
-	if m.Average().String() != "3:40" || m.LapCount() != 0 {
-		t.Errorf("Average() = %s, LapCount() = %d, want 3:40 and 0", m.Average(), m.LapCount())
+	member := newMember(t)
+	if member.Average().String() != "3:40" || member.LapCount() != 0 {
+		t.Errorf("Average() = %s, LapCount() = %d, want 3:40 and 0", member.Average(), member.LapCount())
 	}
 }
 
@@ -46,25 +46,25 @@ func TestAddLaps(t *testing.T) {
 		{name: "first laps give their mean", average: "3:40", lapCount: 0, laps: []string{"3:10", "3:21"}, want: "3:16", wantCount: 2},
 		{name: "no laps", average: "3:30", lapCount: 5, want: "3:30", wantCount: 5},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := memberWith(t, tt.average, tt.lapCount)
-			AverageService{}.AddLaps(m, paces(t, tt.laps...))
-			if m.Average().String() != tt.want || m.LapCount() != tt.wantCount {
-				t.Errorf("average %s, count %d, want %s and %d", m.Average(), m.LapCount(), tt.want, tt.wantCount)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			member := memberWith(t, testCase.average, testCase.lapCount)
+			AverageService{}.AddLaps(member, paces(t, testCase.laps...))
+			if member.Average().String() != testCase.want || member.LapCount() != testCase.wantCount {
+				t.Errorf("average %s, count %d, want %s and %d", member.Average(), member.LapCount(), testCase.want, testCase.wantCount)
 			}
 		})
 	}
 }
 
 func TestRecalculate(t *testing.T) {
-	m := memberWith(t, "3:28", 8)
-	AverageService{}.Recalculate(m, paces(t, "3:20", "3:25"))
-	if m.Average().String() != "3:23" || m.LapCount() != 2 { // 202.5 → 203
-		t.Errorf("average %s, count %d, want 3:23 and 2", m.Average(), m.LapCount())
+	member := memberWith(t, "3:28", 8)
+	AverageService{}.Recalculate(member, paces(t, "3:20", "3:25"))
+	if member.Average().String() != "3:23" || member.LapCount() != 2 { // 202.5 → 203
+		t.Errorf("average %s, count %d, want 3:23 and 2", member.Average(), member.LapCount())
 	}
-	AverageService{}.Recalculate(m, nil)
-	if m.Average().String() != "3:40" || m.LapCount() != 0 {
-		t.Errorf("with no laps: average %s, count %d, want 3:40 and 0", m.Average(), m.LapCount())
+	AverageService{}.Recalculate(member, nil)
+	if member.Average().String() != "3:40" || member.LapCount() != 0 {
+		t.Errorf("with no laps: average %s, count %d, want 3:40 and 0", member.Average(), member.LapCount())
 	}
 }

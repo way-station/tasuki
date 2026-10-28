@@ -7,8 +7,8 @@ const defaultAverageSeconds = 3*60 + 40 // 3:40
 // DefaultAverage returns the average time of a member with no laps (3:40). It is not counted
 // as a lap.
 func DefaultAverage() shared.Pace {
-	p, _ := shared.PaceFromSeconds(defaultAverageSeconds)
-	return p
+	average, _ := shared.PaceFromSeconds(defaultAverageSeconds)
+	return average
 }
 
 // AverageService recalculates a member's average time per km. It is a domain service:
@@ -22,37 +22,37 @@ type AverageService struct{}
 //	new average = (average × lap count + sum of new laps) ÷ (lap count + number of new laps)
 //
 // The default average is not counted, so the first laps give their own mean.
-func (AverageService) AddLaps(m *Member, laps []shared.Pace) {
+func (AverageService) AddLaps(member *Member, laps []shared.Pace) {
 	if len(laps) == 0 {
 		return
 	}
-	total := m.average.Seconds() * m.lapCount
-	for _, l := range laps {
-		total += l.Seconds()
+	total := member.average.Seconds() * member.lapCount
+	for _, lapTime := range laps {
+		total += lapTime.Seconds()
 	}
-	count := m.lapCount + len(laps)
-	m.average = roundedMean(total, count)
-	m.lapCount = count
+	count := member.lapCount + len(laps)
+	member.average = roundedMean(total, count)
+	member.lapCount = count
 }
 
 // Recalculate sets the average from all of the member's remaining laps, after a lap is
 // edited or deleted. With no laps left, the average goes back to the default.
-func (AverageService) Recalculate(m *Member, all []shared.Pace) {
+func (AverageService) Recalculate(member *Member, all []shared.Pace) {
 	if len(all) == 0 {
-		m.average = DefaultAverage()
-		m.lapCount = 0
+		member.average = DefaultAverage()
+		member.lapCount = 0
 		return
 	}
 	total := 0
-	for _, l := range all {
-		total += l.Seconds()
+	for _, lapTime := range all {
+		total += lapTime.Seconds()
 	}
-	m.average = roundedMean(total, len(all))
-	m.lapCount = len(all)
+	member.average = roundedMean(total, len(all))
+	member.lapCount = len(all)
 }
 
 // roundedMean returns total ÷ count, rounded half up to whole seconds.
 func roundedMean(total, count int) shared.Pace {
-	p, _ := shared.PaceFromSeconds((2*total + count) / (2 * count))
-	return p
+	mean, _ := shared.PaceFromSeconds((2*total + count) / (2 * count))
+	return mean
 }
