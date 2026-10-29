@@ -56,7 +56,7 @@ app/backend/
 ├─ cmd/server/            # entry point: config → DB connections → HTTP server, graceful shutdown
 ├─ internal/
 │  ├─ config/             # loads settings from environment variables
-│  ├─ presentation/       # routing (chi) and controllers (`controller/`; they implement the OpenAPI-generated interface)
+│  ├─ presentation/       # routing (chi), controllers (`controller/`), and the code generated from `api/openapi.yaml` (`api/`)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
 │  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
@@ -129,8 +129,17 @@ make dev-down
 
 | Command | Runs on |
 | --- | --- |
-| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Inside the Dev Container |
+| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` / `generate` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | Host (Docker only) |
+
+### Generated code
+
+The Go types and the chi server interface are generated from `api/openapi.yaml` with oapi-codegen into `internal/presentation/api/openapi.gen.go` (ADR-0010, ADR-0017).
+
+- After changing `api/openapi.yaml`, run `make generate` and commit the result. Never edit `openapi.gen.go` by hand.
+- oapi-codegen is pinned as a Go tool in `go.mod`; the settings are in `internal/presentation/api/oapi-codegen.yaml`.
+- CI runs `make generate` and fails when anything changes.
+- The generated interface names the request `r`; controllers name it `req` (see Naming). Parameter names do not have to match the interface.
 
 ### Running the production image
 
@@ -252,7 +261,7 @@ app/backend/
 ├─ cmd/server/         # エントリポイント：設定 → DB 接続 → HTTP サーバー、グレースフルシャットダウン
 ├─ internal/
 │  ├─ config/          # 環境変数から設定を読む
-│  ├─ presentation/    # ルーティング（chi）とコントローラー（`controller/`。OpenAPI から生成したインターフェースを実装する）
+│  ├─ presentation/    # ルーティング（chi）、コントローラー（`controller/`）、`api/openapi.yaml` から生成したコード（`api/`）
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
 │  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
@@ -325,8 +334,17 @@ make dev-down
 
 | コマンド | 実行する場所 |
 | --- | --- |
-| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Dev Container の中 |
+| `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` / `generate` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | ホスト（Docker だけ） |
+
+### 生成するコード
+
+Go の型と chi のサーバーのインターフェースは、oapi-codegen で `api/openapi.yaml` から `internal/presentation/api/openapi.gen.go` に生成する（ADR-0010、ADR-0017）。
+
+- `api/openapi.yaml` を変えたら `make generate` を実行し、結果をコミットする。`openapi.gen.go` は手で編集しない
+- oapi-codegen は Go のツールとして `go.mod` でバージョンを固定している。設定は `internal/presentation/api/oapi-codegen.yaml`
+- CI で `make generate` を実行し、何か変わったら失敗させる
+- 生成したインターフェースではリクエストが `r` だが、コントローラーでは `req` と書く（命名を参照）。引数の名前はインターフェースと同じでなくてよい
 
 ### 本番用イメージを動かす
 
