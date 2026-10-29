@@ -69,6 +69,9 @@ jobs:
         run: pnpm lint
       - name: Format
         run: pnpm format:check
+      # Stop at the first failing test, as the backend CI does.
+      - name: Test
+        run: pnpm test --bail=1
       - name: Typecheck and build
         run: pnpm build
 
