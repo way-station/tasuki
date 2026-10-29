@@ -8,7 +8,7 @@ package sqlcgen
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const getTeam = `-- name: GetTeam :one
@@ -17,7 +17,7 @@ FROM teams
 WHERE id = $1
 `
 
-func (q *Queries) GetTeam(ctx context.Context, id pgtype.UUID) (Team, error) {
+func (q *Queries) GetTeam(ctx context.Context, id uuid.UUID) (Team, error) {
 	row := q.db.QueryRow(ctx, getTeam, id)
 	var i Team
 	err := row.Scan(&i.ID, &i.Name, &i.CreatedAt)

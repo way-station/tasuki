@@ -5,11 +5,12 @@
 package sqlcgen
 
 import (
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Team struct {
-	ID        pgtype.UUID
+	ID        uuid.UUID
 	Name      string
 	CreatedAt pgtype.Timestamptz
 }
