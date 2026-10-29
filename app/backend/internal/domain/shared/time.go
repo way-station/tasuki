@@ -18,13 +18,13 @@ type Pace struct {
 }
 
 // ParsePace parses a pace written as MM:SS (for example "3:28").
-func ParsePace(s string) (Pace, error) {
-	m := paceFormat.FindStringSubmatch(s)
-	if m == nil {
+func ParsePace(text string) (Pace, error) {
+	match := paceFormat.FindStringSubmatch(text)
+	if match == nil {
 		return Pace{}, NewValidationError("time", "must be MM:SS")
 	}
-	minutes, _ := strconv.Atoi(m[1])
-	secs, _ := strconv.Atoi(m[2])
+	minutes, _ := strconv.Atoi(match[1])
+	secs, _ := strconv.Atoi(match[2])
 	return PaceFromSeconds(minutes*60 + secs)
 }
 
@@ -37,13 +37,13 @@ func PaceFromSeconds(seconds int) (Pace, error) {
 }
 
 // Seconds returns the pace in seconds per km.
-func (p Pace) Seconds() int {
-	return p.seconds
+func (pace Pace) Seconds() int {
+	return pace.seconds
 }
 
 // String returns the pace as MM:SS (for example "3:28").
-func (p Pace) String() string {
-	return fmt.Sprintf("%d:%02d", p.seconds/60, p.seconds%60)
+func (pace Pace) String() string {
+	return fmt.Sprintf("%d:%02d", pace.seconds/60, pace.seconds%60)
 }
 
 // TotalTime is a time written as H:MM:SS, such as a target or a predicted total time.
@@ -52,18 +52,18 @@ type TotalTime struct {
 }
 
 // ParseTotalTime parses a time written as H:MM:SS (for example "2:45:30").
-func ParseTotalTime(s string) (TotalTime, error) {
-	m := totalTimeFormat.FindStringSubmatch(s)
-	if m == nil {
+func ParseTotalTime(text string) (TotalTime, error) {
+	match := totalTimeFormat.FindStringSubmatch(text)
+	if match == nil {
 		return TotalTime{}, NewValidationError("total_time", "must be H:MM:SS")
 	}
-	h, err := strconv.Atoi(m[1])
+	hours, err := strconv.Atoi(match[1])
 	if err != nil {
 		return TotalTime{}, NewValidationError("total_time", "must be H:MM:SS")
 	}
-	mm, _ := strconv.Atoi(m[2])
-	ss, _ := strconv.Atoi(m[3])
-	return TotalTimeFromSeconds(h*3600 + mm*60 + ss)
+	minutes, _ := strconv.Atoi(match[2])
+	seconds, _ := strconv.Atoi(match[3])
+	return TotalTimeFromSeconds(hours*3600 + minutes*60 + seconds)
 }
 
 // TotalTimeFromSeconds returns the total time for a whole number of seconds.
@@ -75,11 +75,11 @@ func TotalTimeFromSeconds(seconds int) (TotalTime, error) {
 }
 
 // Seconds returns the total time in seconds.
-func (t TotalTime) Seconds() int {
-	return t.seconds
+func (totalTime TotalTime) Seconds() int {
+	return totalTime.seconds
 }
 
 // String returns the time as H:MM:SS (for example "2:45:30").
-func (t TotalTime) String() string {
-	return fmt.Sprintf("%d:%02d:%02d", t.seconds/3600, t.seconds/60%60, t.seconds%60)
+func (totalTime TotalTime) String() string {
+	return fmt.Sprintf("%d:%02d:%02d", totalTime.seconds/3600, totalTime.seconds/60%60, totalTime.seconds%60)
 }

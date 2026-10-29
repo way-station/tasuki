@@ -16,11 +16,11 @@ type Controllers struct {
 }
 
 // NewRouter returns the HTTP handler with all backend routes registered.
-func NewRouter(c Controllers) http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Recoverer)
+func NewRouter(controllers Controllers) http.Handler {
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Recoverer)
 
-	r.Get("/health", c.Health.Get)
-	return r
+	router.Get("/health", controllers.Health.Get)
+	return router
 }

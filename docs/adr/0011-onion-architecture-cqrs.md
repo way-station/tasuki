@@ -1,6 +1,6 @@
 # ADR-0011: Backend onion architecture with CQRS
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-13
 - Issue: #80
@@ -79,7 +79,7 @@ The backend uses an **onion architecture** with four layers. Dependencies point 
 
 # ADR-0011: backend のオニオンアーキテクチャと CQRS
 
-- Status: Proposed
+- Status: Accepted
 - Type: technical
 - Date: 2026-10-13
 - Issue: #80
