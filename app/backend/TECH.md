@@ -11,18 +11,18 @@ React (Vite)  ── app/frontend
 
 | Data | Store | Why |
 | --- | --- | --- |
-| Teams, members, races, attendance, running order | PostgreSQL | Relational, with constraints the DB must guarantee (one attendance per member per race, only attending members in the running order, lap limits per runner) |
-| Race-day lap records | MongoDB | One run → a variable-length array of laps. In lap-based races the number of laps differs per runner, so a nested array in one document fits naturally. Append-only |
+| Teams, members, races, attendance, entries, running order | PostgreSQL | Relational, with constraints the DB must guarantee (one attendance per member per race, only entry members in the running order) |
+| Lap records | MongoDB | Per race and roster member, a variable-length list of lap times (per km, `MM:SS`) that members add to, edit, and delete |
 | Running order history | MongoDB | "Who changed the order, when, from what to what." A full snapshot per change — a typical event log |
 | External integration data (future) | MongoDB | Raw activities from Garmin / Strava have a different shape per service |
 
 ## Principles (do not break these)
 
 1. **Postgres is always the source of truth.** There are no transactions across the two databases.
-2. **Reference, never copy.** MongoDB documents refer to Postgres rows only by their IDs (UUID). Do not duplicate Postgres data (member names, race info, …) into MongoDB — duplicated data always drifts.
-3. **Write summaries back to Postgres.** When a race ends, write the result summary (e.g. total time per run) back to Postgres. Atlas M0 (free tier) has no automatic backups and idle clusters may be terminated, so actual results must survive even if MongoDB data is lost.
-4. **The MVP features use Postgres only.** MongoDB-backed features (lap recording) come after the MVP.
-5. **Total time is calculated on the frontend.** The backend stores and shares data; it does not compute predicted times.
+2. **Reference, never copy.** MongoDB documents refer to Postgres rows only by their IDs (the ID type is decided in #68). Do not duplicate Postgres data (member names, race info, …) into MongoDB — duplicated data always drifts.
+3. **Write summaries back to Postgres.** When laps are submitted, edited, or deleted, write each member's average time and lap count back to `roster_members` in Postgres (`docs/design/database.md`). Atlas M0 (free tier) has no automatic backups and idle clusters may be terminated, so actual results must survive even if MongoDB data is lost.
+4. **The MVP uses both databases.** Lap records (`lap_records`) and running order history (`running_order_history`) are in MongoDB; everything else is in Postgres (`docs/design/database.md`).
+5. **Predictions are calculated by the backend.** The total time and the number of laps are calculated in Application (ADR-0011) and returned as results. Members may not see other members' average times (ADR-0006), so the frontend never receives the data to calculate them.
 
 ## Stack
 
@@ -31,12 +31,16 @@ React (Vite)  ── app/frontend
 | Language | Go | 1.26 (see `go.mod`) |
 | HTTP router | `github.com/go-chi/chi/v5` | v5.3.x |
 | MongoDB driver | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
-| PostgreSQL driver | not decided yet (see below) | — |
+| PostgreSQL driver | `github.com/jackc/pgx/v5` with `pgxpool`; Neon direct endpoint (ADR-0015) | v5.x |
+| SQL | sqlc (Go generated from SQL, committed) (ADR-0015) | — |
+| Migrations | golang-migrate, zero-padded versions (ADR-0015) | — |
 | Logging | `log/slog` (JSON) | stdlib |
 | Lint / format | golangci-lint v2 (`.golangci.yml`) | v2.x |
+| API code generation | oapi-codegen; generated code is committed (ADR-0017) | v2.8.0 |
 | Container | Multi-stage build → `distroless/static` (`infra/docker/backend/Dockerfile`) | — |
 | Local DB | MongoDB in Docker (`infra/compose.yaml`) | 8.0 |
-| Production DB | Neon (PostgreSQL), MongoDB Atlas | — |
+| Production DB | Neon (PostgreSQL), MongoDB Atlas — both in Singapore (ADR-0018) | — |
+| Hosting | Cloud Run, `asia-southeast1`; one container serving the API and the built frontend (ADR-0018) | — |
 
 ### Why these choices
 
@@ -44,16 +48,6 @@ React (Vite)  ── app/frontend
 - **chi**: needed for routing — route groups, sub-routers, and URL parameters such as `/races/{raceID}/laps`. It is built on `net/http` (`http.Handler`), so handlers and middleware stay compatible with the standard library.
   - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
 - **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
-
-### Not decided yet
-
-| Topic | Candidates | Decided in |
-| --- | --- | --- |
-| PostgreSQL driver | pgx v5 (the de facto standard) | Postgres setup issue |
-| How SQL is written | sqlc (generate Go from plain SQL) / pgx with hand-written queries | Postgres setup issue |
-| Migration tool | goose / golang-migrate / dbmate | Postgres setup issue |
-| API types shared with the frontend | OpenAPI → generate TypeScript types | Frontend / API design |
-| Whether MongoDB is required at startup | Required now; may become optional so the MVP can run with Postgres only | Before the MVP release |
 
 ## Directory structure
 
@@ -65,7 +59,7 @@ app/backend/
 │  ├─ presentation/       # routing (chi) and controllers (`controller/`; they implement the OpenAPI-generated interface)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
-│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, PostgreSQL later)
+│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
@@ -75,7 +69,7 @@ app/backend/
 - Entities, DTOs, and commands are created by factories, not by themselves. Entities and value objects keep their fields unexported.
 - Everything is under `internal/`; nothing is meant to be imported from outside this module.
 - Inside a layer, code is grouped per feature (for example `application/health/`).
-- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (implemented by `mongodb.HealthQueryService`).
+- `/health` follows the layers too: `controller.HealthController` → `health.CheckUseCase` → `health.QueryService` (`health.MongoQueryService` and `health.PostgresQueryService`, implemented by `mongodb.HealthQueryService` and `postgres.HealthQueryService`).
 
 Module path: `github.com/way-station/tasuki/app/backend`
 
@@ -87,9 +81,11 @@ The application reads **only environment variables**; it never loads `.env` itse
 | --- | --- | --- | --- |
 | `MONGODB_URI` | yes | — | MongoDB connection string |
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string. Pool sizes go in its parameters (`pool_max_conns`, `pool_min_conns`, `pool_max_conn_lifetime`, `pool_max_conn_idle_time`; ADR-0015) |
 | `PORT` | no | `8080` | HTTP port |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
+| `POSTGRES_PORT` | no | `5432` | Host port of the PostgreSQL container (`infra/.env`, compose only) |
 
 Who provides the values:
 
@@ -107,7 +103,7 @@ Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compo
 
 ### Option A: Dev Container (recommended)
 
-1. If host ports 27017 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
+1. If host ports 27017 / 5432 / 8080 are already in use, copy `infra/.env.example` to `infra/.env` and change them.
 2. Open `app/backend` in VS Code and run **Dev Containers: Reopen in Container** (JetBrains: open `.devcontainer/devcontainer.json` via Gateway).
 3. In the container terminal:
 
@@ -161,6 +157,21 @@ Container files live in `infra/`, separated from the application code.
 - distroless has no shell or curl, so there is no `HEALTHCHECK` in the image. Health checks are left to the hosting platform via `GET /health`.
 - **The `dev` stage is for development only.** It adds golangci-lint, gopls, and Delve (pinned versions) on top of the same `golang` image used for the production build, so the Go version is the same in development and production.
 
+## Naming
+
+Names are descriptive, including method receivers (`func (client *Client) Ping`) and table-test variables (`testCase`). Only these may be shorter:
+
+| Name | Only for |
+| --- | --- |
+| `t` | `*testing.T` |
+| `w` | `http.ResponseWriter` |
+| `i` | the index of a loop of a few lines |
+| `ok`, `id` | they are words |
+
+- `r` is not used: `req` for `*http.Request`, `router` for a router.
+- Common abbreviations of three letters or more (`ctx`, `err`, `cfg`, `req`) are fine.
+- varnamelen in golangci-lint checks this. It does not see struct fields, or a short name used only on the line after its declaration (such as the receiver of a one-line method), so reviews still check those.
+
 ## Testing
 
 | Command | What it runs |
@@ -176,7 +187,7 @@ Container files live in `infra/`, separated from the application code.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/health` | Pings the databases. `200 {"status":"ok"}` or `503` |
+| GET | `/health` | Pings MongoDB and PostgreSQL at the same time. `200` only when both are reachable, otherwise `503`; the body says which store is unreachable (`{"status":"error","mongo":"ok","postgres":"unreachable"}`) |
 
 ---
 
@@ -196,18 +207,18 @@ React (Vite)  ── app/frontend
 
 | データ | 保存先 | 理由 |
 | --- | --- | --- |
-| チーム、メンバー、大会、出欠、走順 | PostgreSQL | 関係型で、DB で保証したい制約がある（1人1大会につき出欠は1件、走順に入れるのは出席者だけ、1人あたりの周回数の上限） |
-| 当日のラップ記録 | MongoDB | 「出走1回 → 周回ごとのラップ配列」。周回制では人ごとに周回数が違うため、可変長のネスト配列を1ドキュメントに入れるのが自然。追記型 |
+| チーム、メンバー、大会、出欠、エントリー、走順 | PostgreSQL | 関係型で、DB で保証したい制約がある（1人1大会につき出欠は1件、走順に入れるのはエントリーのメンバーだけ） |
+| ラップの記録 | MongoDB | 大会と名簿のメンバーごとに、ラップタイム（1km あたり、`MM:SS`）の可変長の一覧。メンバーが足したり、直したり、消したりする |
 | 走順の変更履歴 | MongoDB | 「誰がいつ、どの並びからどの並びへ変えたか」。変更ごとにスナップショットを丸ごと保存する、典型的なイベントログ |
 | 外部連携データ（将来） | MongoDB | Garmin / Strava の生アクティビティは、サービスごとに形が違う |
 
 ## 原則（崩さないこと）
 
 1. **正は常に Postgres。** DB をまたぐトランザクションはありません
-2. **参照のみ、複製しない。** MongoDB のドキュメントは Postgres の行を ID（UUID）で参照するだけにします。メンバー名や大会情報などを MongoDB に複製しないでください。二重管理は必ずずれます
-3. **サマリーを Postgres に書き戻す。** 大会終了時に、結果のサマリー（出走ごとの合計タイムなど）を Postgres にも書き戻します。Atlas M0（無料枠）は自動バックアップがなく、アイドル状態のクラスタは終了される可能性があるため、MongoDB のデータが消えても実績だけは残るようにします
-4. **MVP の機能は Postgres だけを使う。** MongoDB を使う機能（ラップ記録）は MVP の後に追加します
-5. **合計タイムの計算はフロントエンドで行う。** バックエンドは保存と共有だけを担当し、予想タイムは計算しません
+2. **参照のみ、複製しない。** MongoDB のドキュメントは Postgres の行を ID で参照するだけにします（ID の型は #68 で決めます）。メンバー名や大会情報などを MongoDB に複製しないでください。二重管理は必ずずれます
+3. **サマリーを Postgres に書き戻す。** ラップが提出、修正、削除されたら、メンバーごとの平均タイムとラップ数を Postgres の `roster_members` に書き戻します（`docs/design/database.md`）。Atlas M0（無料枠）は自動バックアップがなく、アイドル状態のクラスタは終了される可能性があるため、MongoDB のデータが消えても実績だけは残るようにします
+4. **MVP は2つのデータベースの両方を使う。** ラップの記録（`lap_records`）と走順の変更履歴（`running_order_history`）は MongoDB、それ以外は Postgres に置きます（`docs/design/database.md`）
+5. **予想はバックエンドで計算する。** 合計タイムと周回数は Application（ADR-0011）で計算し、結果を返します。メンバーはほかのメンバーの平均タイムを見られない（ADR-0006）ので、フロントエンドには計算に使うデータを渡しません
 
 ## 技術スタック
 
@@ -216,12 +227,16 @@ React (Vite)  ── app/frontend
 | 言語 | Go | 1.26（`go.mod` 参照） |
 | HTTP ルーター | `github.com/go-chi/chi/v5` | v5.3.x |
 | MongoDB ドライバ | `go.mongodb.org/mongo-driver/v2` | v2.9.x |
-| PostgreSQL ドライバ | 未決定（下記参照） | — |
+| PostgreSQL ドライバ | `github.com/jackc/pgx/v5` を `pgxpool` で。Neon には直接の接続（ADR-0015） | v5.x |
+| SQL | sqlc（SQL から Go を生成し、コミットする）（ADR-0015） | — |
+| マイグレーション | golang-migrate。バージョンはゼロで埋める（ADR-0015） | — |
 | ログ | `log/slog`（JSON） | 標準ライブラリ |
 | Lint / Format | golangci-lint v2（`.golangci.yml`） | v2.x |
+| API のコード生成 | oapi-codegen。生成したコードはコミットする（ADR-0017） | v2.8.0 |
 | コンテナ | マルチステージビルド → `distroless/static`（`infra/docker/backend/Dockerfile`） | — |
 | ローカル DB | Docker の MongoDB（`infra/compose.yaml`） | 8.0 |
-| 本番 DB | Neon（PostgreSQL）、MongoDB Atlas | — |
+| 本番 DB | Neon（PostgreSQL）、MongoDB Atlas。どちらもシンガポール（ADR-0018） | — |
+| ホスティング | Cloud Run、`asia-southeast1`。API とビルドした frontend を 1 つのコンテナで出す（ADR-0018） | — |
 
 ### 選定理由
 
@@ -229,16 +244,6 @@ React (Vite)  ── app/frontend
 - **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
   - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
 - **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います
-
-### 未決定のこと
-
-| 項目 | 候補 | 決める場所 |
-| --- | --- | --- |
-| PostgreSQL ドライバ | pgx v5（事実上の標準） | Postgres の環境構築 Issue |
-| SQL の書き方 | sqlc（素の SQL から Go を生成）／ pgx で手書き | Postgres の環境構築 Issue |
-| マイグレーションツール | goose / golang-migrate / dbmate | Postgres の環境構築 Issue |
-| フロントエンドとの API の型共有 | OpenAPI → TypeScript の型を生成 | フロントエンド／API 設計 |
-| 起動時に MongoDB を必須にするか | 今は必須。MVP を Postgres だけで動かせるよう任意にする可能性あり | MVP リリース前 |
 
 ## ディレクトリ構成
 
@@ -250,7 +255,7 @@ app/backend/
 │  ├─ presentation/    # ルーティング（chi）とコントローラー（`controller/`。OpenAPI から生成したインターフェースを実装する）
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
-│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、PostgreSQL は後で）
+│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
 ```
@@ -259,7 +264,7 @@ app/backend/
 - 更新はユースケースとリポジトリを通り、参照はユースケースとクエリサービスを通る
 - エンティティ、DTO、コマンドは、自分自身ではなくファクトリーが作る。エンティティと値オブジェクトの項目は公開しない
 - 層の中は機能ごとにまとめる（例：`application/health/`）
-- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`mongodb.HealthQueryService` が実装する）
+- `/health` も層に従う：`controller.HealthController` → `health.CheckUseCase` → `health.QueryService`（`health.MongoQueryService` と `health.PostgresQueryService`。`mongodb.HealthQueryService` と `postgres.HealthQueryService` が実装する）
 - すべて `internal/` 配下です。このモジュールの外から import されることは想定していません
 
 モジュールパス：`github.com/way-station/tasuki/app/backend`
@@ -272,9 +277,11 @@ app/backend/
 | --- | --- | --- | --- |
 | `MONGODB_URI` | ○ | — | MongoDB の接続文字列 |
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
+| `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列。プールの大きさはそのパラメータで指定する（`pool_max_conns`、`pool_min_conns`、`pool_max_conn_lifetime`、`pool_max_conn_idle_time`、ADR-0015） |
 | `PORT` | — | `8080` | HTTP ポート |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
+| `POSTGRES_PORT` | — | `5432` | PostgreSQL コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 
 値を渡すもの：
 
@@ -292,7 +299,7 @@ app/backend/
 
 ### 方法 A：Dev Container（おすすめ）
 
-1. ホストの 27017 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
+1. ホストの 27017 / 5432 / 8080 番ポートが使用中なら、`infra/.env.example` を `infra/.env` にコピーして変更する
 2. VS Code で `app/backend` を開き、**Dev Containers: Reopen in Container** を実行する（JetBrains の場合は Gateway から `.devcontainer/devcontainer.json` を開く）
 3. コンテナのターミナルで：
 
@@ -346,6 +353,21 @@ make down
 - distroless にはシェルも curl もないため、イメージに `HEALTHCHECK` は入れていません。ヘルスチェックは `GET /health` を使い、ホスティング先に任せます
 - **`dev` ステージは開発専用です。** 本番のビルドと同じ `golang` イメージに、golangci-lint、gopls、Delve（バージョン固定）を足したものです。開発と本番で Go のバージョンが揃います
 
+## 命名
+
+名前は説明的にする。メソッドのレシーバ（`func (client *Client) Ping`）とテーブルテストの変数（`testCase`）も同じ。短くてよいのは次だけです。
+
+| 名前 | 使ってよいところ |
+| --- | --- |
+| `t` | `*testing.T` |
+| `w` | `http.ResponseWriter` |
+| `i` | 数行のループの添字 |
+| `ok`、`id` | 単語なので |
+
+- `r` は使わない：`*http.Request` は `req`、ルーターは `router`
+- 3 文字以上のよくある略語（`ctx`、`err`、`cfg`、`req`）はよい
+- golangci-lint の varnamelen で確かめる。構造体のフィールドと、宣言の次の行でしか使わない短い名前（1 行のメソッドのレシーバなど）は検出できないので、レビューで確かめる
+
 ## テスト
 
 | コマンド | 内容 |
@@ -361,6 +383,6 @@ make down
 
 | メソッド | パス | 説明 |
 | --- | --- | --- |
-| GET | `/health` | DB に ping します。`200 {"status":"ok"}` または `503` |
+| GET | `/health` | MongoDB と PostgreSQL に同時に ping します。両方に届くときだけ `200`、それ以外は `503`。どちらに届かないかを本文で返します（`{"status":"error","mongo":"ok","postgres":"unreachable"}`） |
 
 </details>

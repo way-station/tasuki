@@ -12,8 +12,8 @@ info:
 
     | Value | Meaning |
     | --- | --- |
-    | `public` | No token |
-    | `account` | Any valid token, including accounts waiting for approval or rejected |
+    | `public` | No session |
+    | `account` | Any valid session, including accounts waiting for approval or rejected |
     | `member` | Approved link to a roster member, not left. Linked organizers are members too |
     | `organizer` | Listed as an organizer in configuration. No link needed |
 
@@ -42,7 +42,7 @@ tags:
   - name: approvals
     description: Approving links between accounts and roster members (M3)
 security:
-  - bearerAuth: []
+  - sessionCookie: []
 
 paths:
   /health:
@@ -150,29 +150,6 @@ paths:
               schema:
                 type: string
 
-  /api/v1/auth/token:
-    post:
-      tags: [auth]
-      operationId: exchangeToken
-      summary: Exchange the one-time code for a token
-      security: []
-      x-callers: [public]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TokenRequest"
-      responses:
-        "200":
-          description: The access token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Token"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
   /api/v1/dev/login:
     post:
       tags: [auth]
@@ -189,15 +166,46 @@ paths:
               $ref: "#/components/schemas/DevLoginRequest"
       responses:
         "200":
-          description: The access token
+          description: Logged in. The session cookie is set
+          headers:
+            Set-Cookie:
+              description: "`tasuki_session=<session token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Token"
+                $ref: "#/components/schemas/Session"
         "400":
           $ref: "#/components/responses/BadRequest"
 
   /api/v1/session:
+    post:
+      tags: [auth]
+      operationId: createSession
+      summary: Exchange the one-time code for a session
+      security: []
+      x-callers: [public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: Logged in. The session cookie is set
+          headers:
+            Set-Cookie:
+              description: "`tasuki_session=<session token>; HttpOnly; Secure; SameSite=Lax; Path=/api`"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
     delete:
       tags: [auth]
       operationId: logout
@@ -205,7 +213,12 @@ paths:
       x-callers: [account]
       responses:
         "204":
-          description: The token can no longer be used
+          description: The session is revoked, and the session cookie is cleared
+          headers:
+            Set-Cookie:
+              description: "`tasuki_session=; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=0`"
+              schema:
+                type: string
         "401":
           $ref: "#/components/responses/Unauthenticated"
 
@@ -968,9 +981,11 @@ paths:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: tasuki_session
+      description: HttpOnly session cookie. Requests that change data must also carry an `Origin` header equal to the frontend's origin (CSRF)
 
   parameters:
     RaceId:
@@ -1018,13 +1033,13 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
     Unauthenticated:
-      description: "`unauthenticated`: no token, or the token is invalid or expired"
+      description: "`unauthenticated`: no session cookie, or the session is unknown, expired, or revoked"
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
     Forbidden:
-      description: "`forbidden`: the caller's role does not allow the operation"
+      description: "`forbidden`: the caller's role does not allow the operation, or a request that changes data has a missing or foreign `Origin`"
       content:
         application/problem+json:
           schema:
@@ -1121,12 +1136,15 @@ components:
                 type: string
     Health:
       type: object
-      required: [status, mongo]
+      required: [status, mongo, postgres]
       properties:
         status:
           type: string
           enum: [ok, error]
         mongo:
+          type: string
+          enum: [ok, unreachable]
+        postgres:
           type: string
           enum: [ok, unreachable]
 
@@ -1149,18 +1167,16 @@ components:
       properties:
         authorization_url:
           type: string
-    TokenRequest:
+    CreateSessionRequest:
       type: object
       required: [code]
       properties:
         code:
           type: string
-    Token:
+    Session:
       type: object
-      required: [access_token, expires_at]
+      required: [expires_at]
       properties:
-        access_token:
-          type: string
         expires_at:
           type: string
           format: date-time

@@ -29,7 +29,7 @@ fmt:
 
 # Start the development container without an editor integration, then open a shell in it.
 dev-up:
-	$(COMPOSE_DEV) up -d --build --wait mongo backend-dev
+	$(COMPOSE_DEV) up -d --build --wait mongo postgres backend-dev
 
 dev-shell:
 	$(COMPOSE_DEV) exec backend-dev bash
@@ -37,9 +37,9 @@ dev-shell:
 dev-down:
 	$(COMPOSE_DEV) down
 
-# Build the production image and start it together with MongoDB.
+# Build the production image and start it together with MongoDB and PostgreSQL.
 up:
-	$(COMPOSE) up -d --build --wait mongo backend
+	$(COMPOSE) up -d --build --wait mongo postgres backend
 
 down:
 	$(COMPOSE) down

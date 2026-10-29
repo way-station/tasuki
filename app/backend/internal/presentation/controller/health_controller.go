@@ -22,16 +22,29 @@ func NewHealthController(check *health.CheckUseCase) *HealthController {
 }
 
 // Get writes 200 when every store is reachable, and 503 otherwise.
-func (c *HealthController) Get(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+func (controller *HealthController) Get(w http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), 2*time.Second)
 	defer cancel()
 
-	status := c.check.Execute(ctx)
+	status := controller.check.Execute(ctx)
+	body := map[string]string{
+		"status":   "ok",
+		"mongo":    storeState(status.MongoReachable()),
+		"postgres": storeState(status.PostgresReachable()),
+	}
 	if !status.Healthy() {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "error", "mongo": "unreachable"})
+		body["status"] = "error"
+		writeJSON(w, http.StatusServiceUnavailable, body)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "mongo": "ok"})
+	writeJSON(w, http.StatusOK, body)
+}
+
+func storeState(reachable bool) string {
+	if reachable {
+		return "ok"
+	}
+	return "unreachable"
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

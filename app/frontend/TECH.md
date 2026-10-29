@@ -4,7 +4,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 
 ## Principles
 
-1. **Total time is calculated on the frontend only.** The backend stores and shares data.
+1. **Predictions are calculated by the backend.** The frontend only shows the total time or laps it returns. Members may not see other members' average times (ADR-0006), so the frontend never receives the data to calculate them (`app/backend/TECH.md`, ADR-0011).
 2. **No Node toolchain on the host.** Development happens inside the Dev Container; the host only needs Docker and an editor.
 
 ## Stack
@@ -16,7 +16,9 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Build / dev server | Vite | 8 |
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
-| Lint | oxlint (Vite template default; to be confirmed in #5) | 1.x |
+| Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt pinned (pre-1.0) |
+| Routing | React Router, without data mode (ADR-0013) | 7 |
+| Server data | TanStack Query (ADR-0013) | 5 |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
 
 ### Why these choices
@@ -30,12 +32,21 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Topic | Candidates |
 | --- | --- |
 | API types shared with the backend | OpenAPI → generated TypeScript types |
-| Routing | React Router / TanStack Router |
-| Data fetching | TanStack Query |
 | Styling | Tailwind CSS / CSS Modules |
-| Lint / format | oxlint (current) / Biome / ESLint + Prettier |
 | Tests | Vitest + Testing Library |
 | Production image | depends on hosting (#7) |
+
+## Structure (ADR-0012)
+
+Each feature is split into Types, Mapper, Hooks, Container, and UI. Imports go Container → UI and Container → Hooks → Mapper → Types; Hooks call the backend through the `ApiClient` interface; the UI imports only view types.
+
+```
+src/
+  features/<feature>/     # auth, races, participation, running-orders, laps, roster
+    types/  mapper/  hooks/  container/  ui/
+  api/                    # ApiClient interface and implementation, query keys
+  shared/                 # only what more than one feature needs
+```
 
 ## Supply-chain safety (`pnpm-workspace.yaml`)
 
@@ -74,7 +85,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 
 ## 原則
 
-1. **合計タイムの計算はフロントエンドだけで行う。** backend は保存と共有だけを担当します
+1. **予想は backend が計算する。** frontend は、返ってきた合計タイムや周回数を表示するだけです。メンバーはほかのメンバーの平均タイムを見られない（ADR-0006）ので、frontend には計算に使うデータが届きません（`app/backend/TECH.md`、ADR-0011）
 2. **ホストに Node のツールチェーンを入れない。** 開発は Dev Container の中で行い、ホストに必要なのは Docker とエディタだけです
 
 ## 技術スタック
@@ -86,7 +97,9 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | ビルド / 開発サーバー | Vite | 8 |
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
-| Lint | oxlint（Vite テンプレートのデフォルト。#5 で確定） | 1.x |
+| Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt は固定（1.0 より前） |
+| ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
+| サーバーのデータ | TanStack Query（ADR-0013） | 5 |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
 
 ### 選定理由
@@ -100,12 +113,21 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | 項目 | 候補 |
 | --- | --- |
 | backend との API の型共有 | OpenAPI → TypeScript の型を生成 |
-| ルーティング | React Router / TanStack Router |
-| データ取得 | TanStack Query |
 | スタイリング | Tailwind CSS / CSS Modules |
-| Lint / Format | oxlint（現状）/ Biome / ESLint + Prettier |
 | テスト | Vitest + Testing Library |
 | 本番用イメージ | ホスティング（#7）次第 |
+
+## 構成（ADR-0012）
+
+機能ごとに Types、Mapper、Hooks、Container、UI に分ける。import は Container → UI と Container → Hooks → Mapper → Types の向き。Hooks は `ApiClient` の interface を通して backend を呼ぶ。UI は画面用の型だけを import する。
+
+```
+src/
+  features/<feature>/     # auth, races, participation, running-orders, laps, roster
+    types/  mapper/  hooks/  container/  ui/
+  api/                    # ApiClient の interface と実装、query key
+  shared/                 # 複数の機能が必要とするものだけ
+```
 
 ## サプライチェーン対策（`pnpm-workspace.yaml`）
 

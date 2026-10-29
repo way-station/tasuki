@@ -6,12 +6,12 @@ import (
 )
 
 func TestParseDate(t *testing.T) {
-	d, err := ParseDate("2026-11-23")
+	date, err := ParseDate("2026-11-23")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if d.String() != "2026-11-23" {
-		t.Errorf("String() = %q", d.String())
+	if date.String() != "2026-11-23" {
+		t.Errorf("String() = %q", date.String())
 	}
 	if _, err := ParseDate("2026/11/23"); err == nil {
 		t.Error("ParseDate(2026/11/23): want an error")
