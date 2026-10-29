@@ -80,14 +80,34 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      postgres:
+        # Keep in sync with infra/compose.yaml.
+        image: postgres:18
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: tasuki
+          POSTGRES_DB: tasuki_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d tasuki_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       MONGODB_URI: mongodb://localhost:27017
+      DATABASE_URL: postgres://app:tasuki@localhost:5432/tasuki_test?sslmode=disable
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: app/backend/go.mod
           cache-dependency-path: app/backend/go.sum
+      - name: Install golang-migrate
+        # Keep in sync with infra/docker/backend/Dockerfile (dev stage).
+        run: go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+      - name: Apply migrations
+        run: make db-migrate
       - name: Unit and integration tests
         run: make test-integration
 
