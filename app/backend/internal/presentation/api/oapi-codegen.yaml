@@ -1,0 +1,6 @@
+# oapi-codegen settings for the server code generated from api/openapi.yaml (ADR-0017).
+package: api
+output: openapi.gen.go
+generate:
+  models: true
+  chi-server: true
