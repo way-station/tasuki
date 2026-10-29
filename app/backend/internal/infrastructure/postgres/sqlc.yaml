@@ -1,0 +1,15 @@
+# sqlc settings: Go code generated from the queries in queries/ against the schema in
+# migrations/ (ADR-0015). The generated code is committed (ADR-0017); run make generate.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: ../../../migrations
+    queries: queries
+    gen:
+      go:
+        package: sqlcgen
+        out: sqlcgen
+        sql_package: pgx/v5
+        output_db_file_name: db.gen.go
+        output_models_file_name: models.gen.go
+        output_files_suffix: .gen
