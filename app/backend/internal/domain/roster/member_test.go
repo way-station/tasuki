@@ -11,40 +11,40 @@ import (
 
 type fixedIDs struct{ id string }
 
-func (f fixedIDs) NewID() string { return f.id }
+func (ids fixedIDs) NewID() string { return ids.id }
 
 func newMember(t *testing.T) *Member {
 	t.Helper()
-	m, err := NewMemberFactory(fixedIDs{id: "m1"}).New("team1", "  Sato  ")
+	member, err := NewMemberFactory(fixedIDs{id: "m1"}).New("team1", "  Sato  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return m
+	return member
 }
 
 func TestMemberFactoryNew(t *testing.T) {
-	m := newMember(t)
-	if m.ID() != "m1" || m.TeamID() != "team1" || m.Name() != "Sato" || m.Left() {
-		t.Errorf("New() = %+v", m)
+	member := newMember(t)
+	if member.ID() != "m1" || member.TeamID() != "team1" || member.Name() != "Sato" || member.Left() {
+		t.Errorf("New() = %+v", member)
 	}
 
 	_, err := NewMemberFactory(fixedIDs{id: "m2"}).New("team1", " ")
-	var ve *shared.ValidationError
-	if !errors.As(err, &ve) {
+	var validationErr *shared.ValidationError
+	if !errors.As(err, &validationErr) {
 		t.Errorf("New(blank name) error = %v, want a ValidationError", err)
 	}
 }
 
 func TestLeaveAndRejoin(t *testing.T) {
-	m := newMember(t)
+	member := newMember(t)
 	first := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
-	m.Leave(first)
-	m.Leave(first.Add(time.Hour)) // does nothing
-	if at, ok := m.LeftAt(); !ok || !at.Equal(first) {
-		t.Errorf("LeftAt() = %v, %v, want %v", at, ok, first)
+	member.Leave(first)
+	member.Leave(first.Add(time.Hour)) // does nothing
+	if leftAt, ok := member.LeftAt(); !ok || !leftAt.Equal(first) {
+		t.Errorf("LeftAt() = %v, %v, want %v", leftAt, ok, first)
 	}
-	m.Rejoin()
-	if m.Left() {
+	member.Rejoin()
+	if member.Left() {
 		t.Error("Left() after Rejoin() = true")
 	}
 }
@@ -64,24 +64,24 @@ func TestCanIssueInviteLink(t *testing.T) {
 		{name: "approved", member: newMember(t), link: LinkApproved, wantErr: true},
 		{name: "left", member: left, link: LinkNone, wantErr: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.member.CanIssueInviteLink(tt.link)
-			var se *shared.StateError
-			if tt.wantErr != errors.As(err, &se) {
-				t.Errorf("CanIssueInviteLink() = %v, want error: %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := testCase.member.CanIssueInviteLink(testCase.link)
+			var stateErr *shared.StateError
+			if testCase.wantErr != errors.As(err, &stateErr) {
+				t.Errorf("CanIssueInviteLink() = %v, want error: %v", err, testCase.wantErr)
 			}
 		})
 	}
 }
 
 func TestInvitationsToCancel(t *testing.T) {
-	date := func(s string) shared.Date {
-		d, err := shared.ParseDate(s)
+	date := func(text string) shared.Date {
+		parsed, err := shared.ParseDate(text)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return d
+		return parsed
 	}
 	got := LeaveService{}.InvitationsToCancel(date("2026-10-17"), []InvitedRace{
 		{RaceID: "past", RaceDate: date("2026-10-16")},
