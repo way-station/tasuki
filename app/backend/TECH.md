@@ -160,6 +160,21 @@ The PostgreSQL schema is changed only by migrations in `migrations/` (golang-mig
 - Versions are zero-padded to six digits, so sqlc and golang-migrate read the files in the same order (ADR-0015).
 - The commands use `DATABASE_URL`. To migrate the test database, pass it: `make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`.
 
+### Queries (sqlc)
+
+PostgreSQL queries are written in SQL and sqlc generates the Go code (ADR-0015). Everything is in `internal/infrastructure/postgres/`:
+
+| Path | What it is |
+| --- | --- |
+| `queries/*.sql` | Queries with a name, for example `-- name: GetTeam :one` |
+| `sqlc.yaml` | Settings: the schema is the up files in `migrations/`, the generated code uses pgx v5 |
+| `sqlcgen/*.gen.go` | Generated code. Never edit it by hand |
+
+- After changing a query or a migration, run `make generate` and commit the result. A wrong column or type stops the generation with an error.
+- sqlc is a prebuilt binary copied from the official image in the dev stage of `infra/docker/backend/Dockerfile`, and installed with `sqlc-dev/setup-sqlc` in CI. Building it with `go tool` would compile its PostgreSQL parser in C, which takes minutes. Change the version in both places.
+- `uuid` columns are `uuid.UUID` from `github.com/google/uuid`, and a nullable one is `*uuid.UUID` (`overrides` in `sqlc.yaml`). Other types are pgx's defaults, such as `pgtype.Timestamptz`.
+- Generated types stay in Infrastructure: repositories convert them to entities, and query services to DTOs (ADR-0015).
+
 ### Running the production image
 
 ```sh
@@ -383,6 +398,21 @@ PostgreSQL のスキーマは、`migrations/` のマイグレーションでだ�
 
 - バージョン番号は 6 桁でゼロ埋めする。sqlc と golang-migrate がファイルを同じ順番で読むようにするため（ADR-0015）
 - コマンドは `DATABASE_URL` を使う。テスト用の DB に適用するときは指定する：`make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`
+
+### クエリ（sqlc）
+
+PostgreSQL のクエリは SQL で書き、sqlc が Go のコードを生成する（ADR-0015）。すべて `internal/infrastructure/postgres/` に置く：
+
+| 場所 | 中身 |
+| --- | --- |
+| `queries/*.sql` | 名前付きのクエリ。例：`-- name: GetTeam :one` |
+| `sqlc.yaml` | 設定：スキーマは `migrations/` の上げるファイル、生成するコードは pgx v5 を使う |
+| `sqlcgen/*.gen.go` | 生成したコード。手で編集しない |
+
+- クエリかマイグレーションを変えたら `make generate` を実行し、結果をコミットする。列や型を間違えると、生成がエラーで止まる
+- sqlc は、`infra/docker/backend/Dockerfile` の dev ステージで公式イメージからビルド済みのバイナリをコピーし、CI では `sqlc-dev/setup-sqlc` で入れる。`go tool` でビルドすると PostgreSQL の構文解析を C からビルドするので数分かかるため。バージョンは両方で変える
+- `uuid` の列は `github.com/google/uuid` の `uuid.UUID`、NULL を許す列は `*uuid.UUID` にする（`sqlc.yaml` の `overrides`）。ほかの型は pgx の既定（`pgtype.Timestamptz` など）
+- 生成した型は Infrastructure の外に出さない：リポジトリは Entity に、QueryService は DTO に変える（ADR-0015）
 
 ### 本番用イメージを動かす
 

@@ -49,6 +49,10 @@ jobs:
         with:
           go-version-file: app/backend/go.mod
           cache-dependency-path: app/backend/go.sum
+      - uses: sqlc-dev/setup-sqlc@bac53b7fb28c039a6c7f5736fd1e89744021bdd6 # v5.0.0
+        with:
+          # Keep in sync with infra/docker/backend/Dockerfile (dev stage).
+          sqlc-version: "1.31.1"
       # Generated code is committed (ADR-0017); fail when it is older than its source.
       - name: Check that generated code is up to date
         run: |
