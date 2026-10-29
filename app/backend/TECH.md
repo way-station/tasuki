@@ -171,7 +171,7 @@ PostgreSQL queries are written in SQL and sqlc generates the Go code (ADR-0015).
 | `sqlcgen/*.gen.go` | Generated code. Never edit it by hand |
 
 - After changing a query or a migration, run `make generate` and commit the result. A wrong column or type stops the generation with an error.
-- sqlc is pinned as a Go tool in `go.mod`. The first build compiles its PostgreSQL parser in C and takes a few minutes; later runs use the build cache.
+- sqlc is a prebuilt binary copied from the official image in the dev stage of `infra/docker/backend/Dockerfile`, and installed with `sqlc-dev/setup-sqlc` in CI. Building it with `go tool` would compile its PostgreSQL parser in C, which takes minutes. Change the version in both places.
 - Generated types stay in Infrastructure: repositories convert them to entities, and query services to DTOs (ADR-0015).
 
 ### Running the production image
@@ -409,7 +409,7 @@ PostgreSQL のクエリは SQL で書き、sqlc が Go のコードを生成す�
 | `sqlcgen/*.gen.go` | 生成したコード。手で編集しない |
 
 - クエリかマイグレーションを変えたら `make generate` を実行し、結果をコミットする。列や型を間違えると、生成がエラーで止まる
-- sqlc は Go のツールとして `go.mod` でバージョンを固定している。最初のビルドは PostgreSQL の構文解析を C からビルドするので数分かかる。2 回目からはビルドのキャッシュが効く
+- sqlc は、`infra/docker/backend/Dockerfile` の dev ステージで公式イメージからビルド済みのバイナリをコピーし、CI では `sqlc-dev/setup-sqlc` で入れる。`go tool` でビルドすると PostgreSQL の構文解析を C からビルドするので数分かかるため。バージョンは両方で変える
 - 生成した型は Infrastructure の外に出さない：リポジトリは Entity に、QueryService は DTO に変える（ADR-0015）
 
 ### 本番用イメージを動かす
