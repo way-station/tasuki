@@ -11,7 +11,8 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Topic | Rule |
 | --- | --- |
 | Base path | `/api/v1` |
-| Authentication | `Authorization: Bearer <token>`. When the token expires, the user logs in with LINE again; there is no refresh token |
+| Authentication | The session token is carried in an HttpOnly cookie `tasuki_session` (`Secure`, `SameSite=Lax`, `Path=/api`). Scripts on the page cannot read it, so the frontend never handles the session token. The frontend and the API are served from the same site. When the session expires, the user logs in with LINE again; there is no refresh token |
+| CSRF | Requests that change data (`POST`, `PUT`, `PATCH`, `DELETE`) must carry an `Origin` header equal to the frontend's origin; otherwise `403 forbidden`. With `SameSite=Lax`, this rejects requests sent from other sites |
 | Errors | RFC 9457 `application/problem+json` with an extra `code` field the frontend uses to choose what to show |
 | Hidden resources | A race (and anything under it) that the caller may not see returns `404`, the same as a race that does not exist |
 | Times | Lap times and average times: `"MM:SS"` (e.g. `"3:28"`). Total times: `"H:MM:SS"` (e.g. `"2:45:30"`) |
@@ -26,8 +27,8 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 
 | Caller | Meaning |
 | --- | --- |
-| Public | No token |
-| Account | Any valid token, including accounts waiting for approval or rejected |
+| Public | No session |
+| Account | Any valid session, including accounts waiting for approval or rejected |
 | Member | Account whose link to a roster member is approved and who has not left |
 | Organizer | Account listed as an organizer in configuration. Does not need a link |
 
@@ -38,8 +39,8 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Status | `code` | When |
 | --- | --- | --- |
 | 400 | `invalid_request` | Malformed body or parameters |
-| 401 | `unauthenticated` | No token, or the token is invalid or expired |
-| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting account calling a member endpoint) |
+| 401 | `unauthenticated` | No session cookie, or the session is unknown, expired, or revoked |
+| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting account calling a member endpoint), or a request that changes data has a missing or foreign `Origin` |
 | 404 | `not_found` | Does not exist, or the caller may not see it |
 | 404 | `invite_unusable` | Invite link expired, used, or replaced |
 | 409 | `version_conflict` | Someone else changed it since it was read |
@@ -53,7 +54,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | `GET /invite-links/{token}` | Public | A1 | Check an invite link before login |
 | `POST /auth/line/authorize` | Public | A1, login | Start LINE Login |
 | `GET /auth/line/callback` | Public (LINE redirects here) | — | Finish LINE Login, redirect to the frontend |
-| `POST /auth/token` | Public | — | Exchange the one-time code for a token |
+| `POST /session` | Public | — | Exchange the one-time code for a session |
 | `POST /dev/login` | Public, development only | — | Dev-only login (ADR-0009) |
 | `DELETE /session` | Account | — | Log out |
 | `GET /me` | Account | All | Who am I, and which screens to show |
@@ -74,24 +75,24 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 - With an invite token: creates a pending link between the account and the roster member and makes the invite link unusable. If the link became unusable in the meantime, redirects with an error.
 - Redirects to the frontend `/auth/complete?code=<one-time code>`, or `/auth/complete?error=<code>`:
   - `invite_unusable`: the invite link cannot be used → A4
-  - `left`: the account's roster member has left → A4 (no token is issued)
+  - `left`: the account's roster member has left → A4 (no session is created)
   - `login_failed`: LINE Login failed or was cancelled
 - The one-time code is short-lived and can be exchanged once.
 
-### `POST /auth/token`
+### `POST /session`
 
 - Body: `{ code }`.
-- `200`: `{ access_token, expires_at }`.
+- `200`: `{ expires_at }`, and sets the session cookie (`Set-Cookie`). The session token is not in the body.
 - `400 invalid_request`: unknown, expired, or used code.
 
 ### `POST /dev/login`
 
 - Exists only when `DEV_LOGIN_ENABLED=true` (ADR-0009). Otherwise the route is not registered (`404`).
-- Body: `{ line_user_id, display_name }`. Response is the same as `POST /auth/token`.
+- Body: `{ line_user_id, display_name }`. Response is the same as `POST /session`.
 
 ### `DELETE /session`
 
-- `204`. The token can no longer be used.
+- `204`. The session is revoked, and the session cookie is cleared.
 
 ### `GET /me`
 
@@ -112,7 +113,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | `none` | No link | A4 for non-organizers; organizers use organizer screens |
 
 - `roster_member` is set only when `status` is `approved`.
-- Left members never get a token (see the callback), so there is no `left` status.
+- Left members never get a session (see the callback), so there is no `left` status.
 
 ## Races
 
@@ -348,12 +349,12 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 ### `PATCH /roster-members/{roster_member_id}`
 
 - Body: `{ left: true | false }`. Names cannot be changed. `200` roster member.
-- `left: true`: cancels invitations to races dated today or later, with the side effects of cancelling an invitation. The member can no longer log in, and existing tokens stop working.
+- `left: true`: cancels invitations to races dated today or later, with the side effects of cancelling an invitation. The member can no longer log in, and all of their account's sessions are revoked.
 - `left: false`: the member can log in again. Cancelled invitations do not come back.
 
 ### `DELETE /roster-members/{roster_member_id}/link`
 
-- Removes the approved link. `204`. The account's tokens stop working as a member.
+- Removes the approved link. `204`. The account can no longer act as a member; its sessions stay valid.
 - `409 state_conflict`: no approved link.
 
 ### `POST /roster-members/{roster_member_id}/invite-links`
@@ -405,7 +406,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 項目 | ルール |
 | --- | --- |
 | パスの頭 | `/api/v1` |
-| 認証 | `Authorization: Bearer <トークン>`。期限が切れたら LINE でログインし直す。リフレッシュトークンはない |
+| 認証 | セッショントークンは HttpOnly Cookie `tasuki_session`（`Secure`、`SameSite=Lax`、`Path=/api`）で運ぶ。ページ上のスクリプトから読めないので、frontend はセッショントークンを扱わない。frontend と API は同じサイトから出す。期限が切れたら LINE でログインし直す。リフレッシュトークンはない |
+| CSRF | データを変えるリクエスト（`POST`、`PUT`、`PATCH`、`DELETE`）は、frontend のオリジンと同じ `Origin` ヘッダーを持つ必要がある。なければ `403 forbidden`。`SameSite=Lax` と合わせて、ほかのサイトから送られたリクエストを断る |
 | エラー | RFC 9457 の `application/problem+json`。画面が出し分けるための `code` を足す |
 | 見られないもの | 見てはいけない大会（とその下のもの）は `404`。存在しない大会と同じ |
 | タイム | ラップと平均タイム：`"MM:SS"`（例：`"3:28"`）。合計タイム：`"H:MM:SS"`（例：`"2:45:30"`） |
@@ -420,8 +422,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 | 呼ぶ人 | 意味 |
 | --- | --- |
-| 公開 | トークンなし |
-| アカウント | 有効なトークンがあれば誰でも。承認待ちや却下のアカウントも含む |
+| 公開 | セッションなし |
+| アカウント | 有効なセッションがあれば誰でも。承認待ちや却下のアカウントも含む |
 | メンバー | 名簿のメンバーとの紐付けが承認され、退会していないアカウント |
 | 幹事 | 設定で幹事として並べられたアカウント。紐付けは不要 |
 
@@ -432,8 +434,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | ステータス | `code` | いつ |
 | --- | --- | --- |
 | 400 | `invalid_request` | 本文やパラメータの形が正しくない |
-| 401 | `unauthenticated` | トークンがない、正しくない、期限切れ |
-| 403 | `forbidden` | 役割がそのエンドポイントを許さない（例：メンバーが幹事のエンドポイントを呼ぶ、承認待ちがメンバーのエンドポイントを呼ぶ） |
+| 401 | `unauthenticated` | セッションの Cookie がない、またはそのセッションが不明、期限切れ、無効 |
+| 403 | `forbidden` | 役割がそのエンドポイントを許さない（例：メンバーが幹事のエンドポイントを呼ぶ、承認待ちがメンバーのエンドポイントを呼ぶ）、またはデータを変えるリクエストの `Origin` がない、ほかのサイトのもの |
 | 404 | `not_found` | 存在しない、または見てはいけない |
 | 404 | `invite_unusable` | 招待リンクが期限切れ、使用済み、置き換え済み |
 | 409 | `version_conflict` | 読んだ後にほかの人が変えた |
@@ -447,7 +449,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `GET /invite-links/{token}` | 公開 | A1 | ログイン前に招待リンクを確かめる |
 | `POST /auth/line/authorize` | 公開 | A1、ログイン | LINE ログインを始める |
 | `GET /auth/line/callback` | 公開（LINE がここに戻す） | — | LINE ログインを終え、frontend に戻す |
-| `POST /auth/token` | 公開 | — | 一度きりのコードをトークンに交換する |
+| `POST /session` | 公開 | — | 一度きりのコードをセッションに交換する |
 | `POST /dev/login` | 公開、開発のときだけ | — | ローカル開発専用の仮ログイン（ADR-0009） |
 | `DELETE /session` | アカウント | — | ログアウト |
 | `GET /me` | アカウント | すべて | 自分は誰か、どの画面を出すか |
@@ -468,24 +470,24 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - 招待トークンがあれば、アカウントと名簿のメンバーの紐付けを承認待ちで作り、招待リンクを使えなくする。その間にリンクが使えなくなっていたら、エラーで戻す
 - frontend の `/auth/complete?code=<一度きりのコード>` か、`/auth/complete?error=<コード>` に戻す
   - `invite_unusable`：招待リンクが使えない → A4
-  - `left`：アカウントの名簿のメンバーが退会している → A4（トークンは出さない）
+  - `left`：アカウントの名簿のメンバーが退会している → A4（セッションは作らない）
   - `login_failed`：LINE ログインが失敗した、または取り消された
 - 一度きりのコードは短い期限で、1回だけ交換できる
 
-### `POST /auth/token`
+### `POST /session`
 
 - 本文：`{ code }`
-- `200`：`{ access_token, expires_at }`
+- `200`：`{ expires_at }`。セッションの Cookie を設定する（`Set-Cookie`）。本文にセッショントークンは入れない
 - `400 invalid_request`：知らない、期限切れ、使用済みのコード
 
 ### `POST /dev/login`
 
 - `DEV_LOGIN_ENABLED=true` のときだけある（ADR-0009）。それ以外はルートを登録しない（`404`）
-- 本文：`{ line_user_id, display_name }`。レスポンスは `POST /auth/token` と同じ
+- 本文：`{ line_user_id, display_name }`。レスポンスは `POST /session` と同じ
 
 ### `DELETE /session`
 
-- `204`。そのトークンは使えなくなる
+- `204`。そのセッションを無効にし、セッションの Cookie を消す
 
 ### `GET /me`
 
@@ -499,7 +501,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `none` | 紐付けがない | 幹事でなければ A4。幹事は幹事の画面を使う |
 
 - `roster_member` は `status` が `approved` のときだけ入る
-- 退会したメンバーにはトークンを出さない（コールバックを参照）ので、`left` の状態はない
+- 退会したメンバーにはセッションを作らない（コールバックを参照）ので、`left` の状態はない
 
 ## 大会
 
@@ -626,8 +628,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `GET /roster-members`：名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
 - `POST /roster-members`：本文 `{ name }` → `201`
 - `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ
-- `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、今のトークンも使えなくなる。`left: false` でまたログインできる。取り消された招待は戻らない
-- `DELETE .../link`：承認済みの紐付けを外す。`204`。承認済みの紐付けがなければ `409 state_conflict`
+- `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのアカウントのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
+- `DELETE .../link`：承認済みの紐付けを外す。`204`。アカウントはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
 - `POST .../invite-links`：`201`：`{ url, expires_at }`。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
 - `GET /member-links`：承認待ちの紐付け（LINE の表示名、名簿のメンバー、日時）
 - `POST .../approve`、`.../reject`：`204`。承認待ちでなければ `409 state_conflict`

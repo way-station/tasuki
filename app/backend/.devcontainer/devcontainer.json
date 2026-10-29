@@ -5,7 +5,7 @@
     "../../../infra/compose.dev.yaml"
   ],
   "service": "backend-dev",
-  "runServices": ["mongo", "backend-dev"],
+  "runServices": ["mongo", "postgres", "backend-dev"],
   "workspaceFolder": "/workspaces/tasuki/app/backend",
   "shutdownAction": "stopCompose",
   "forwardPorts": [8080],

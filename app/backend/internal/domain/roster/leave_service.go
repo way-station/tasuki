@@ -15,9 +15,9 @@ type LeaveService struct{}
 // leaves: races dated today or later. Past races are not changed.
 func (LeaveService) InvitationsToCancel(today shared.Date, invited []InvitedRace) []shared.RaceID {
 	var ids []shared.RaceID
-	for _, r := range invited {
-		if !r.RaceDate.Before(today) {
-			ids = append(ids, r.RaceID)
+	for _, race := range invited {
+		if !race.RaceDate.Before(today) {
+			ids = append(ids, race.RaceID)
 		}
 	}
 	return ids
