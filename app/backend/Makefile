@@ -14,11 +14,14 @@ run:
 build:
 	go build -o bin/server ./cmd/server
 
+# Extra go test flags; CI passes -failfast to stop at the first failing test.
+TESTFLAGS ?=
+
 test:
-	go test -race ./...
+	go test -race $(TESTFLAGS) ./...
 
 test-integration:
-	go test -race -tags integration ./...
+	go test -race -tags integration $(TESTFLAGS) ./...
 
 lint:
 	golangci-lint run

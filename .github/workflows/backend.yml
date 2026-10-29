@@ -109,7 +109,8 @@ jobs:
       - name: Apply migrations
         run: make db-migrate
       - name: Unit and integration tests
-        run: make test-integration
+        # Stop at the first failing test; the remaining tests, in every package, do not run.
+        run: make test-integration TESTFLAGS=-failfast
 
   docker:
     runs-on: ubuntu-latest
