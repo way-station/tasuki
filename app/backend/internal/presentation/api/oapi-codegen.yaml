@@ -4,3 +4,6 @@ output: openapi.gen.go
 generate:
   models: true
   chi-server: true
+  # Controllers take typed requests and return typed responses, so a response that the
+  # document does not define fails to compile.
+  strict-server: true
