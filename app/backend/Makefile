@@ -1,7 +1,7 @@
 COMPOSE     := docker compose -f ../../infra/compose.yaml
 COMPOSE_DEV := $(COMPOSE) -f ../../infra/compose.dev.yaml
 
-.PHONY: run build test test-integration lint fmt \
+.PHONY: run build test test-integration lint fmt generate \
 	dev-up dev-shell dev-down up down
 
 # ---- Run inside the Dev Container ------------------------------------------
@@ -24,6 +24,10 @@ lint:
 
 fmt:
 	golangci-lint fmt
+
+# Regenerates committed code, such as the server code from api/openapi.yaml (ADR-0017).
+generate:
+	go generate ./...
 
 # ---- Run on the host (Docker only, no Go needed) ---------------------------
 
