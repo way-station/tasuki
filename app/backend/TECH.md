@@ -160,6 +160,20 @@ The PostgreSQL schema is changed only by migrations in `migrations/` (golang-mig
 - Versions are zero-padded to six digits, so sqlc and golang-migrate read the files in the same order (ADR-0015).
 - The commands use `DATABASE_URL`. To migrate the test database, pass it: `make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`.
 
+### Queries (sqlc)
+
+PostgreSQL queries are written in SQL and sqlc generates the Go code (ADR-0015). Everything is in `internal/infrastructure/postgres/`:
+
+| Path | What it is |
+| --- | --- |
+| `queries/*.sql` | Queries with a name, for example `-- name: GetTeam :one` |
+| `sqlc.yaml` | Settings: the schema is the up files in `migrations/`, the generated code uses pgx v5 |
+| `sqlcgen/*.gen.go` | Generated code. Never edit it by hand |
+
+- After changing a query or a migration, run `make generate` and commit the result. A wrong column or type stops the generation with an error.
+- sqlc is pinned as a Go tool in `go.mod`. The first build compiles its PostgreSQL parser in C and takes a few minutes; later runs use the build cache.
+- Generated types stay in Infrastructure: repositories convert them to entities, and query services to DTOs (ADR-0015).
+
 ### Running the production image
 
 ```sh
@@ -383,6 +397,20 @@ PostgreSQL のスキーマは、`migrations/` のマイグレーションでだ�
 
 - バージョン番号は 6 桁でゼロ埋めする。sqlc と golang-migrate がファイルを同じ順番で読むようにするため（ADR-0015）
 - コマンドは `DATABASE_URL` を使う。テスト用の DB に適用するときは指定する：`make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`
+
+### クエリ（sqlc）
+
+PostgreSQL のクエリは SQL で書き、sqlc が Go のコードを生成する（ADR-0015）。すべて `internal/infrastructure/postgres/` に置く：
+
+| 場所 | 中身 |
+| --- | --- |
+| `queries/*.sql` | 名前付きのクエリ。例：`-- name: GetTeam :one` |
+| `sqlc.yaml` | 設定：スキーマは `migrations/` の上げるファイル、生成するコードは pgx v5 を使う |
+| `sqlcgen/*.gen.go` | 生成したコード。手で編集しない |
+
+- クエリかマイグレーションを変えたら `make generate` を実行し、結果をコミットする。列や型を間違えると、生成がエラーで止まる
+- sqlc は Go のツールとして `go.mod` でバージョンを固定している。最初のビルドは PostgreSQL の構文解析を C からビルドするので数分かかる。2 回目からはビルドのキャッシュが効く
+- 生成した型は Infrastructure の外に出さない：リポジトリは Entity に、QueryService は DTO に変える（ADR-0015）
 
 ### 本番用イメージを動かす
 
