@@ -19,6 +19,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt 0.73.0 (exact, pre-1.0) |
 | Routing | React Router, without data mode (ADR-0013) | 7 |
 | Server data | TanStack Query (ADR-0013) | 5 |
+| Tests | Vitest, Testing Library, jsdom | Vitest 5 |
 | API types | openapi-typescript, generated from `app/backend/api/openapi.yaml` (ADR-0017) | 7.13.0 (exact) |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
 
@@ -33,7 +34,6 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Topic | Candidates |
 | --- | --- |
 | Styling | Tailwind CSS / CSS Modules |
-| Tests | Vitest + Testing Library |
 | Production image | depends on hosting (#7) |
 
 ## Structure (ADR-0012)
@@ -63,6 +63,7 @@ src/
 ```sh
 pnpm dev           # http://localhost:5173
 pnpm build
+pnpm test         # pnpm test:watch reruns on changes
 pnpm lint
 pnpm format        # pnpm format:check only reports
 pnpm generate:api  # after app/backend/api/openapi.yaml changes
@@ -73,8 +74,15 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 | Command | Runs on |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Inside the Dev Container |
+| `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` | Host (Docker only) |
+
+### Tests
+
+- Vitest runs the tests, with Testing Library and jsdom for components, so no browser is needed. Settings are in the `test` block of `vite.config.ts`; `src/test/setup.ts` adds the DOM matchers (`toBeInTheDocument()` and others).
+- Test files sit next to what they test, as `*.test.ts` / `*.test.tsx`.
+- Predictions are calculated by the backend, so frontend tests cover mappers, hooks with a fake `ApiClient` (#32), containers, and UI components.
+- CI runs `pnpm test --bail=1`, which stops at the first failing test.
 
 ### Lint and format
 
@@ -125,6 +133,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt 0.73.0（固定、1.0 より前） |
 | ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
+| テスト | Vitest、Testing Library、jsdom | Vitest 5 |
 | API の型 | openapi-typescript。`app/backend/api/openapi.yaml` から生成（ADR-0017） | 7.13.0（固定） |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
 
@@ -139,7 +148,6 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | 項目 | 候補 |
 | --- | --- |
 | スタイリング | Tailwind CSS / CSS Modules |
-| テスト | Vitest + Testing Library |
 | 本番用イメージ | ホスティング（#7）次第 |
 
 ## 構成（ADR-0012）
@@ -169,6 +177,7 @@ src/
 ```sh
 pnpm dev           # http://localhost:5173
 pnpm build
+pnpm test         # pnpm test:watch は変更のたびに実行し直す
 pnpm lint
 pnpm format        # pnpm format:check は確かめるだけ
 pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
@@ -179,8 +188,15 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 | コマンド | 実行する場所 |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Dev Container の中 |
+| `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` | ホスト（Docker だけ） |
+
+### テスト
+
+- テストは Vitest で実行する。部品は Testing Library と jsdom で描画するので、ブラウザは要らない。設定は `vite.config.ts` の `test`。`src/test/setup.ts` で DOM 用の matcher（`toBeInTheDocument()` など）を足している
+- テストファイルは、テストする対象の隣に `*.test.ts` / `*.test.tsx` として置く
+- 予想は backend が計算するので、frontend のテストは Mapper、偽の `ApiClient`（#32）を使う Hooks、Container、UI の部品を対象にする
+- CI では `pnpm test --bail=1` を実行し、最初に落ちたテストで止める
 
 ### Lint と format
 
