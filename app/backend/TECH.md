@@ -60,6 +60,7 @@ app/backend/
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
 │  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
+├─ migrations/           # PostgreSQL schema: golang-migrate up / down SQL files (ADR-0015)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
 ```
@@ -108,9 +109,10 @@ Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compo
 3. In the container terminal:
 
 ```sh
+make db-migrate         # creates the PostgreSQL tables
 make run                # http://localhost:8080/health (port is forwarded to the host)
 make test
-make test-integration   # uses the MongoDB container
+make test-integration   # uses the MongoDB and PostgreSQL containers
 make lint
 ```
 
@@ -130,7 +132,22 @@ make dev-down
 | Command | Runs on |
 | --- | --- |
 | `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Inside the Dev Container |
+| `make db-migrate` / `db-rollback` / `db-reset` / `db-new` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | Host (Docker only) |
+
+### Migrations
+
+The PostgreSQL schema is changed only by migrations in `migrations/` (golang-migrate, ADR-0015).
+
+| Command | What it does |
+| --- | --- |
+| `make db-migrate` | Applies every migration not applied yet |
+| `make db-rollback` | Undoes the last migration |
+| `make db-reset` | Drops everything in the database, then applies every migration (local only) |
+| `make db-new NAME=create_accounts` | Creates the next pair of files, `00000N_create_accounts.up.sql` and `.down.sql` |
+
+- Versions are zero-padded to six digits, so sqlc and golang-migrate read the files in the same order (ADR-0015).
+- The commands use `DATABASE_URL`. To migrate the test database, pass it: `make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`.
 
 ### Running the production image
 
@@ -256,6 +273,7 @@ app/backend/
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
 │  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
+├─ migrations/        # PostgreSQL のスキーマ：golang-migrate の上げる／戻す SQL ファイル（ADR-0015）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
 ```
@@ -304,9 +322,10 @@ app/backend/
 3. コンテナのターミナルで：
 
 ```sh
+make db-migrate         # PostgreSQL のテーブルを作る
 make run                # http://localhost:8080/health（ポートはホストに転送される）
 make test
-make test-integration   # MongoDB コンテナを使う
+make test-integration   # MongoDB と PostgreSQL のコンテナを使う
 make lint
 ```
 
@@ -326,7 +345,22 @@ make dev-down
 | コマンド | 実行する場所 |
 | --- | --- |
 | `make run` / `build` / `test` / `test-integration` / `lint` / `fmt` | Dev Container の中 |
+| `make db-migrate` / `db-rollback` / `db-reset` / `db-new` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` / `up` / `down` | ホスト（Docker だけ） |
+
+### マイグレーション
+
+PostgreSQL のスキーマは、`migrations/` のマイグレーションでだけ変える（golang-migrate、ADR-0015）。
+
+| コマンド | すること |
+| --- | --- |
+| `make db-migrate` | まだ適用していないマイグレーションをすべて適用する |
+| `make db-rollback` | 最後のマイグレーションを 1 つ戻す |
+| `make db-reset` | DB の中身をすべて消してから、すべてのマイグレーションを適用し直す（ローカル専用） |
+| `make db-new NAME=create_accounts` | 次の番号のファイルの組 `00000N_create_accounts.up.sql` と `.down.sql` を作る |
+
+- バージョン番号は 6 桁でゼロ埋めする。sqlc と golang-migrate がファイルを同じ順番で読むようにするため（ADR-0015）
+- コマンドは `DATABASE_URL` を使う。テスト用の DB に適用するときは指定する：`make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`
 
 ### 本番用イメージを動かす
 
