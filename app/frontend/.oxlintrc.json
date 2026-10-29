@@ -3,6 +3,119 @@
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/features/*/ui/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)(container|hooks|mapper)(/|$)",
+                "message": "UI only displays its props and reports actions through callbacks (ADR-0012)."
+              },
+              {
+                "regex": "(^|/)api(/|$)",
+                "message": "UI does not import the API client or the generated API types; use view types (ADR-0012)."
+              }
+            ],
+            "paths": [
+              {
+                "name": "react-router",
+                "message": "UI does not use React Router; the Container reads the URL (ADR-0012)."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "message": "UI does not fetch data; the Hooks do (ADR-0012)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/*/container/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)(mapper)(/|$)",
+                "message": "The Container does not convert API types; the Hooks use the Mapper (ADR-0012)."
+              },
+              {
+                "regex": "(^|/)api(/|$)",
+                "message": "The Container does not call the backend or use API types; it calls Hooks (ADR-0012)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/*/hooks/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)(container|ui)(/|$)",
+                "message": "Hooks do not render or import the Container or UI (ADR-0012)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/*/mapper/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)(hooks|container|ui)(/|$)",
+                "message": "The Mapper is pure functions over types (ADR-0012)."
+              },
+              {
+                "group": ["**/api/*", "!**/api/schema.gen", "!**/api/schema.gen.ts"],
+                "message": "The Mapper does not call the backend; only the generated API types may be imported (ADR-0012)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/*/types/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(^|/)(mapper|hooks|container|ui)(/|$)",
+                "message": "Types import no other layer (ADR-0012)."
+              },
+              {
+                "group": ["**/api/*", "!**/api/schema.gen", "!**/api/schema.gen.ts"],
+                "message": "Types may import only the generated API types from api/ (ADR-0012)."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

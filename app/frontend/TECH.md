@@ -16,7 +16,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Build / dev server | Vite | 8 |
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
-| Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt pinned (pre-1.0) |
+| Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt 0.73.0 (exact, pre-1.0) |
 | Routing | React Router, without data mode (ADR-0013) | 7 |
 | Server data | TanStack Query (ADR-0013) | 5 |
 | API types | openapi-typescript, generated from `app/backend/api/openapi.yaml` (ADR-0017) | 7.13.0 (exact) |
@@ -64,6 +64,7 @@ src/
 pnpm dev           # http://localhost:5173
 pnpm build
 pnpm lint
+pnpm format        # pnpm format:check only reports
 pnpm generate:api  # after app/backend/api/openapi.yaml changes
 ```
 
@@ -72,8 +73,22 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 | Command | Runs on |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `preview` / `generate:api` | Inside the Dev Container |
+| `pnpm install` / `dev` / `build` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` | Host (Docker only) |
+
+### Lint and format
+
+- oxfmt uses its defaults, the same as Prettier: double quotes and semicolons. `.oxfmtrc.json` only lists what it skips: the generated `src/api/schema.gen.ts` and Markdown.
+- CI runs `pnpm lint` and `pnpm format:check`.
+- oxlint enforces the import directions of ADR-0012 per layer folder (`overrides` in `.oxlintrc.json`):
+
+| Files in | May not import |
+| --- | --- |
+| `src/features/*/ui/` | `container/`, `hooks/`, `mapper/`, anything in `api/` (including the generated types), `react-router`, `@tanstack/react-query` |
+| `src/features/*/container/` | `mapper/`, anything in `api/` |
+| `src/features/*/hooks/` | `container/`, `ui/` |
+| `src/features/*/mapper/` | `hooks/`, `container/`, `ui/`, `api/` except the generated types |
+| `src/features/*/types/` | `mapper/`, `hooks/`, `container/`, `ui/`, `api/` except the generated types |
 
 ### Generated API types
 
@@ -107,7 +122,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | ビルド / 開発サーバー | Vite | 8 |
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
-| Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt は固定（1.0 より前） |
+| Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt 0.73.0（固定、1.0 より前） |
 | ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
 | API の型 | openapi-typescript。`app/backend/api/openapi.yaml` から生成（ADR-0017） | 7.13.0（固定） |
@@ -155,6 +170,7 @@ src/
 pnpm dev           # http://localhost:5173
 pnpm build
 pnpm lint
+pnpm format        # pnpm format:check は確かめるだけ
 pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 ```
 
@@ -163,8 +179,22 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 | コマンド | 実行する場所 |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `preview` / `generate:api` | Dev Container の中 |
+| `pnpm install` / `dev` / `build` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` | ホスト（Docker だけ） |
+
+### Lint と format
+
+- oxfmt は既定の設定を使う。Prettier と同じで、ダブルクォートとセミコロンあり。`.oxfmtrc.json` には対象外のもの（生成した `src/api/schema.gen.ts` と Markdown）だけを書く
+- CI で `pnpm lint` と `pnpm format:check` を実行する
+- oxlint で、ADR-0012 の import の向きを層のフォルダごとに強制する（`.oxlintrc.json` の `overrides`）：
+
+| 対象のファイル | import してはいけないもの |
+| --- | --- |
+| `src/features/*/ui/` | `container/`、`hooks/`、`mapper/`、`api/` のすべて（生成した型も含む）、`react-router`、`@tanstack/react-query` |
+| `src/features/*/container/` | `mapper/`、`api/` のすべて |
+| `src/features/*/hooks/` | `container/`、`ui/` |
+| `src/features/*/mapper/` | `hooks/`、`container/`、`ui/`、生成した型以外の `api/` |
+| `src/features/*/types/` | `mapper/`、`hooks/`、`container/`、`ui/`、生成した型以外の `api/` |
 
 ### 生成する API の型
 

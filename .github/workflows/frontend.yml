@@ -67,6 +67,8 @@ jobs:
           fi
       - name: Lint
         run: pnpm lint
+      - name: Format
+        run: pnpm format:check
       - name: Typecheck and build
         run: pnpm build
 
