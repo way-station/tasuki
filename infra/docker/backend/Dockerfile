@@ -8,7 +8,8 @@
 FROM golang:1.26.1 AS dev
 COPY --from=golangci/golangci-lint:v2.14.0 /usr/bin/golangci-lint /usr/local/bin/golangci-lint
 RUN go install golang.org/x/tools/gopls@v0.23.0 \
- && go install github.com/go-delve/delve/cmd/dlv@v1.27.2
+ && go install github.com/go-delve/delve/cmd/dlv@v1.27.2 \
+ && go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
 
 FROM golang:1.26.1 AS build
 WORKDIR /src
