@@ -225,6 +225,8 @@ Names are descriptive, including method receivers (`func (client *Client) Ping`)
 
 - Unit tests replace databases with fakes through interfaces.
 - Integration tests are files named `*_integration_test.go` with `//go:build integration`, and use separate test databases (`tasuki_test`).
+- Apply the migrations to the test database before integration tests that need tables: `make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`.
+- CI starts MongoDB and PostgreSQL as service containers, applies the migrations to `tasuki_test`, then runs `make test-integration`.
 
 ## Endpoints
 
@@ -464,6 +466,8 @@ make down
 
 - ユニットテストでは、インターフェース経由で DB をフェイクに置き換えます
 - 結合テストは `*_integration_test.go` に `//go:build integration` を付けて書き、テスト用のデータベース（`tasuki_test`）を使います
+- テーブルが必要な結合テストの前に、テスト用の DB にマイグレーションを適用します：`make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`
+- CI では MongoDB と PostgreSQL を service container で起動し、`tasuki_test` にマイグレーションを適用してから `make test-integration` を実行します
 
 ## エンドポイント
 
