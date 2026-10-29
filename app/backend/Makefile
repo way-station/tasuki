@@ -1,7 +1,7 @@
 COMPOSE     := docker compose -f ../../infra/compose.yaml
 COMPOSE_DEV := $(COMPOSE) -f ../../infra/compose.dev.yaml
 
-.PHONY: run build test test-integration lint fmt \
+.PHONY: run build test test-integration lint fmt generate \
 	db-migrate db-rollback db-reset db-new \
 	dev-up dev-shell dev-down up down
 
@@ -25,6 +25,10 @@ lint:
 
 fmt:
 	golangci-lint fmt
+
+# Regenerates committed code, such as the server code from api/openapi.yaml (ADR-0017).
+generate:
+	go generate ./...
 
 # Migrations (golang-migrate, ADR-0015). They use DATABASE_URL; pass another one to target a
 # different database, for example: make db-migrate DATABASE_URL=postgres://.../tasuki_test

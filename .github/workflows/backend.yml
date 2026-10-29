@@ -41,6 +41,25 @@ jobs:
           version: v2.14.0
           working-directory: app/backend
 
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: app/backend/go.mod
+          cache-dependency-path: app/backend/go.sum
+      # Generated code is committed (ADR-0017); fail when it is older than its source.
+      - name: Check that generated code is up to date
+        run: |
+          make generate
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            git diff
+            echo "::error::Generated code is out of date. Run make generate and commit the result."
+            exit 1
+          fi
+
   test:
     runs-on: ubuntu-latest
     services:
