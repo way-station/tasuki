@@ -19,6 +19,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt pinned (pre-1.0) |
 | Routing | React Router, without data mode (ADR-0013) | 7 |
 | Server data | TanStack Query (ADR-0013) | 5 |
+| API types | openapi-typescript, generated from `app/backend/api/openapi.yaml` (ADR-0017) | 7.13.0 (exact) |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
 
 ### Why these choices
@@ -31,7 +32,6 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 
 | Topic | Candidates |
 | --- | --- |
-| API types shared with the backend | OpenAPI → generated TypeScript types |
 | Styling | Tailwind CSS / CSS Modules |
 | Tests | Vitest + Testing Library |
 | Production image | depends on hosting (#7) |
@@ -61,9 +61,10 @@ src/
 3. Inside the container:
 
 ```sh
-pnpm dev        # http://localhost:5173
+pnpm dev           # http://localhost:5173
 pnpm build
 pnpm lint
+pnpm generate:api  # after app/backend/api/openapi.yaml changes
 ```
 
 - `node_modules` and the pnpm store live in Docker volumes, so nothing is installed on the host.
@@ -71,8 +72,17 @@ pnpm lint
 
 | Command | Runs on |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `preview` | Inside the Dev Container |
+| `pnpm install` / `dev` / `build` / `lint` / `preview` / `generate:api` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` | Host (Docker only) |
+
+### Generated API types
+
+The TypeScript types of the API are generated from `app/backend/api/openapi.yaml` with openapi-typescript into `src/api/schema.gen.ts` (ADR-0010, ADR-0017).
+
+- After the document changes, run `pnpm generate:api` and commit the result. Never edit `schema.gen.ts` by hand.
+- openapi-typescript is pinned exactly in `package.json`. It lists TypeScript 5 as its peer; it has been checked with TypeScript 6.0.
+- CI runs `pnpm generate:api` and fails when anything changes. The frontend workflow also runs when only `openapi.yaml` changes.
+- Only the API client and the hooks use these types; UI components use view types (ADR-0012).
 
 ---
 
@@ -100,6 +110,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt は固定（1.0 より前） |
 | ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
+| API の型 | openapi-typescript。`app/backend/api/openapi.yaml` から生成（ADR-0017） | 7.13.0（固定） |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
 
 ### 選定理由
@@ -112,7 +123,6 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 
 | 項目 | 候補 |
 | --- | --- |
-| backend との API の型共有 | OpenAPI → TypeScript の型を生成 |
 | スタイリング | Tailwind CSS / CSS Modules |
 | テスト | Vitest + Testing Library |
 | 本番用イメージ | ホスティング（#7）次第 |
@@ -142,9 +152,10 @@ src/
 3. コンテナの中で：
 
 ```sh
-pnpm dev        # http://localhost:5173
+pnpm dev           # http://localhost:5173
 pnpm build
 pnpm lint
+pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 ```
 
 - `node_modules` と pnpm のストアは Docker の volume にあるので、ホストには何もインストールされません
@@ -152,7 +163,16 @@ pnpm lint
 
 | コマンド | 実行する場所 |
 | --- | --- |
-| `pnpm install` / `dev` / `build` / `lint` / `preview` | Dev Container の中 |
+| `pnpm install` / `dev` / `build` / `lint` / `preview` / `generate:api` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` | ホスト（Docker だけ） |
+
+### 生成する API の型
+
+API の TypeScript の型は、openapi-typescript で `app/backend/api/openapi.yaml` から `src/api/schema.gen.ts` に生成する（ADR-0010、ADR-0017）。
+
+- 文書が変わったら `pnpm generate:api` を実行し、結果をコミットする。`schema.gen.ts` は手で編集しない
+- openapi-typescript は `package.json` で厳密にバージョンを固定している。peer は TypeScript 5 だが、TypeScript 6.0 で動くことを確かめた
+- CI で `pnpm generate:api` を実行し、何か変わったら失敗させる。frontend の workflow は `openapi.yaml` だけが変わったときも動く
+- この型を使うのは API クライアントと Hooks だけ。UI の部品は画面用の型を使う（ADR-0012）
 
 </details>
