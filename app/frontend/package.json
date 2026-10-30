@@ -16,10 +16,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "5.104.3",
+    "@tanstack/react-router": "1.170.45",
     "openapi-fetch": "0.17.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router": "8.4.0"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

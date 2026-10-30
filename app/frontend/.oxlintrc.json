@@ -29,8 +29,8 @@
             ],
             "paths": [
               {
-                "name": "react-router",
-                "message": "UI does not use React Router; the Container reads the URL (ADR-0012)."
+                "name": "@tanstack/react-router",
+                "message": "UI does not use the router; the Container reads the URL (ADR-0012)."
               },
               {
                 "name": "@tanstack/react-query",

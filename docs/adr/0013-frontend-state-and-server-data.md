@@ -4,6 +4,7 @@
 - Type: technical
 - Date: 2026-10-18
 - Issue: #160
+- Updated: 2026-10-30, the router changed from React Router to TanStack Router (#31)
 
 ## Context
 
@@ -26,7 +27,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 
 | State | Where it lives | Examples |
 | --- | --- | --- |
-| Which screen and which data is shown | **URL**, through **React Router without data mode** (no loaders or actions) | `/races/:raceId`, a selected tab |
+| Which screen and which data is shown | **URL**, through **TanStack Router without loaders** | `/races/$raceId`, a selected tab |
 | Data from the backend | **TanStack Query**, for all communication with the backend, including public APIs | Race list, running order, `GET /me`, `GET /invite-links/{token}`, `POST /session` |
 | UI state inside a screen | `useState` / `useReducer` | A form's current input, whether a dialog is open |
 | UI state shared across screens | **React Context**, for this only; never data from the backend | Notifications after saving |
@@ -56,7 +57,8 @@ Without a rule, each screen would decide for itself where to keep data and when 
 | Option | Why it was not chosen |
 | --- | --- |
 | `useEffect` + `useState` for fetching | Each screen keeps its own copy of the data. After a change, every screen that shows the affected data has to be found and fetched again by hand |
-| React Router data mode (loaders and actions) | Data would be fetched in two places, route loaders and components. Invalidating after a mutation would work differently depending on where the data was fetched |
+| Route loaders (TanStack Router loaders, React Router data mode) | Data would be fetched in two places, route loaders and components. Invalidating after a mutation would work differently depending on where the data was fetched |
+| React Router without data mode | Route params are plain strings (`useParams` returns `string \| undefined`), and a link to a wrong path or without a required param is not caught by the compiler. Its type-safe routes need framework mode, which brings its own build plugin and loaders. TanStack Router checks paths, params, and search params with types, without loaders |
 | SWR | Mutations and invalidating related data, which tasuki needs after every change, are weaker than in TanStack Query |
 | RTK Query | Requires a Redux store, while tasuki has almost no state that belongs only to the frontend |
 | A global store (Redux, Zustand) for UI state | Apart from data from the backend, the only state shared across screens is small (notifications); Context is enough |
@@ -86,6 +88,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 - Type: technical
 - Date: 2026-10-18
 - Issue: #160
+- 更新：2026-10-30、ルーターを React Router から TanStack Router に変えた（#31）
 
 ## Context（背景）
 
@@ -108,7 +111,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 
 | 状態 | 置き場所 | 例 |
 | --- | --- | --- |
-| どの画面で、どのデータを見ているか | **URL**。**data mode を使わない React Router**（loader と action は使わない） | `/races/:raceId`、選んでいるタブ |
+| どの画面で、どのデータを見ているか | **URL**。**loader を使わない TanStack Router** | `/races/$raceId`、選んでいるタブ |
 | backend のデータ | **TanStack Query**。公開 API も含め、backend とのやり取りはすべてこれを通す | 大会一覧、走順、`GET /me`、`GET /invite-links/{token}`、`POST /session` |
 | 画面の中の UI の状態 | `useState` / `useReducer` | フォームの入力中の値、ダイアログが開いているか |
 | 画面をまたぐ UI の状態 | **React Context**。これだけに使い、backend のデータは入れない | 保存した後の通知 |
@@ -138,7 +141,8 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 | 案 | 採用しなかった理由 |
 | --- | --- |
 | `useEffect` + `useState` で取得する | 画面ごとにデータのコピーを持つことになる。変更の後、影響するデータを出している画面を自分で探して取り直す必要がある |
-| React Router の data mode（loader と action） | データを取る場所が、route の loader とコンポーネントの 2 つになる。mutation の後の invalidate が、どこで取ったデータかによって違う動きになる |
+| route の loader（TanStack Router の loader、React Router の data mode） | データを取る場所が、route の loader とコンポーネントの 2 つになる。mutation の後の invalidate が、どこで取ったデータかによって違う動きになる |
+| data mode を使わない React Router | route の引数がただの文字列になり（`useParams` が `string \| undefined` を返す）、間違ったパスや、必要な引数のないリンクをコンパイラが見つけられない。型の付いたルートには framework mode が要り、専用のビルドプラグインと loader が付いてくる。TanStack Router は loader なしで、パス、引数、クエリ文字列を型で確かめられる |
 | SWR | tasuki では変更のたびに関係するデータの invalidate が要るが、mutation と invalidate が TanStack Query より弱い |
 | RTK Query | Redux のストアが前提になる。tasuki には frontend だけが持つ状態がほとんどない |
 | UI の状態に全体ストア（Redux、Zustand） | backend のデータを除くと、画面をまたいで共有する状態は小さい（通知）。Context で足りる |
