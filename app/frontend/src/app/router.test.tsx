@@ -1,17 +1,14 @@
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
-import { AppRoutes } from "./routes.tsx";
+import { createAppRouter } from "./router.tsx";
 
 function renderAt(path: string) {
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
-  );
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
+  render(<RouterProvider router={router} />);
 }
 
-describe("AppRoutes", () => {
+describe("createAppRouter", () => {
   it.each([
     ["/invite/abc", "A1 Invite link landing"],
     ["/auth/complete?code=abc", "Completing login"],
@@ -31,27 +28,33 @@ describe("AppRoutes", () => {
     ["/roster", "M1 Roster"],
     ["/roster/123", "M2 Member profile"],
     ["/approvals", "M3 Approvals"],
-  ])("shows %s as %s", (path, heading) => {
+  ])("shows %s as %s", async (path, heading) => {
     renderAt(path);
 
-    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
   });
 
   it.each(["/unknown", "/races/123/unknown", "/roster/123/unknown"])(
     "shows the not-found page for %s",
-    (path) => {
+    async (path) => {
       renderAt(path);
 
-      expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
     },
   );
 
-  it("shows every screen inside the common layout", () => {
+  it("shows every screen inside the common layout", async () => {
     renderAt("/races/123");
 
+    const heading = await screen.findByRole("heading", { name: "R2 Race detail" });
     expect(screen.getByRole("banner")).toHaveTextContent("tasuki");
-    expect(screen.getByRole("main")).toContainElement(
-      screen.getByRole("heading", { name: "R2 Race detail" }),
-    );
+    expect(screen.getByRole("main")).toContainElement(heading);
+  });
+
+  it("shows the not-found page inside the common layout", async () => {
+    renderAt("/unknown");
+
+    const heading = await screen.findByRole("heading", { name: "Page not found" });
+    expect(screen.getByRole("main")).toContainElement(heading);
   });
 });
