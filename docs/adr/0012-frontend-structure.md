@@ -24,8 +24,8 @@ The frontend implementation issues are already split per feature (#109, #115, #1
 | **Types** | Types generated from the OpenAPI document, and view types (what the screens use) | — |
 | **Mapper** | Pure functions that convert API types into view types, and form input into request bodies | Call the backend, hold state |
 | **Hooks** | TanStack Query queries and mutations (ADR-0013). They call the backend through the API client and convert with the Mapper (for example in `select`) | Render, hold UI state |
-| **Container** | Calls hooks, reads the URL (React Router), holds UI state (`useState` / `useReducer`) and drafts (ADR-0013), and passes data and callbacks to the UI as props | Call the backend directly, convert API types |
-| **UI** | Components that only display what they receive as props, and report user actions through callback props | Fetch data, use React Router or TanStack Query, hold state, import API types |
+| **Container** | Calls hooks, reads the URL (TanStack Router), holds UI state (`useState` / `useReducer`) and drafts (ADR-0013), and passes data and callbacks to the UI as props | Call the backend directly, convert API types |
+| **UI** | Components that only display what they receive as props, and report user actions through callback props | Fetch data, use the router or TanStack Query, hold state, import API types |
 
 **Dependency direction (imports)**
 
@@ -122,8 +122,8 @@ frontend の実装の Issue は、すでに機能ごとに分かれていて（#
 | **Types** | OpenAPI の文書から生成した型と、画面用の型（画面が使うもの） | — |
 | **Mapper** | API の型を画面用の型に、フォームの入力をリクエストの本文に変える純粋な関数 | backend を呼ぶ、状態を持つ |
 | **Hooks** | TanStack Query の query と mutation（ADR-0013）。API クライアントを通して backend を呼び、Mapper で変換する（例：`select` で） | 描画する、UI の状態を持つ |
-| **Container** | Hooks を呼び、URL を読み（React Router）、UI の状態（`useState` / `useReducer`）と下書き（ADR-0013）を持ち、データとコールバックを props で UI に渡す | backend を直接呼ぶ、API の型を変換する |
-| **UI** | props で受け取ったものを表示するだけで、ユーザーの操作はコールバックの props で知らせる部品 | データを取る、React Router や TanStack Query を使う、状態を持つ、API の型を import する |
+| **Container** | Hooks を呼び、URL を読み（TanStack Router）、UI の状態（`useState` / `useReducer`）と下書き（ADR-0013）を持ち、データとコールバックを props で UI に渡す | backend を直接呼ぶ、API の型を変換する |
+| **UI** | props で受け取ったものを表示するだけで、ユーザーの操作はコールバックの props で知らせる部品 | データを取る、ルーターや TanStack Query を使う、状態を持つ、API の型を import する |
 
 **依存の向き（import）**
 
