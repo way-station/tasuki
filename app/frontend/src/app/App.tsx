@@ -1,10 +1,8 @@
-import { BrowserRouter } from "react-router";
-import { AppRoutes } from "./routes.tsx";
+import { RouterProvider } from "@tanstack/react-router";
+import { createAppRouter } from "./router.tsx";
+
+const router = createAppRouter();
 
 export function App() {
-  return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
