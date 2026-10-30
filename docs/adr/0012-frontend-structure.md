@@ -60,6 +60,7 @@ src/
     running-orders/       # #127
     laps/                 # #133
     roster/               # #139
+  app/                    # what belongs to no feature: routes, the common layout, the not-found page (#31)
   api/                    # ApiClient interface and implementation, query keys (ADR-0013)
   shared/                 # only what more than one feature needs (see below)
 ```
@@ -157,6 +158,7 @@ src/
     running-orders/       # #127
     laps/                 # #133
     roster/               # #139
+  app/                    # どの機能にも属さないもの：ルート、共通のレイアウト、not found ページ（#31）
   api/                    # ApiClient の interface と実装、query key（ADR-0013）
   shared/                 # 複数の機能が必要とするものだけ（下を参照）
 ```
