@@ -24,20 +24,20 @@ type fixedToken string
 func (token fixedToken) NewToken() (string, error) { return string(token), nil }
 
 type fakeSessionQueryService struct {
-	accountID shared.AccountID
-	err       error
-	gotHash   []byte
-	gotNow    time.Time
+	userID  shared.UserID
+	err     error
+	gotHash []byte
+	gotNow  time.Time
 }
 
-func (fake *fakeSessionQueryService) FindActiveAccountID(_ context.Context, hash []byte, at time.Time) (shared.AccountID, error) {
+func (fake *fakeSessionQueryService) FindActiveUserID(_ context.Context, hash []byte, at time.Time) (shared.UserID, error) {
 	fake.gotHash, fake.gotNow = hash, at
-	return fake.accountID, fake.err
+	return fake.userID, fake.err
 }
 
 func TestAuthenticateUseCase(t *testing.T) {
-	t.Run("returns the account of an active session", func(t *testing.T) {
-		sessions := &fakeSessionQueryService{accountID: "a1"}
+	t.Run("returns the user of an active session", func(t *testing.T) {
+		sessions := &fakeSessionQueryService{userID: "a1"}
 		got, err := NewAuthenticateUseCase(sessions, clock).Execute(context.Background(), "token")
 		if err != nil || got != "a1" {
 			t.Fatalf("Execute() = %q, %v, want a1", got, err)
@@ -71,12 +71,12 @@ type fakeMeQueryService struct {
 	err    error
 }
 
-func (fake fakeMeQueryService) FindMe(context.Context, shared.AccountID) (MeRecord, error) {
+func (fake fakeMeQueryService) FindMe(context.Context, shared.UserID) (MeRecord, error) {
 	return fake.record, fake.err
 }
 
 func newGetMeUseCase(query MeQueryService) *GetMeUseCase {
-	return NewGetMeUseCase(query, identity.NewAccountFactory(&sequentialIDs{}), identity.NewMemberLinkFactory(&sequentialIDs{}),
+	return NewGetMeUseCase(query, identity.NewUserFactory(&sequentialIDs{}), identity.NewMemberLinkFactory(&sequentialIDs{}),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy([]string{"U-organizer"}), MeDTOFactory{})
 }
 
@@ -124,7 +124,7 @@ func TestGetMeUseCase(t *testing.T) {
 		})
 	}
 
-	t.Run("an account that no longer exists is unauthenticated", func(t *testing.T) {
+	t.Run("a user that no longer exists is unauthenticated", func(t *testing.T) {
 		_, err := newGetMeUseCase(fakeMeQueryService{err: shared.ErrNotFound}).Execute(context.Background(), "a1")
 		if !errors.Is(err, ErrUnauthenticated) {
 			t.Errorf("Execute() error = %v, want ErrUnauthenticated", err)
@@ -132,24 +132,24 @@ func TestGetMeUseCase(t *testing.T) {
 	})
 }
 
-type fakeAccountRepository struct {
-	byLineUserID map[string]*identity.Account
-	saved        []*identity.Account
+type fakeUserRepository struct {
+	byLineUserID map[string]*identity.User
+	saved        []*identity.User
 }
 
-func (fake *fakeAccountRepository) FindByID(context.Context, shared.AccountID) (*identity.Account, error) {
+func (fake *fakeUserRepository) FindByID(context.Context, shared.UserID) (*identity.User, error) {
 	return nil, shared.ErrNotFound
 }
 
-func (fake *fakeAccountRepository) FindByLineUserID(_ context.Context, lineUserID string) (*identity.Account, error) {
-	if account, ok := fake.byLineUserID[lineUserID]; ok {
-		return account, nil
+func (fake *fakeUserRepository) FindByLineUserID(_ context.Context, lineUserID string) (*identity.User, error) {
+	if user, ok := fake.byLineUserID[lineUserID]; ok {
+		return user, nil
 	}
 	return nil, shared.ErrNotFound
 }
 
-func (fake *fakeAccountRepository) Save(_ context.Context, account *identity.Account) error {
-	fake.saved = append(fake.saved, account)
+func (fake *fakeUserRepository) Save(_ context.Context, user *identity.User) error {
+	fake.saved = append(fake.saved, user)
 	return nil
 }
 
@@ -170,8 +170,8 @@ func (fake *fakeSessionRepository) Save(_ context.Context, session *identity.Ses
 	return nil
 }
 
-func newLoginUseCase(accounts *fakeAccountRepository, sessions *fakeSessionRepository) *LoginUseCase {
-	return NewLoginUseCase(accounts, sessions, identity.NewAccountFactory(&sequentialIDs{}),
+func newLoginUseCase(users *fakeUserRepository, sessions *fakeSessionRepository) *LoginUseCase {
+	return NewLoginUseCase(users, sessions, identity.NewUserFactory(&sequentialIDs{}),
 		identity.NewSessionFactory(&sequentialIDs{}, fixedToken("session-token")), SessionDTOFactory{}, clock)
 }
 
@@ -181,38 +181,38 @@ func TestLoginUseCase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("creates the account on the first login, and a session", func(t *testing.T) {
-		accounts := &fakeAccountRepository{}
+	t.Run("creates the user on the first login, and a session", func(t *testing.T) {
+		users := &fakeUserRepository{}
 		sessions := &fakeSessionRepository{}
 
-		got, err := newLoginUseCase(accounts, sessions).Execute(context.Background(), command)
+		got, err := newLoginUseCase(users, sessions).Execute(context.Background(), command)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(accounts.saved) != 1 || accounts.saved[0].LineUserID() != "U-1" || accounts.saved[0].DisplayName() != "Taro" {
-			t.Fatalf("saved accounts = %v, want one for U-1 named Taro", accounts.saved)
+		if len(users.saved) != 1 || users.saved[0].LineUserID() != "U-1" || users.saved[0].DisplayName() != "Taro" {
+			t.Fatalf("saved users = %v, want one for U-1 named Taro", users.saved)
 		}
-		if len(sessions.saved) != 1 || sessions.saved[0].AccountID() != accounts.saved[0].ID() {
-			t.Fatalf("saved sessions = %v, want one for the account", sessions.saved)
+		if len(sessions.saved) != 1 || sessions.saved[0].UserID() != users.saved[0].ID() {
+			t.Fatalf("saved sessions = %v, want one for the user", sessions.saved)
 		}
 		if got.Token() != "session-token" || !got.ExpiresAt().Equal(now.Add(identity.SessionLifetime)) {
 			t.Errorf("Execute() = %q, %v", got.Token(), got.ExpiresAt())
 		}
 	})
 
-	t.Run("keeps the account and updates its display name", func(t *testing.T) {
-		existing := identity.NewAccountFactory(&sequentialIDs{}).Reconstruct("a1", "U-1", "Old name")
-		accounts := &fakeAccountRepository{byLineUserID: map[string]*identity.Account{"U-1": existing}}
+	t.Run("keeps the user and updates its display name", func(t *testing.T) {
+		existing := identity.NewUserFactory(&sequentialIDs{}).Reconstruct("a1", "U-1", "Old name")
+		users := &fakeUserRepository{byLineUserID: map[string]*identity.User{"U-1": existing}}
 		sessions := &fakeSessionRepository{}
 
-		if _, err := newLoginUseCase(accounts, sessions).Execute(context.Background(), command); err != nil {
+		if _, err := newLoginUseCase(users, sessions).Execute(context.Background(), command); err != nil {
 			t.Fatal(err)
 		}
-		if len(accounts.saved) != 1 || accounts.saved[0].ID() != "a1" || accounts.saved[0].DisplayName() != "Taro" {
-			t.Errorf("saved accounts = %v, want a1 renamed to Taro", accounts.saved)
+		if len(users.saved) != 1 || users.saved[0].ID() != "a1" || users.saved[0].DisplayName() != "Taro" {
+			t.Errorf("saved users = %v, want a1 renamed to Taro", users.saved)
 		}
-		if sessions.saved[0].AccountID() != "a1" {
-			t.Errorf("session account = %q, want a1", sessions.saved[0].AccountID())
+		if sessions.saved[0].UserID() != "a1" {
+			t.Errorf("session user = %q, want a1", sessions.saved[0].UserID())
 		}
 	})
 }

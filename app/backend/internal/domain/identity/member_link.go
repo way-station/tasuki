@@ -7,13 +7,13 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
 
-// MemberLink links an account to a roster member. An organizer approves or rejects it,
+// MemberLink links a user to a roster member. An organizer approves or rejects it,
 // and can unlink it after approving (ADR-0006, ADR-0008). Its states are timestamps, as in
 // the member_links table: a state holds when its time is set, and a link with none of them
 // set is pending. It is created by MemberLinkFactory.
 type MemberLink struct {
 	id           shared.MemberLinkID
-	accountID    shared.AccountID
+	userID       shared.UserID
 	memberID     shared.MemberID
 	inviteLinkID shared.InviteLinkID
 	createdAt    time.Time
@@ -25,8 +25,8 @@ type MemberLink struct {
 // ID returns the link's ID.
 func (link *MemberLink) ID() shared.MemberLinkID { return link.id }
 
-// AccountID returns the account.
-func (link *MemberLink) AccountID() shared.AccountID { return link.accountID }
+// UserID returns the user.
+func (link *MemberLink) UserID() shared.UserID { return link.userID }
 
 // MemberID returns the roster member.
 func (link *MemberLink) MemberID() shared.MemberID { return link.memberID }
@@ -55,7 +55,7 @@ func (link *MemberLink) Rejected() bool { return link.rejectedAt != nil }
 // Unlinked reports whether an organizer unlinked the approved link.
 func (link *MemberLink) Unlinked() bool { return link.unlinkedAt != nil }
 
-// Active reports whether the link is approved and not unlinked: the account acts as the
+// Active reports whether the link is approved and not unlinked: the user acts as the
 // roster member.
 func (link *MemberLink) Active() bool { return link.approvedAt != nil && link.unlinkedAt == nil }
 
@@ -97,16 +97,16 @@ func NewMemberLinkFactory(ids shared.IDGenerator) MemberLinkFactory {
 	return MemberLinkFactory{ids: ids}
 }
 
-// New returns a pending link between the account and the invite link's roster member, and
+// New returns a pending link between the user and the invite link's roster member, and
 // marks the invite link as used. It returns ErrInviteLinkUnusable when the invite link
 // cannot be used.
-func (factory MemberLinkFactory) New(accountID shared.AccountID, invite *InviteLink, now time.Time) (*MemberLink, error) {
+func (factory MemberLinkFactory) New(userID shared.UserID, invite *InviteLink, now time.Time) (*MemberLink, error) {
 	if err := invite.use(now); err != nil {
 		return nil, err
 	}
 	return &MemberLink{
 		id:           shared.MemberLinkID(factory.ids.NewID()),
-		accountID:    accountID,
+		userID:       userID,
 		memberID:     invite.memberID,
 		inviteLinkID: invite.id,
 		createdAt:    now,
@@ -114,11 +114,11 @@ func (factory MemberLinkFactory) New(accountID shared.AccountID, invite *InviteL
 }
 
 // Reconstruct returns a link read from storage. A nil time means the state does not hold.
-func (factory MemberLinkFactory) Reconstruct(id shared.MemberLinkID, accountID shared.AccountID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, createdAt time.Time, approvedAt, rejectedAt, unlinkedAt *time.Time) *MemberLink {
-	return &MemberLink{id: id, accountID: accountID, memberID: memberID, inviteLinkID: inviteLinkID, createdAt: createdAt, approvedAt: approvedAt, rejectedAt: rejectedAt, unlinkedAt: unlinkedAt}
+func (factory MemberLinkFactory) Reconstruct(id shared.MemberLinkID, userID shared.UserID, memberID shared.MemberID, inviteLinkID shared.InviteLinkID, createdAt time.Time, approvedAt, rejectedAt, unlinkedAt *time.Time) *MemberLink {
+	return &MemberLink{id: id, userID: userID, memberID: memberID, inviteLinkID: inviteLinkID, createdAt: createdAt, approvedAt: approvedAt, rejectedAt: rejectedAt, unlinkedAt: unlinkedAt}
 }
 
-// CallerStatus is what GET /me reports about an account's link (docs/design/api.md).
+// CallerStatus is what GET /me reports about a user's link (docs/design/api.md).
 type CallerStatus string
 
 // Caller states.
@@ -129,10 +129,10 @@ const (
 	CallerNone     CallerStatus = "none"
 )
 
-// LinkStatusService derives statuses from an account's or a roster member's links.
+// LinkStatusService derives statuses from a user's or a roster member's links.
 type LinkStatusService struct{}
 
-// CallerStatus returns the status of an account from all of its links: approved if one is
+// CallerStatus returns the status of a user from all of its links: approved if one is
 // approved and not unlinked, otherwise pending if one is pending, otherwise rejected if the
 // latest link was rejected, otherwise none.
 func (LinkStatusService) CallerStatus(links []*MemberLink) CallerStatus {

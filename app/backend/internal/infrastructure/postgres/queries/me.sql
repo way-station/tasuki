@@ -1,6 +1,6 @@
--- name: GetMeAccount :one
+-- name: GetMeUser :one
 SELECT line_user_id, display_name
-FROM accounts
+FROM users
 WHERE id = $1;
 
 -- name: ListMeLinks :many
@@ -14,5 +14,5 @@ SELECT member_links.id,
        member_links.unlinked_at
 FROM member_links
 JOIN roster_members ON roster_members.id = member_links.roster_member_id
-WHERE member_links.account_id = $1
+WHERE member_links.user_id = $1
 ORDER BY member_links.created_at;

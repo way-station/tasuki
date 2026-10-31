@@ -35,7 +35,7 @@ A SaaS that serves many teams from one environment must keep each team's data st
 - The MVP behaves as a single-team app; the team can be created by a setup step or migration.
 - Organizers are configured by environment variable for now (ADR-0006). Per-team organizer management in the database is needed when tasuki becomes a SaaS.
 - A single LINE Login channel serves all teams (ADR-0007).
-- Whether one account can belong to several teams is decided when tasuki becomes a SaaS (ADR-0008).
+- Whether one user can belong to several teams is decided when tasuki becomes a SaaS (ADR-0008).
 - Running a SaaS later also brings operational and legal responsibilities (availability, backups, terms of service, privacy policy) that need their own decisions.
 
 ---
@@ -80,7 +80,7 @@ tasuki は、LINE で連絡を取り合っている実在の1つのリレーマ�
 - MVP は1チームのアプリとして動く。チームは初期設定の手順かマイグレーションで作る
 - 幹事は今は環境変数で決める（ADR-0006）。SaaS にするときは、チームごとの幹事をデータベースで管理する必要がある
 - LINE ログインのチャネルは1つで全チームに対応できる（ADR-0007）
-- 1つのアカウントが複数のチームに所属できるかは、SaaS にするときに決める（ADR-0008）
+- 1人のユーザーが複数のチームに所属できるかは、SaaS にするときに決める（ADR-0008）
 - SaaS を運用するときには、運用上と法律上の責任（可用性、バックアップ、利用規約、プライバシーポリシー）も生じ、それぞれ判断が必要になる
 
 </details>

@@ -48,7 +48,7 @@ db-reset:
 	$(MIGRATE) drop -f
 	$(MIGRATE) up
 
-# Creates the next pair of migration files: make db-new NAME=create_accounts
+# Creates the next pair of migration files: make db-new NAME=create_users
 db-new:
 	@test -n "$(NAME)" || (echo "usage: make db-new NAME=create_something" && exit 1)
 	migrate create -ext sql -dir migrations -seq -digits 6 $(NAME)

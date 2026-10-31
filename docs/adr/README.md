@@ -14,7 +14,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0005](0005-multi-tenant-data-single-team-mvp.md) | Multi-tenant data model, single-team MVP | business | Accepted |
 | [0006](0006-access-policy.md) | Access policy — team-only visibility, roles, and organizer approval | business | Accepted |
 | [0007](0007-line-login.md) | Authenticate all users with LINE Login | technical | Accepted |
-| [0008](0008-separate-accounts-and-roster-members.md) | Separate accounts from roster members | technical | Accepted |
+| [0008](0008-separate-users-and-roster-members.md) | Separate users from roster members | technical | Accepted |
 | [0009](0009-dev-only-login.md) | Dev-only login for local development | technical | Accepted |
 | [0010](0010-spec-first-openapi.md) | Describe the API spec-first with OpenAPI | technical | Accepted |
 | [0011](0011-onion-architecture-cqrs.md) | Backend onion architecture with CQRS | technical | Accepted |

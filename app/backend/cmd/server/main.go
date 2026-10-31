@@ -104,14 +104,14 @@ func run(logger *slog.Logger) error {
 // newAuth wires the use cases of logging in and identifying the caller.
 func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *controller.AuthController) {
 	ids := random.IDGenerator{}
-	accountFactory := identity.NewAccountFactory(ids)
+	userFactory := identity.NewUserFactory(ids)
 	sessionFactory := identity.NewSessionFactory(ids, random.TokenGenerator{})
 	sessions := postgres.NewSessionRepository(postgresClient, sessionFactory)
 
 	authenticate := auth.NewAuthenticateUseCase(postgres.NewSessionQueryService(postgresClient), time.Now)
-	login := auth.NewLoginUseCase(postgres.NewAccountRepository(postgresClient, accountFactory), sessions, accountFactory, sessionFactory, auth.SessionDTOFactory{}, time.Now)
+	login := auth.NewLoginUseCase(postgres.NewUserRepository(postgresClient, userFactory), sessions, userFactory, sessionFactory, auth.SessionDTOFactory{}, time.Now)
 	logout := auth.NewLogoutUseCase(sessions, time.Now)
-	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), accountFactory, identity.NewMemberLinkFactory(ids),
+	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), userFactory, identity.NewMemberLinkFactory(ids),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy(cfg.OrganizerLineUserIDs), auth.MeDTOFactory{})
 	return authenticate, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
 }

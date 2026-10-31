@@ -158,7 +158,7 @@ The PostgreSQL schema is changed only by migrations in `migrations/` (golang-mig
 | `make db-migrate` | Applies every migration not applied yet |
 | `make db-rollback` | Undoes the last migration |
 | `make db-reset` | Drops everything in the database, then applies every migration (local only) |
-| `make db-new NAME=create_accounts` | Creates the next pair of files, `00000N_create_accounts.up.sql` and `.down.sql` |
+| `make db-new NAME=create_users` | Creates the next pair of files, `00000N_create_users.up.sql` and `.down.sql` |
 
 - Versions are zero-padded to six digits, so sqlc and golang-migrate read the files in the same order (ADR-0015).
 - The commands use `DATABASE_URL`. To migrate the test database, pass it: `make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`.
@@ -249,9 +249,9 @@ The other operations of `api/openapi.yaml` are not routed yet. Their controllers
 
 ### Sessions (ADR-0014)
 
-- A session is a row in `sessions`: the account, the SHA-256 hash of the token, the expiry (30 days, no refresh token), and the revocation time. The token is only in the `tasuki_session` cookie (`HttpOnly; Secure; SameSite=Lax; Path=/api`).
-- `middleware.Authenticate` reads the cookie, identifies the account through `AuthenticateUseCase`, and passes it in the request context; routes that need a session are in its group in `router.go`. A missing, unknown, expired, or revoked session is `401 unauthenticated`.
-- `LoginUseCase` creates the account on the first login and starts a session. The dev-only login uses it now; LINE Login will use the same use case after verifying the ID token (ADR-0007, ADR-0009).
+- A session is a row in `sessions`: the user, the SHA-256 hash of the token, the expiry (30 days, no refresh token), and the revocation time. The token is only in the `tasuki_session` cookie (`HttpOnly; Secure; SameSite=Lax; Path=/api`).
+- `middleware.Authenticate` reads the cookie, identifies the user through `AuthenticateUseCase`, and passes it in the request context; routes that need a session are in its group in `router.go`. A missing, unknown, expired, or revoked session is `401 unauthenticated`.
+- `LoginUseCase` creates the user on the first login and starts a session. The dev-only login uses it now; LINE Login will use the same use case after verifying the ID token (ADR-0007, ADR-0009).
 - Not built yet: the `Origin` check for requests that change data (ADR-0014). It comes with the next endpoints that change data.
 
 ### Logging in during development
@@ -266,7 +266,7 @@ await fetch("/api/v1/dev/login", {
 });
 ```
 
-Then reload. `dev-organizer` is an organizer (`ORGANIZER_LINE_USER_IDS`); any other `line_user_id` is a new account without a link (A4). Delete the cookie or call `DELETE /api/v1/session` to log out.
+Then reload. `dev-organizer` is an organizer (`ORGANIZER_LINE_USER_IDS`); any other `line_user_id` is a new user without a link (A4). Delete the cookie or call `DELETE /api/v1/session` to log out.
 
 ---
 
@@ -433,7 +433,7 @@ PostgreSQL のスキーマは、`migrations/` のマイグレーションでだ�
 | `make db-migrate` | まだ適用していないマイグレーションをすべて適用する |
 | `make db-rollback` | 最後のマイグレーションを 1 つ戻す |
 | `make db-reset` | DB の中身をすべて消してから、すべてのマイグレーションを適用し直す（ローカル専用） |
-| `make db-new NAME=create_accounts` | 次の番号のファイルの組 `00000N_create_accounts.up.sql` と `.down.sql` を作る |
+| `make db-new NAME=create_users` | 次の番号のファイルの組 `00000N_create_users.up.sql` と `.down.sql` を作る |
 
 - バージョン番号は 6 桁でゼロ埋めする。sqlc と golang-migrate がファイルを同じ順番で読むようにするため（ADR-0015）
 - コマンドは `DATABASE_URL` を使う。テスト用の DB に適用するときは指定する：`make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable`
@@ -524,13 +524,13 @@ make down
 
 ### セッション（ADR-0014）
 
-- セッションは `sessions` の行：アカウント、トークンの SHA-256 ハッシュ、期限（30 日、リフレッシュトークンなし）、無効にした時刻。トークンは `tasuki_session` の cookie（`HttpOnly; Secure; SameSite=Lax; Path=/api`）にだけある
-- `middleware.Authenticate` が cookie を読み、`AuthenticateUseCase` でアカウントを調べ、リクエストの context で渡す。セッションの要るルートは、`router.go` でそのグループに入れる。セッションがない、知らない、期限切れ、無効のときは `401 unauthenticated`
-- `LoginUseCase` は、初めてのログインでアカウントを作り、セッションを始める。今は開発用ログインが使い、LINE ログインも ID トークンを確かめた後に同じユースケースを使う（ADR-0007、ADR-0009）
+- セッションは `sessions` の行：ユーザー、トークンの SHA-256 ハッシュ、期限（30 日、リフレッシュトークンなし）、無効にした時刻。トークンは `tasuki_session` の cookie（`HttpOnly; Secure; SameSite=Lax; Path=/api`）にだけある
+- `middleware.Authenticate` が cookie を読み、`AuthenticateUseCase` でユーザーを調べ、リクエストの context で渡す。セッションの要るルートは、`router.go` でそのグループに入れる。セッションがない、知らない、期限切れ、無効のときは `401 unauthenticated`
+- `LoginUseCase` は、初めてのログインでユーザーを作り、セッションを始める。今は開発用ログインが使い、LINE ログインも ID トークンを確かめた後に同じユースケースを使う（ADR-0007、ADR-0009）
 - まだ作っていないもの：データを変えるリクエストの `Origin` の検査（ADR-0014）。次にデータを変えるエンドポイントを作るときに入れる
 
 ### 開発中のログイン
 
-Dev Container（`DEV_LOGIN_ENABLED=true`）で backend（`make run`）と frontend（`pnpm dev`）を起動し、http://localhost:5173 を開いて、ブラウザのコンソールで上の `fetch` を実行する。そのあと再読み込みする。`dev-organizer` は幹事（`ORGANIZER_LINE_USER_IDS`）、ほかの `line_user_id` は紐付けのない新しいアカウント（A4）になる。ログアウトは cookie を消すか、`DELETE /api/v1/session` を呼ぶ
+Dev Container（`DEV_LOGIN_ENABLED=true`）で backend（`make run`）と frontend（`pnpm dev`）を起動し、http://localhost:5173 を開いて、ブラウザのコンソールで上の `fetch` を実行する。そのあと再読み込みする。`dev-organizer` は幹事（`ORGANIZER_LINE_USER_IDS`）、ほかの `line_user_id` は紐付けのない新しいユーザー（A4）になる。ログアウトは cookie を消すか、`DELETE /api/v1/session` を呼ぶ
 
 </details>

@@ -12,35 +12,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getActiveSessionAccountID = `-- name: GetActiveSessionAccountID :one
-SELECT account_id
+const getActiveSessionUserID = `-- name: GetActiveSessionUserID :one
+SELECT user_id
 FROM sessions
 WHERE token_hash = $1
   AND revoked_at IS NULL
   AND expires_at > $2
 `
 
-type GetActiveSessionAccountIDParams struct {
+type GetActiveSessionUserIDParams struct {
 	TokenHash []byte
 	Now       pgtype.Timestamptz
 }
 
-func (q *Queries) GetActiveSessionAccountID(ctx context.Context, arg GetActiveSessionAccountIDParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, getActiveSessionAccountID, arg.TokenHash, arg.Now)
-	var account_id uuid.UUID
-	err := row.Scan(&account_id)
-	return account_id, err
+func (q *Queries) GetActiveSessionUserID(ctx context.Context, arg GetActiveSessionUserIDParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getActiveSessionUserID, arg.TokenHash, arg.Now)
+	var user_id uuid.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
 }
 
 const getSessionByTokenHash = `-- name: GetSessionByTokenHash :one
-SELECT id, account_id, token_hash, expires_at, revoked_at
+SELECT id, user_id, token_hash, expires_at, revoked_at
 FROM sessions
 WHERE token_hash = $1
 `
 
 type GetSessionByTokenHashRow struct {
 	ID        uuid.UUID
-	AccountID uuid.UUID
+	UserID    uuid.UUID
 	TokenHash []byte
 	ExpiresAt pgtype.Timestamptz
 	RevokedAt pgtype.Timestamptz
@@ -51,7 +51,7 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 	var i GetSessionByTokenHashRow
 	err := row.Scan(
 		&i.ID,
-		&i.AccountID,
+		&i.UserID,
 		&i.TokenHash,
 		&i.ExpiresAt,
 		&i.RevokedAt,
@@ -60,7 +60,7 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 }
 
 const saveSession = `-- name: SaveSession :exec
-INSERT INTO sessions (id, account_id, token_hash, expires_at, revoked_at)
+INSERT INTO sessions (id, user_id, token_hash, expires_at, revoked_at)
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (id) DO UPDATE
 SET revoked_at = EXCLUDED.revoked_at
@@ -68,7 +68,7 @@ SET revoked_at = EXCLUDED.revoked_at
 
 type SaveSessionParams struct {
 	ID        uuid.UUID
-	AccountID uuid.UUID
+	UserID    uuid.UUID
 	TokenHash []byte
 	ExpiresAt pgtype.Timestamptz
 	RevokedAt pgtype.Timestamptz
@@ -78,7 +78,7 @@ type SaveSessionParams struct {
 func (q *Queries) SaveSession(ctx context.Context, arg SaveSessionParams) error {
 	_, err := q.db.Exec(ctx, saveSession,
 		arg.ID,
-		arg.AccountID,
+		arg.UserID,
 		arg.TokenHash,
 		arg.ExpiresAt,
 		arg.RevokedAt,

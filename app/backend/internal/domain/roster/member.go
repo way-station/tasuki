@@ -49,7 +49,7 @@ func (member *Member) Rejoin() {
 	member.leftAt = nil
 }
 
-// LinkStatus is the state of the link between a roster member and an account,
+// LinkStatus is the state of the link between a roster member and a user,
 // as far as issuing invite links is concerned.
 type LinkStatus int
 
@@ -67,7 +67,7 @@ func (member *Member) CanIssueInviteLink(link LinkStatus) error {
 	case member.Left():
 		return shared.NewStateError("the member has left")
 	case link == LinkApproved:
-		return shared.NewStateError("the member already has an approved account")
+		return shared.NewStateError("the member already has an approved user")
 	case link == LinkPending:
 		return shared.NewStateError("the member has a link waiting for approval")
 	}

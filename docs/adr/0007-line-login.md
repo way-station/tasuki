@@ -32,9 +32,9 @@ Organizers and members all log in with **LINE Login (OpenID Connect)**.
 | Option | Why it was not chosen |
 | --- | --- |
 | Email magic link | Needs an email delivery service; runners are not used to checking email for this team |
-| Email + password | Password storage, reset flows, and account recovery to build and secure ourselves |
+| Email + password | Password storage, reset flows, and user recovery to build and secure ourselves |
 | One shared passphrase | Cannot tell members apart, so it cannot meet ADR-0006 (own data only, approval per person) |
-| Google login | Not every runner uses a Google account; LINE is what the team already uses |
+| Google login | Not every runner uses a Google user; LINE is what the team already uses |
 | No login | Rejected by ADR-0006 |
 
 ## Consequences
@@ -42,7 +42,7 @@ Organizers and members all log in with **LINE Login (OpenID Connect)**.
 - Logging in from the LINE app is close to one tap, and no passwords are stored by tasuki.
 - Teams that do not use LINE (for example, in English-speaking regions) cannot use tasuki as is. Adding another provider later is possible because authentication sits behind one interface.
 - One LINE Login channel, operated by us, serves every team (ADR-0005). It must be published before anyone other than its Admins and Testers can log in, and publishing cannot be undone.
-- Because user IDs differ per provider, changing the LINE provider changes every user's ID. The provider must stay the same for the service, or accounts must be re-linked.
+- Because user IDs differ per provider, changing the LINE provider changes every user's ID. The provider must stay the same for the service, or users must be re-linked.
 - Local development cannot rely on LINE Login for arbitrary test users; see ADR-0009.
 
 ---
@@ -84,9 +84,9 @@ LINE Developers のドキュメントで確認した LINE ログインの事実�
 | 案 | 採用しなかった理由 |
 | --- | --- |
 | メールのマジックリンク | メール送信の仕組みが必要。ランナーはこのチームの用事でメールを見る習慣がない |
-| メール + パスワード | パスワードの保存、リセット、アカウント復旧を自分たちで作り、守る必要がある |
+| メール + パスワード | パスワードの保存、リセット、ユーザー復旧を自分たちで作り、守る必要がある |
 | 共通の合言葉1つ | メンバーを区別できず、ADR-0006（自分のデータだけ、1人ずつの承認）を満たせない |
-| Google ログイン | ランナー全員が Google アカウントを使うとは限らない。チームが使っているのは LINE |
+| Google ログイン | ランナー全員が Google ユーザーを使うとは限らない。チームが使っているのは LINE |
 | ログインなし | ADR-0006 で採用しないと決めた |
 
 ## Consequences（影響）
@@ -94,7 +94,7 @@ LINE Developers のドキュメントで確認した LINE ログインの事実�
 - LINE のアプリからならログインはほぼワンタップで、tasuki はパスワードを保存しない
 - LINE を使わないチーム（英語圏など）は、そのままでは tasuki を使えない。認証を1つのインターフェースの裏にまとめているので、後からほかのログイン方法を足すことはできる
 - 私たちが運用する1つの LINE ログインのチャネルで、すべてのチームに対応する（ADR-0005）。Admin と Tester 以外がログインするにはチャネルの公開が必要で、公開は元に戻せない
-- ユーザー ID はプロバイダーごとに違うので、LINE のプロバイダーを変えると全員のユーザー ID が変わる。サービスとしてプロバイダーを変えないか、アカウントを紐付け直す必要がある
+- ユーザー ID はプロバイダーごとに違うので、LINE のプロバイダーを変えると全員のユーザー ID が変わる。サービスとしてプロバイダーを変えないか、ユーザーを紐付け直す必要がある
 - ローカル開発では、任意のテストユーザーで LINE ログインを使えない。ADR-0009 を参照
 
 </details>

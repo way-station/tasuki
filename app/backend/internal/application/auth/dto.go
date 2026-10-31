@@ -32,7 +32,7 @@ func (dto MeDTO) RosterMember() (RosterMemberDTO, bool) {
 	return *dto.rosterMember, true
 }
 
-// RosterMemberDTO is the roster member an account acts as.
+// RosterMemberDTO is the roster member a user acts as.
 type RosterMemberDTO struct {
 	id   shared.MemberID
 	name string

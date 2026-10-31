@@ -31,7 +31,7 @@ func (repository *SessionRepository) FindByTokenHash(ctx context.Context, hash [
 	}
 	return repository.factory.Reconstruct(
 		shared.SessionID(row.ID.String()),
-		shared.AccountID(row.AccountID.String()),
+		shared.UserID(row.UserID.String()),
 		row.TokenHash,
 		row.ExpiresAt.Time,
 		timeOrNil(row.RevokedAt),
@@ -44,7 +44,7 @@ func (repository *SessionRepository) Save(ctx context.Context, session *identity
 	if err != nil {
 		return err
 	}
-	accountID, err := parseID(session.AccountID())
+	userID, err := parseID(session.UserID())
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (repository *SessionRepository) Save(ctx context.Context, session *identity
 	}
 	return repository.queries.SaveSession(ctx, sqlcgen.SaveSessionParams{
 		ID:        sessionID,
-		AccountID: accountID,
+		UserID:    userID,
 		TokenHash: session.TokenHash(),
 		ExpiresAt: timestamptz(session.ExpiresAt()),
 		RevokedAt: revokedAt,

@@ -2,7 +2,7 @@
 
 - Status: Draft
 - Issue: #60, #65, #68
-- Related: ADR-0002 (PostgreSQL and MongoDB), ADR-0005 (multi-tenant data), ADR-0006 (access policy), ADR-0008 (accounts and roster members), `docs/design/screens.md`
+- Related: ADR-0002 (PostgreSQL and MongoDB), ADR-0005 (multi-tenant data), ADR-0006 (access policy), ADR-0008 (users and roster members), `docs/design/screens.md`
 
 This document describes the data tasuki's MVP stores and the rules it follows. Column types, keys, and indexes are decided by the maintainer before implementation.
 
@@ -74,15 +74,15 @@ This document describes the data tasuki's MVP stores and the rules it follows. C
 - Organizers can mark a roster member as left. Left members cannot log in and are shown as left. Their data is kept.
   - Invitations to races dated today or later are cancelled automatically, with the same effects as cancelling by hand. Past races are not changed.
   - Organizers can undo left. Cancelled invitations do not come back.
-- Organizers can unlink an approved account from a roster member (for example when someone changes their LINE account).
+- Organizers can unlink an approved user from a roster member (for example when someone changes their LINE account).
 
 ### Invite links (joining the team)
 
 - An organizer creates a personal invite link for a roster member. It is valid for one week and can be used once.
-- Links cannot be created for roster members who already have an approved account or who have left.
+- Links cannot be created for roster members who already have an approved user or who have left.
 - Creating a new link for the same roster member makes the old one unusable.
-- The person logs in with LINE through the link, and an organizer approves or rejects the link between the account and the roster member. Rejected people see that they were rejected; the reason is told outside the app. Applying again is low priority.
-- Organizers who also run link their own account the same way, and may approve it themselves.
+- The person logs in with LINE through the link, and an organizer approves or rejects the link between the user and the roster member. Rejected people see that they were rejected; the reason is told outside the app. Applying again is low priority.
+- Organizers who also run link themselves the same way, and may approve it themselves.
 
 ### Who sees what
 
@@ -105,10 +105,10 @@ Every team-owned table belongs to a team (ADR-0005).
 | Table | Main fields |
 | --- | --- |
 | `teams` | The team (tenant) |
-| `accounts` | LINE user ID, display name |
+| `users` | LINE user ID, display name |
 | `roster_members` | Team, name, left or not, average time (`MM:SS`), lap count |
 | `invite_links` | Roster member, token, expiry (one week), when it was used or made unusable |
-| `member_links` | Account, roster member, when it was approved, rejected, or unlinked (pending until then) |
+| `member_links` | User, roster member, when it was approved, rejected, or unlinked (pending until then) |
 | `races` | Team, name, description (JSON: race type, race date, text, leg distances in km, lap distance in km, time limit in minutes, deadline, target time) |
 | `race_invitations` | Race, roster member (invited) |
 | `attendances` | Race, roster member, status (attending / not attending / undecided) |
@@ -144,7 +144,7 @@ Status: draft written by Claude from the ADRs and the rules above, for the maint
 | Requires | PostgreSQL 15 or later (`ON DELETE SET NULL (column)`) |
 | Cancelled invitations | Deleted. Attendance, entry membership, and legs follow by foreign keys |
 | Link states | Timestamps, not a status column: `approved_at`, `rejected_at`, `unlinked_at` in `member_links`. A state holds when its column is not `NULL`; pending = all three `NULL` |
-| Unlinked accounts | Kept, with `unlinked_at` set; `approved_at` stays |
+| Unlinked users | Kept, with `unlinked_at` set; `approved_at` stays |
 | Invite links | Renamed from `invitations` to `invite_links`, so they are not confused with `race_invitations` |
 
 ### Relations
@@ -154,7 +154,7 @@ erDiagram
   teams ||--o{ roster_members : has
   teams ||--o{ races : has
   roster_members ||--o{ invite_links : "invited by"
-  accounts ||--o{ member_links : "asks for"
+  users ||--o{ member_links : "asks for"
   roster_members ||--o{ member_links : "linked to"
   invite_links ||--o| member_links : "used for"
   races ||--o{ race_invitations : invites
@@ -168,7 +168,7 @@ erDiagram
   entry_members ||--o{ running_order_legs : runs
 ```
 
-- `accounts` do not belong to a team; `roster_members` do (ADR-0005, ADR-0008).
+- `users` do not belong to a team; `roster_members` do (ADR-0005, ADR-0008).
 - `entry_members` refers to `race_invitations`, so cancelling an invitation removes the member from the entry by `ON DELETE CASCADE`.
 - `running_order_legs` refers to `entry_members`, so removing a member from the entry empties their legs by `ON DELETE SET NULL (roster_member_id)`.
 - Attendance changed away from "attending" is not a foreign key; the use case removes the entry membership (`docs/design/api.md`).
@@ -183,7 +183,7 @@ CREATE TABLE teams (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE accounts (
+CREATE TABLE users (
   id           uuid PRIMARY KEY,
   line_user_id text NOT NULL UNIQUE,
   display_name text NOT NULL,
@@ -218,7 +218,7 @@ CREATE UNIQUE INDEX invite_links_one_open ON invite_links (roster_member_id)
 
 CREATE TABLE member_links (
   id               uuid PRIMARY KEY,
-  account_id       uuid NOT NULL REFERENCES accounts (id),
+  user_id       uuid NOT NULL REFERENCES users (id),
   roster_member_id uuid NOT NULL REFERENCES roster_members (id),
   invite_link_id   uuid NOT NULL UNIQUE REFERENCES invite_links (id),  -- an invite link is used once
   approved_at      timestamptz,                        -- not NULL = approved
@@ -228,23 +228,23 @@ CREATE TABLE member_links (
   CHECK (approved_at IS NULL OR rejected_at IS NULL),  -- not both approved and rejected
   CHECK (unlinked_at IS NULL OR approved_at IS NOT NULL)  -- only approved links are unlinked
 );
--- One approved account per roster member, and one roster member per account (ADR-0008).
+-- One approved user per roster member, and one roster member per user (ADR-0008).
 CREATE UNIQUE INDEX member_links_one_approved_per_member  ON member_links (roster_member_id) WHERE approved_at IS NOT NULL AND unlinked_at IS NULL;
-CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (account_id)       WHERE approved_at IS NOT NULL AND unlinked_at IS NULL;
--- No new invite link while a link is pending; an account waits for one roster member at a time.
+CREATE UNIQUE INDEX member_links_one_approved_per_user ON member_links (user_id)       WHERE approved_at IS NOT NULL AND unlinked_at IS NULL;
+-- No new invite link while a link is pending; a user waits for one roster member at a time.
 CREATE UNIQUE INDEX member_links_one_pending_per_member   ON member_links (roster_member_id) WHERE approved_at IS NULL AND rejected_at IS NULL;
-CREATE UNIQUE INDEX member_links_one_pending_per_account  ON member_links (account_id)       WHERE approved_at IS NULL AND rejected_at IS NULL;
+CREATE UNIQUE INDEX member_links_one_pending_per_user  ON member_links (user_id)       WHERE approved_at IS NULL AND rejected_at IS NULL;
 
 -- Server-side sessions (ADR-0014). Sessions last 30 days; there is no refresh token.
 CREATE TABLE sessions (
   id         uuid PRIMARY KEY,
-  account_id uuid NOT NULL REFERENCES accounts (id),
+  user_id uuid NOT NULL REFERENCES users (id),
   token_hash bytea NOT NULL UNIQUE,                    -- SHA-256 of the token; the token itself is not stored
   expires_at timestamptz NOT NULL,
   revoked_at timestamptz,                              -- set on logout, and when the roster member leaves
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX sessions_account_id ON sessions (account_id);
+CREATE INDEX sessions_user_id ON sessions (user_id);
 
 CREATE TABLE races (
   id          uuid PRIMARY KEY,
@@ -339,7 +339,7 @@ running_order_history
   running_order_id:      UUID,       // running_orders.id
   race_id:               UUID,
   entry_id:              UUID,
-  changed_by_account_id: UUID,       // accounts.id
+  changed_by_user_id: UUID,       // users.id
   changed_at:            Date,
   status:                "draft" | "confirmed",
   legs: [ { leg_number: int, roster_member_id: UUID | null } ]
@@ -361,7 +361,7 @@ index { running_order_id: 1, changed_at: -1 }
 
 - Status: Draft
 - Issue: #60, #65, #68
-- 関連：ADR-0002（PostgreSQL と MongoDB）、ADR-0005（マルチテナントのデータ）、ADR-0006（アクセスの方針）、ADR-0008（アカウントと名簿のメンバー）、`docs/design/screens.md`
+- 関連：ADR-0002（PostgreSQL と MongoDB）、ADR-0005（マルチテナントのデータ）、ADR-0006（アクセスの方針）、ADR-0008（ユーザーと名簿のメンバー）、`docs/design/screens.md`
 
 tasuki の MVP が保存するデータと、そのルールを書く。列の型、キー、インデックスは、実装の前にメンテナーが決める。
 
@@ -433,15 +433,15 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 - 幹事は名簿のメンバーを退会にできる。退会したメンバーはログインできず、退会と表示される。データは残す
   - 開催日が今日以降の大会への招待は自動で取り消され、手で取り消したときと同じことが起きる。過去の大会は変えない
   - 幹事は退会を取り消せる。取り消された招待は戻らない
-- 幹事は、承認済みのアカウントと名簿のメンバーの紐付けを解除できる（LINE のアカウントを変えた人など）
+- 幹事は、承認済みのユーザーと名簿のメンバーの紐付けを解除できる（LINE のアカウントを変えた人など）
 
 ### 招待リンク（チームへの参加）
 
 - 幹事が、名簿のメンバーごとに個人の招待リンクを作る。期限は1週間で、使えるのは1回だけ
-- 承認済みのアカウントがあるメンバーと、退会したメンバーには作れない
+- 承認済みのユーザーがあるメンバーと、退会したメンバーには作れない
 - 同じメンバーに新しいリンクを作ると、古いリンクは使えなくなる
-- 本人がリンクから LINE でログインし、アカウントと名簿のメンバーの紐付けを幹事が承認または却下する。却下された人には却下されたことを表示する。理由はアプリの外で伝える。再申請は優先度が低い
-- 走る幹事も同じ手順で自分のアカウントを紐付け、自分で承認してよい
+- 本人がリンクから LINE でログインし、ユーザーと名簿のメンバーの紐付けを幹事が承認または却下する。却下された人には却下されたことを表示する。理由はアプリの外で伝える。再申請は優先度が低い
+- 走る幹事も同じ手順で自分を名簿のメンバーに紐付け、自分で承認してよい
 
 ### 誰が何を見られるか
 
@@ -464,10 +464,10 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | テーブル | 主な項目 |
 | --- | --- |
 | `teams` | チーム（テナント） |
-| `accounts` | LINE のユーザー ID、表示名 |
+| `users` | LINE のユーザー ID、表示名 |
 | `roster_members` | チーム、名前、退会したかどうか、平均タイム（`MM:SS`）、ラップ数 |
 | `invite_links` | 名簿のメンバー、トークン、期限（1週間）、使った日時または使えなくした日時 |
-| `member_links` | アカウント、名簿のメンバー、承認・却下・解除した日時（それまでは承認待ち） |
+| `member_links` | ユーザー、名簿のメンバー、承認・却下・解除した日時（それまでは承認待ち） |
 | `races` | チーム、大会名、説明欄（JSON：大会の種別、開催日、文章、区ごとの距離 km、1周の距離 km、制限時間 分、締め切り、目標タイム） |
 | `race_invitations` | 大会、名簿のメンバー（誘われた人） |
 | `attendances` | 大会、名簿のメンバー、状態（参加／不参加／保留） |
@@ -508,7 +508,7 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 
 ### リレーション
 
-- `accounts` はチームに属さず、`roster_members` はチームに属する（ADR-0005、ADR-0008）
+- `users` はチームに属さず、`roster_members` はチームに属する（ADR-0005、ADR-0008）
 - `entry_members` は `race_invitations` を参照する。招待を取り消すと、`ON DELETE CASCADE` でエントリーから外れる
 - `running_order_legs` は `entry_members` を参照する。エントリーから外すと、`ON DELETE SET NULL (roster_member_id)` でその人の区が空く
 - 出欠を「参加」から変えたときは外部キーではなく、ユースケースがエントリーから外す（`docs/design/api.md`）

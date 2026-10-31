@@ -31,7 +31,7 @@ func newInvite(t *testing.T) (*InviteLink, string) {
 }
 
 func TestOrganizerPolicy(t *testing.T) {
-	factory := NewAccountFactory(&seqIDs{})
+	factory := NewUserFactory(&seqIDs{})
 	org, _ := factory.New("U-org", "Org")
 	member, _ := factory.New("U-member", "Member")
 	policy := NewOrganizerPolicy([]string{"U-org"})
