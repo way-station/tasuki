@@ -29,3 +29,9 @@ type MemberLinkRepository interface {
 	ListByMember(ctx context.Context, memberID shared.MemberID) ([]*MemberLink, error)
 	Save(ctx context.Context, l *MemberLink) error
 }
+
+// SessionRepository stores login sessions. Errors for missing sessions wrap shared.ErrNotFound.
+type SessionRepository interface {
+	FindByTokenHash(ctx context.Context, hash []byte) (*Session, error)
+	Save(ctx context.Context, session *Session) error
+}

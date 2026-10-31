@@ -67,7 +67,7 @@ func (link *InviteLink) Revoke(now time.Time) {
 	}
 }
 
-// TokenGenerator creates the random token of an invite link. It is implemented in the
+// TokenGenerator creates the random token of an invite link or a session. It is implemented in the
 // infrastructure layer.
 type TokenGenerator interface {
 	NewToken() (string, error)
