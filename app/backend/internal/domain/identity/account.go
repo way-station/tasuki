@@ -18,19 +18,19 @@ type Account struct {
 }
 
 // ID returns the account's ID.
-func (a *Account) ID() shared.AccountID { return a.id }
+func (account *Account) ID() shared.AccountID { return account.id }
 
 // LineUserID returns the LINE user ID (the `sub` claim, ADR-0007).
-func (a *Account) LineUserID() string { return a.lineUserID }
+func (account *Account) LineUserID() string { return account.lineUserID }
 
 // DisplayName returns the display name from LINE.
-func (a *Account) DisplayName() string { return a.displayName }
+func (account *Account) DisplayName() string { return account.displayName }
 
 // UpdateDisplayName replaces the display name with the one LINE returned at the latest login.
 // A blank name is ignored.
-func (a *Account) UpdateDisplayName(name string) {
+func (account *Account) UpdateDisplayName(name string) {
 	if name = strings.TrimSpace(name); name != "" {
-		a.displayName = name
+		account.displayName = name
 	}
 }
 
@@ -45,19 +45,19 @@ func NewAccountFactory(ids shared.IDGenerator) AccountFactory {
 }
 
 // New returns a new account for a LINE user.
-func (f AccountFactory) New(lineUserID, displayName string) (*Account, error) {
+func (factory AccountFactory) New(lineUserID, displayName string) (*Account, error) {
 	if strings.TrimSpace(lineUserID) == "" {
 		return nil, shared.NewValidationError("line_user_id", "is required")
 	}
 	return &Account{
-		id:          shared.AccountID(f.ids.NewID()),
+		id:          shared.AccountID(factory.ids.NewID()),
 		lineUserID:  lineUserID,
 		displayName: strings.TrimSpace(displayName),
 	}, nil
 }
 
 // Reconstruct returns an account read from storage.
-func (f AccountFactory) Reconstruct(id shared.AccountID, lineUserID, displayName string) *Account {
+func (factory AccountFactory) Reconstruct(id shared.AccountID, lineUserID, displayName string) *Account {
 	return &Account{id: id, lineUserID: lineUserID, displayName: displayName}
 }
 
@@ -73,6 +73,6 @@ func NewOrganizerPolicy(lineUserIDs []string) OrganizerPolicy {
 }
 
 // IsOrganizer reports whether the account is an organizer.
-func (p OrganizerPolicy) IsOrganizer(a *Account) bool {
-	return slices.Contains(p.lineUserIDs, a.lineUserID)
+func (policy OrganizerPolicy) IsOrganizer(account *Account) bool {
+	return slices.Contains(policy.lineUserIDs, account.lineUserID)
 }

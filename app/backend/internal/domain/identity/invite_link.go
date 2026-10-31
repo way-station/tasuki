@@ -28,42 +28,42 @@ type InviteLink struct {
 }
 
 // ID returns the link's ID.
-func (l *InviteLink) ID() shared.InviteLinkID { return l.id }
+func (link *InviteLink) ID() shared.InviteLinkID { return link.id }
 
 // MemberID returns the roster member the link is for.
-func (l *InviteLink) MemberID() shared.MemberID { return l.memberID }
+func (link *InviteLink) MemberID() shared.MemberID { return link.memberID }
 
 // TokenHash returns the SHA-256 hash of the token.
-func (l *InviteLink) TokenHash() []byte { return l.tokenHash }
+func (link *InviteLink) TokenHash() []byte { return link.tokenHash }
 
 // ExpiresAt returns when the link expires.
-func (l *InviteLink) ExpiresAt() time.Time { return l.expiresAt }
+func (link *InviteLink) ExpiresAt() time.Time { return link.expiresAt }
 
 // UsedAt returns when the link was used, and false if it has not been used.
-func (l *InviteLink) UsedAt() (time.Time, bool) { return deref(l.usedAt) }
+func (link *InviteLink) UsedAt() (time.Time, bool) { return deref(link.usedAt) }
 
 // RevokedAt returns when a newer link replaced this one, and false if it has not been replaced.
-func (l *InviteLink) RevokedAt() (time.Time, bool) { return deref(l.revokedAt) }
+func (link *InviteLink) RevokedAt() (time.Time, bool) { return deref(link.revokedAt) }
 
 // Usable reports whether the link can still be used at now.
-func (l *InviteLink) Usable(now time.Time) bool {
-	return l.usedAt == nil && l.revokedAt == nil && now.Before(l.expiresAt)
+func (link *InviteLink) Usable(now time.Time) bool {
+	return link.usedAt == nil && link.revokedAt == nil && now.Before(link.expiresAt)
 }
 
 // use marks the link as used. Only MemberLinkFactory calls it, when the link creates a
 // member link.
-func (l *InviteLink) use(now time.Time) error {
-	if !l.Usable(now) {
+func (link *InviteLink) use(now time.Time) error {
+	if !link.Usable(now) {
 		return ErrInviteLinkUnusable
 	}
-	l.usedAt = &now
+	link.usedAt = &now
 	return nil
 }
 
 // Revoke makes the link unusable because a newer link replaces it.
-func (l *InviteLink) Revoke(now time.Time) {
-	if l.usedAt == nil && l.revokedAt == nil {
-		l.revokedAt = &now
+func (link *InviteLink) Revoke(now time.Time) {
+	if link.usedAt == nil && link.revokedAt == nil {
+		link.revokedAt = &now
 	}
 }
 
@@ -93,13 +93,13 @@ func NewInviteLinkFactory(ids shared.IDGenerator, tokens TokenGenerator) InviteL
 // New returns a new invite link for the member, valid from now, and its token. The token is
 // returned only here; it goes into the URL and is never stored.
 // Check roster.Member.CanIssueInviteLink first, and revoke the member's previous link.
-func (f InviteLinkFactory) New(memberID shared.MemberID, now time.Time) (*InviteLink, string, error) {
-	token, err := f.tokens.NewToken()
+func (factory InviteLinkFactory) New(memberID shared.MemberID, now time.Time) (*InviteLink, string, error) {
+	token, err := factory.tokens.NewToken()
 	if err != nil {
 		return nil, "", err
 	}
 	return &InviteLink{
-		id:        shared.InviteLinkID(f.ids.NewID()),
+		id:        shared.InviteLinkID(factory.ids.NewID()),
 		memberID:  memberID,
 		tokenHash: HashToken(token),
 		expiresAt: now.Add(InviteLinkLifetime),
@@ -107,13 +107,13 @@ func (f InviteLinkFactory) New(memberID shared.MemberID, now time.Time) (*Invite
 }
 
 // Reconstruct returns an invite link read from storage.
-func (f InviteLinkFactory) Reconstruct(id shared.InviteLinkID, memberID shared.MemberID, tokenHash []byte, expiresAt time.Time, usedAt, revokedAt *time.Time) *InviteLink {
+func (factory InviteLinkFactory) Reconstruct(id shared.InviteLinkID, memberID shared.MemberID, tokenHash []byte, expiresAt time.Time, usedAt, revokedAt *time.Time) *InviteLink {
 	return &InviteLink{id: id, memberID: memberID, tokenHash: tokenHash, expiresAt: expiresAt, usedAt: usedAt, revokedAt: revokedAt}
 }
 
-func deref(t *time.Time) (time.Time, bool) {
-	if t == nil {
+func deref(value *time.Time) (time.Time, bool) {
+	if value == nil {
 		return time.Time{}, false
 	}
-	return *t, true
+	return *value, true
 }
