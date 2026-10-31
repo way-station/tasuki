@@ -2,6 +2,7 @@ import type { CurrentUser, EntryScreen, MeResponse } from "../types/auth.ts";
 
 export function toCurrentUser(me: MeResponse): CurrentUser {
   return {
+    userId: me.user_id,
     displayName: me.display_name,
     isOrganizer: me.is_organizer,
     rosterMember: me.roster_member,

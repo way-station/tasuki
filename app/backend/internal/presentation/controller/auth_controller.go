@@ -82,6 +82,7 @@ func (controller *AuthController) GetMe(ctx context.Context, _ api.GetMeRequestO
 	}
 
 	response := api.GetMe200JSONResponse{
+		UserId:      string(caller.UserID()),
 		DisplayName: caller.DisplayName(),
 		IsOrganizer: caller.IsOrganizer(),
 		Status:      meStatus(caller.Status()),

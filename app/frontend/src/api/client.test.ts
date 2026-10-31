@@ -144,6 +144,7 @@ describe("createApiClient", () => {
 
     it("gets me", async () => {
       const me: Me = {
+        user_id: "user-1",
         display_name: "Taro",
         is_organizer: false,
         status: "approved",

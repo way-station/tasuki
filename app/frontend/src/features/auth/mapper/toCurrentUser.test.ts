@@ -4,6 +4,7 @@ import { toCurrentUser } from "./toCurrentUser.ts";
 
 function me(overrides: Partial<MeResponse>): MeResponse {
   return {
+    user_id: "user-1",
     display_name: "Taro",
     is_organizer: false,
     status: "none",
@@ -19,6 +20,7 @@ describe("toCurrentUser", () => {
         me({ status: "approved", roster_member: { id: "member-1", name: "Taro Yamada" } }),
       ),
     ).toEqual({
+      userId: "user-1",
       displayName: "Taro",
       isOrganizer: false,
       rosterMember: { id: "member-1", name: "Taro Yamada" },

@@ -46,5 +46,5 @@ func (useCase *GetMeUseCase) Execute(ctx context.Context, userID shared.UserID) 
 	}
 
 	status := useCase.linkStatus.CallerStatus(links)
-	return useCase.dtoFactory.Create(record.DisplayName, useCase.organizers.IsOrganizer(user), status, rosterMember), nil
+	return useCase.dtoFactory.Create(userID, record.DisplayName, useCase.organizers.IsOrganizer(user), status, rosterMember), nil
 }

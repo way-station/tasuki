@@ -13,6 +13,7 @@ function renderAt(path: string) {
     getHealth: () => Promise.resolve({ status: "ok", mongo: "ok", postgres: "ok" }),
     getMe: () =>
       Promise.resolve({
+        user_id: "user-1",
         display_name: "Taro",
         is_organizer: true,
         status: "approved",
