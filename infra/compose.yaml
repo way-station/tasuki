@@ -36,10 +36,11 @@ services:
       timeout: 5s
       retries: 10
 
+  # The production image: the backend serves the API and the built frontend from one origin (ADR-0018).
   backend:
     build:
-      context: ../app/backend
-      dockerfile: ../../infra/docker/backend/Dockerfile
+      context: ..
+      dockerfile: infra/docker/backend/Dockerfile
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     environment:
