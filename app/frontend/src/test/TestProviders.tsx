@@ -2,6 +2,7 @@ import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { ApiClientProvider } from "../api/ApiClientProvider.tsx";
 import type { ApiClient } from "../api/client.ts";
+import { NotificationProvider } from "../shared/notification/NotificationProvider.tsx";
 import { createTestQueryClient } from "./testQueryClient.ts";
 
 type TestProvidersProps = {
@@ -17,7 +18,9 @@ export function TestProviders({ client, queryClient, children }: TestProvidersPr
 
   return (
     <QueryClientProvider client={queryClient ?? defaultQueryClient}>
-      <ApiClientProvider client={client}>{children}</ApiClientProvider>
+      <ApiClientProvider client={client}>
+        <NotificationProvider>{children}</NotificationProvider>
+      </ApiClientProvider>
     </QueryClientProvider>
   );
 }
