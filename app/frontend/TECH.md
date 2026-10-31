@@ -36,11 +36,9 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
   - The official Vite plugin (`@tailwindcss/vite`) is the whole setup.
 - **mise**: `mise.toml` is the single source of truth for the Node and pnpm versions. The Dev Container image installs exactly these versions. `packageManager` in `package.json` is intentionally not used, to avoid a second place for the pnpm version.
 
-### Not decided yet (#5)
+### Production
 
-| Topic | Candidates |
-| --- | --- |
-| Production image | depends on hosting (#7) |
+There is no frontend image. The backend's production image builds the frontend and serves it from the same origin as the API (ADR-0018, #197; `app/backend/TECH.md`).
 
 ## Structure (ADR-0012)
 
@@ -185,11 +183,9 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
   - 設定は Vite の公式プラグイン（`@tailwindcss/vite`）を足すだけ
 - **mise**：Node と pnpm のバージョンは `mise.toml` だけに書きます。Dev Container のイメージは、ここに書いたバージョンをそのまま入れます。pnpm のバージョンを書く場所が2つにならないよう、`package.json` の `packageManager` は使いません
 
-### 未決定のこと（#5）
+### 本番
 
-| 項目 | 候補 |
-| --- | --- |
-| 本番用イメージ | ホスティング（#7）次第 |
+frontend のイメージはない。backend の本番用イメージが frontend をビルドし、API と同じオリジンから配信する（ADR-0018、#197。`app/backend/TECH.md`）
 
 ## 構成（ADR-0012）
 
