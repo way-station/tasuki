@@ -16,11 +16,20 @@ type Controllers struct {
 }
 
 // NewRouter returns the HTTP handler with all backend routes registered.
-func NewRouter(controllers Controllers) http.Handler {
+// When frontend is not nil, it serves every GET outside /api and /health, so
+// the API and the frontend share one origin (ADR-0018). In development it is
+// nil, and the Vite dev server serves the frontend.
+func NewRouter(controllers Controllers, frontend http.Handler) http.Handler {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Recoverer)
 
 	router.Get("/health", controllers.Health.Get)
+
+	if frontend != nil {
+		// An unknown API path is a 404, never the frontend.
+		router.Handle("/api/*", http.NotFoundHandler())
+		router.Get("/*", frontend.ServeHTTP)
+	}
 	return router
 }
