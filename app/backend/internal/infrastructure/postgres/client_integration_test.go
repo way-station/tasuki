@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-func TestConnect(t *testing.T) {
+// testDatabaseURL returns DATABASE_URL pointed at the test database, which the tests may
+// reset freely (infra/docker/postgres/init).
+func testDatabaseURL(t *testing.T) string {
+	t.Helper()
 	raw := os.Getenv("DATABASE_URL")
 	if raw == "" {
 		t.Skip("DATABASE_URL is not set")
@@ -20,11 +23,14 @@ func TestConnect(t *testing.T) {
 		t.Fatalf("parse DATABASE_URL: %v", err)
 	}
 	databaseURL.Path = "/tasuki_test"
+	return databaseURL.String()
+}
 
+func TestConnect(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := Connect(ctx, databaseURL.String())
+	client, err := Connect(ctx, testDatabaseURL(t))
 	if err != nil {
 		t.Fatalf("Connect: %v", err)
 	}
