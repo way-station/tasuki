@@ -13,6 +13,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | --- | --- | --- |
 | Language | TypeScript | 6.0 |
 | UI | React | 19 |
+| Styling | Tailwind CSS, with its Vite plugin (#33) | 4.3.3 (exact) |
 | Build / dev server | Vite | 8 |
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
@@ -28,13 +29,17 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 
 - **Node + pnpm instead of Bun**: the backend is Go, so Bun is no longer needed; the Vite / React ecosystem assumes Node.
 - **pnpm**: strict `node_modules` (no undeclared "phantom" dependencies), and safer defaults: dependency install scripts are blocked unless allowed (`pnpm-workspace.yaml`).
+- **Tailwind CSS instead of CSS Modules**:
+  - UI components only display their props (ADR-0012). With the styles written in the JSX, each component needs no CSS file of its own.
+  - The design tokens from the UI design (#146) go in Tailwind's `@theme` as variables, so every component uses only those values.
+  - Classes without a prefix apply to small screens, and `md:` and other prefixes add larger screens. This is mobile-first, which suits an app opened mostly from LINE on phones.
+  - The official Vite plugin (`@tailwindcss/vite`) is the whole setup.
 - **mise**: `mise.toml` is the single source of truth for the Node and pnpm versions. The Dev Container image installs exactly these versions. `packageManager` in `package.json` is intentionally not used, to avoid a second place for the pnpm version.
 
 ### Not decided yet (#5)
 
 | Topic | Candidates |
 | --- | --- |
-| Styling | Tailwind CSS / CSS Modules |
 | Production image | depends on hosting (#7) |
 
 ## Structure (ADR-0012)
@@ -79,6 +84,12 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 | `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` | Host (Docker only) |
 
+### Styling
+
+- Styles are Tailwind classes in the JSX. `src/index.css` imports Tailwind; the design tokens (#146) go in its `@theme` block.
+- Write for small screens first, then add `md:` and larger prefixes where needed.
+- `pnpm format` sorts the classes; CI fails on unsorted classes through `pnpm format:check`.
+
 ### Routes
 
 - `src/app/router.tsx` defines the routes in code (no generated route tree): one route per screen in `docs/design/screens.md`, all inside the common layout (`src/app/Layout.tsx`). Unknown URLs show the not-found page.
@@ -105,7 +116,7 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 ### Lint and format
 
-- oxfmt uses its defaults, the same as Prettier: double quotes and semicolons. `.oxfmtrc.json` only lists what it skips: the generated `src/api/schema.gen.ts` and Markdown.
+- oxfmt uses its defaults, the same as Prettier: double quotes and semicolons. `.oxfmtrc.json` lists what it skips (the generated `src/api/schema.gen.ts` and Markdown) and turns on Tailwind class sorting, which orders classes the same way as the official prettier-plugin-tailwindcss.
 - CI runs `pnpm lint` and `pnpm format:check`.
 - oxlint enforces the import directions of ADR-0012 per layer folder (`overrides` in `.oxlintrc.json`):
 
@@ -146,6 +157,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | --- | --- | --- |
 | 言語 | TypeScript | 6.0 |
 | UI | React | 19 |
+| スタイリング | Tailwind CSS。Vite のプラグインで使う（#33） | 4.3.3（固定） |
 | ビルド / 開発サーバー | Vite | 8 |
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
@@ -161,13 +173,17 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 
 - **Bun ではなく Node + pnpm**：backend が Go になったので Bun は不要です。Vite / React のエコシステムは Node を前提にしています
 - **pnpm**：`node_modules` が厳密で、`package.json` に書いていない依存（幽霊依存）を使えません。依存のインストール時スクリプトは、許可しない限り実行されません（`pnpm-workspace.yaml`）
+- **CSS Modules ではなく Tailwind CSS**：
+  - UI の部品は props を表示するだけ（ADR-0012）。見た目を JSX に書くので、部品ごとの CSS ファイルが要らない
+  - UI デザインの基本（#146）の値は、Tailwind の `@theme` に変数として書く。すべての部品がその値だけを使う
+  - 接頭辞のないクラスは小さい画面に効き、`md:` などの接頭辞で大きい画面を足す。モバイルファーストなので、ほとんど LINE からスマホで開く tasuki に合う
+  - 設定は Vite の公式プラグイン（`@tailwindcss/vite`）を足すだけ
 - **mise**：Node と pnpm のバージョンは `mise.toml` だけに書きます。Dev Container のイメージは、ここに書いたバージョンをそのまま入れます。pnpm のバージョンを書く場所が2つにならないよう、`package.json` の `packageManager` は使いません
 
 ### 未決定のこと（#5）
 
 | 項目 | 候補 |
 | --- | --- |
-| スタイリング | Tailwind CSS / CSS Modules |
 | 本番用イメージ | ホスティング（#7）次第 |
 
 ## 構成（ADR-0012）
@@ -212,6 +228,12 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 | `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` | ホスト（Docker だけ） |
 
+### スタイリング
+
+- 見た目は JSX に Tailwind のクラスで書く。`src/index.css` で Tailwind を読み込み、デザインの値（#146）はその `@theme` に書く
+- まず小さい画面向けに書き、必要なところだけ `md:` 以上の接頭辞で足す
+- `pnpm format` がクラスを並べ替える。並んでいないクラスは、CI の `pnpm format:check` で落ちる
+
 ### ルート
 
 - `src/app/router.tsx` に、ルートをコードで定義する（ルートの木は生成しない）。`docs/design/screens.md` の画面ごとに 1 つのルートを、すべて共通のレイアウト（`src/app/Layout.tsx`）の中に置く。知らない URL は not found ページを出す
@@ -238,7 +260,7 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 ### Lint と format
 
-- oxfmt は既定の設定を使う。Prettier と同じで、ダブルクォートとセミコロンあり。`.oxfmtrc.json` には対象外のもの（生成した `src/api/schema.gen.ts` と Markdown）だけを書く
+- oxfmt は既定の設定を使う。Prettier と同じで、ダブルクォートとセミコロンあり。`.oxfmtrc.json` には、対象外のもの（生成した `src/api/schema.gen.ts` と Markdown）と、Tailwind のクラスの並べ替えを書く。並べ方は公式の prettier-plugin-tailwindcss と同じ
 - CI で `pnpm lint` と `pnpm format:check` を実行する
 - oxlint で、ADR-0012 の import の向きを層のフォルダごとに強制する（`.oxlintrc.json` の `overrides`）：
 

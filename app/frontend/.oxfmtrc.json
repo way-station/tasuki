@@ -1,4 +1,7 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["src/api/schema.gen.ts", "**/*.md"]
+  "ignorePatterns": ["src/api/schema.gen.ts", "**/*.md"],
+  "sortTailwindcss": {
+    "stylesheet": "./src/index.css"
+  }
 }
