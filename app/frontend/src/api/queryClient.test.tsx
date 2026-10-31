@@ -1,3 +1,6 @@
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "./ApiError.ts";
 import { problem } from "./fakeApiClient.ts";
@@ -5,7 +8,7 @@ import { createQueryClient } from "./queryClient.ts";
 
 describe("createQueryClient", () => {
   describe("after a 401", () => {
-    it("clears every query when a query fails", async () => {
+    it("removes every query with data when a query fails", async () => {
       const queryClient = createQueryClient();
       queryClient.setQueryData(["previous-user"], "visible to the previous user");
 
@@ -16,10 +19,10 @@ describe("createQueryClient", () => {
         })
         .catch(() => {});
 
-      expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+      expect(queryClient.getQueryData(["previous-user"])).toBeUndefined();
     });
 
-    it("clears every query when a mutation fails", async () => {
+    it("removes every query with data when a mutation fails", async () => {
       const queryClient = createQueryClient();
       queryClient.setQueryData(["previous-user"], "visible to the previous user");
 
@@ -29,7 +32,38 @@ describe("createQueryClient", () => {
         .execute(undefined)
         .catch(() => {});
 
-      expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+      expect(queryClient.getQueryData(["previous-user"])).toBeUndefined();
+    });
+
+    it("does not fetch a query in use again and again", async () => {
+      const queryClient = createQueryClient();
+      const queryFn = vi.fn(() => Promise.reject(problem(401, "unauthenticated")));
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+
+      // A screen using the query.
+      const { result } = renderHook(() => useQuery({ queryKey: ["me"], queryFn }), { wrapper });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(queryFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("removes the failing query's own data, fetching it only once more", async () => {
+      const queryClient = createQueryClient();
+      queryClient.setQueryData(["me"], "the previous user");
+      const queryFn = vi.fn(() => Promise.reject(problem(401, "unauthenticated")));
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+
+      const { result } = renderHook(() => useQuery({ queryKey: ["me"], queryFn }), { wrapper });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(result.current.data).toBeUndefined();
+      expect(queryFn).toHaveBeenCalledTimes(2);
     });
 
     it("keeps the queries after other errors", async () => {
