@@ -1190,8 +1190,12 @@ components:
           type: string
     Me:
       type: object
-      required: [display_name, is_organizer, status, roster_member]
+      required: [user_id, display_name, is_organizer, status, roster_member]
       properties:
+        user_id:
+          description: Identifies the user, so the frontend can keep drafts per user (ADR-0013)
+          allOf:
+            - $ref: "#/components/schemas/Id"
         display_name:
           type: string
         is_organizer:

@@ -379,6 +379,9 @@ type Me struct {
 	// RosterMember Set only when `status` is `approved`
 	RosterMember *RosterMemberBasic `json:"roster_member"`
 	Status       MeStatus           `json:"status"`
+
+	// UserId Identifies the user, so the frontend can keep drafts per user (ADR-0013)
+	UserId Id `json:"user_id"`
 }
 
 // MeStatus defines model for Me.Status.

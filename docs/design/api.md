@@ -98,6 +98,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 ```
 {
+  "user_id": "...",
   "display_name": "LINE display name",
   "is_organizer": true,
   "status": "approved" | "pending" | "rejected" | "none",
@@ -113,6 +114,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | `none` | No link | A4 for non-organizers; organizers use organizer screens |
 
 - `roster_member` is set only when `status` is `approved`.
+- `user_id` is the caller's user. The frontend keys drafts by it, so one user never sees another's draft (ADR-0013).
 - Left members never get a session (see the callback), so there is no `left` status.
 
 ## Races
