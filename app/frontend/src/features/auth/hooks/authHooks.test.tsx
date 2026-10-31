@@ -1,8 +1,10 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient, Me } from "../../../api/client.ts";
 import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
+import { queryKeys } from "../../../api/queryKeys.ts";
+import { draftKey, readDraft, writeDraft } from "../../../shared/draft/draftStorage.ts";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 import { createTestQueryClient } from "../../../test/testQueryClient.ts";
 import { useCreateSession } from "./useCreateSession.ts";
@@ -155,6 +157,55 @@ describe("useCreateSession", () => {
 });
 
 describe("useLogout", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  // A signed-in user with a draft, and another user's draft on the
+  // same device.
+  function signedInWithDrafts() {
+    const queryClient = seededQueryClient();
+    queryClient.setQueryData(queryKeys.me, approvedMe);
+    writeDraft(draftKey("user-1", "race-1"), { value: "mine", version: 1 });
+    writeDraft(draftKey("user-2", "race-1"), { value: "theirs", version: 1 });
+    return queryClient;
+  }
+
+  it("deletes the user's drafts, and no one else's", async () => {
+    const { result } = renderWith(
+      useLogout,
+      createFakeApiClient({ logout: () => Promise.resolve() }),
+      signedInWithDrafts(),
+    );
+
+    await result.current.mutateAsync();
+
+    expect(readDraft(draftKey("user-1", "race-1"))).toBeUndefined();
+    expect(readDraft(draftKey("user-2", "race-1"))).toEqual({ value: "theirs", version: 1 });
+  });
+
+  it("deletes the drafts when the session had already ended", async () => {
+    const { result } = renderWith(
+      useLogout,
+      createFakeApiClient({ logout: () => Promise.reject(problem(401, "unauthenticated")) }),
+      signedInWithDrafts(),
+    );
+
+    await expect(result.current.mutateAsync()).rejects.toMatchObject({ code: "unauthenticated" });
+    expect(readDraft(draftKey("user-1", "race-1"))).toBeUndefined();
+  });
+
+  it("keeps the drafts when logging out fails", async () => {
+    const { result } = renderWith(
+      useLogout,
+      createFakeApiClient({ logout: () => Promise.reject(new Error("offline")) }),
+      signedInWithDrafts(),
+    );
+
+    await expect(result.current.mutateAsync()).rejects.toBeDefined();
+    expect(readDraft(draftKey("user-1", "race-1"))).toEqual({ value: "mine", version: 1 });
+  });
+
   it("logs out and clears the cache", async () => {
     const logout = vi.fn(() => Promise.resolve());
     const { result, queryClient } = renderWith(
