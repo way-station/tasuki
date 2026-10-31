@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  draftKey,
-  readDraft,
-  removeUserDrafts,
-  removeDraft,
-  writeDraft,
-} from "./draftStorage.ts";
+import { draftKey, readDraft, removeUserDrafts, removeDraft, writeDraft } from "./draftStorage.ts";
 
 afterEach(() => {
   localStorage.clear();
