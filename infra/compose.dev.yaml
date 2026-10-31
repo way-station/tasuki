@@ -39,6 +39,9 @@ services:
       - pnpm-store:/pnpm/store
     working_dir: /workspaces/tasuki/app/frontend
     command: sleep infinity
+    environment:
+      # The Vite dev server proxies API requests here (app/frontend/vite.config.ts).
+      BACKEND_URL: http://backend-dev:8080
     # Vite dev server (pnpm dev), reachable from the host browser.
     ports:
       - "${FRONTEND_PORT:-5173}:5173"

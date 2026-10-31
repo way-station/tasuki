@@ -15,7 +15,9 @@
     "generate:api": "openapi-typescript ../backend/api/openapi.yaml --output src/api/schema.gen.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "5.104.3",
     "@tanstack/react-router": "1.170.45",
+    "openapi-fetch": "0.17.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

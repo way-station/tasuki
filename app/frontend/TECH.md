@@ -19,6 +19,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt 0.73.0 (exact, pre-1.0) |
 | Routing | TanStack Router, without loaders (ADR-0013) | 1.170.45 |
 | Server data | TanStack Query (ADR-0013) | 5 |
+| API client | openapi-fetch, typed by the generated API types | 0.17.0 (exact, pre-1.0) |
 | Tests | Vitest, Testing Library, jsdom | Vitest 5 |
 | API types | openapi-typescript, generated from `app/backend/api/openapi.yaml` (ADR-0017) | 7.13.0 (exact) |
 | Dev environment | Dev Container (`infra/docker/frontend/Dockerfile`, `infra/compose.dev.yaml`) | — |
@@ -86,6 +87,15 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 - Routes only pick the screen: no loaders (ADR-0013). Containers read the URL with `useParams` / `useSearch` and fetch through hooks.
 - Reloading on any URL works because the server returns `index.html` for every path. Vite does this in `pnpm dev` and `pnpm preview`; in production the backend does it for every path outside `/api` (ADR-0018, #197).
 
+### API client and server data
+
+- Hooks call the backend only through the `ApiClient` interface (`src/api/client.ts`), which they get with `useApiClient()` (ADR-0012). It has one method per endpoint, such as `getHealth()`; each feature adds the methods its hooks need. The implementation uses openapi-fetch, so paths, parameters, and bodies are checked against the OpenAPI document.
+- Error responses become an `ApiError` with the `status` and the problem+json `code` (`docs/design/api.md`).
+- Query keys are all in `src/api/queryKeys.ts` (ADR-0013).
+- The `QueryClient` (`src/api/queryClient.ts`) does not retry 4xx responses, clears the whole cache on any `401`, and keeps the default `staleTime` of `0`, so screens fetch again when they open or the window regains focus (ADR-0013).
+- Tests pass `createFakeApiClient({ ... })` (`src/api/fakeApiClient.ts`) with only the methods they need, and report errors with `problem(status, code)`, the same `ApiError` the real client throws.
+- `pnpm dev` and `pnpm preview` proxy `/api` and `/health` to the backend (`BACKEND_URL`, set in `infra/compose.dev.yaml`), so the browser sees one origin as in production (ADR-0018). Start the backend with `make run` in its container.
+
 ### Tests
 
 - Vitest runs the tests, with Testing Library and jsdom for components, so no browser is needed. Settings are in the `test` block of `vite.config.ts`; `src/test/setup.ts` adds the DOM matchers (`toBeInTheDocument()` and others).
@@ -142,6 +152,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt 0.73.0（固定、1.0 より前） |
 | ルーティング | TanStack Router。loader は使わない（ADR-0013） | 1.170.45 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
+| API クライアント | openapi-fetch。生成した API の型で型が付く | 0.17.0（固定、1.0 前） |
 | テスト | Vitest、Testing Library、jsdom | Vitest 5 |
 | API の型 | openapi-typescript。`app/backend/api/openapi.yaml` から生成（ADR-0017） | 7.13.0（固定） |
 | 開発環境 | Dev Container（`infra/docker/frontend/Dockerfile`、`infra/compose.dev.yaml`） | — |
@@ -208,6 +219,15 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 - 機能の Container ができるまでは、画面 ID を出す仮のページを出す
 - ルートは画面を選ぶだけで、loader は使わない（ADR-0013）。Container が `useParams` / `useSearch` で URL を読み、Hooks を通してデータを取る
 - どの URL で再読み込みしても画面が出るのは、サーバーがどのパスにも `index.html` を返すから。`pnpm dev` と `pnpm preview` では Vite がそうする。本番では backend が `/api` 以外のパスでそうする（ADR-0018、#197）
+
+### API クライアントとサーバーのデータ
+
+- Hooks は `ApiClient` の interface（`src/api/client.ts`）だけを通して backend を呼ぶ。`useApiClient()` で受け取る（ADR-0012）。エンドポイントごとに `getHealth()` のようなメソッドを 1 つ持ち、各機能が自分の Hooks に要るメソッドを足す。実装は openapi-fetch で、パス、パラメータ、body は OpenAPI と照らして型で確かめられる
+- エラーの応答は、`status` と problem+json の `code` を持つ `ApiError` になる（`docs/design/api.md`）
+- query key はすべて `src/api/queryKeys.ts` に置く（ADR-0013）
+- `QueryClient`（`src/api/queryClient.ts`）は 4xx を再試行せず、`401` でキャッシュをすべて消し、`staleTime` は既定の `0` のまま。画面を開いたときとウィンドウに戻ったときに取り直す（ADR-0013）
+- テストでは、要るメソッドだけを渡した `createFakeApiClient({ ... })`（`src/api/fakeApiClient.ts`）を使い、エラーは `problem(status, code)` で返す。本物のクライアントと同じ `ApiError` になる
+- `pnpm dev` と `pnpm preview` は `/api` と `/health` を backend に中継する（`BACKEND_URL`、`infra/compose.dev.yaml` で設定）。本番と同じく、ブラウザからは 1 つのオリジンに見える（ADR-0018）。backend はそのコンテナで `make run` で起動する
 
 ### テスト
 
