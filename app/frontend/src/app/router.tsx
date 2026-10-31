@@ -4,6 +4,11 @@ import {
   createRouter,
   type RouterHistory,
 } from "@tanstack/react-router";
+import { AuthCompleteContainer } from "../features/auth/container/AuthCompleteContainer.tsx";
+import { InviteLandingContainer } from "../features/auth/container/InviteLandingContainer.tsx";
+import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
+import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
+import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
 import { HealthContainer } from "../features/health/container/HealthContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
@@ -14,36 +19,74 @@ import { Placeholder } from "./Placeholder.tsx";
 // pick the screen: no loaders (ADR-0013).
 const rootRoute = createRootRoute({ component: Layout });
 
+// ---- Joining and access: open without a session --------------------------
+
 const inviteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "invite/$token",
-  component: () => <Placeholder screen="A1" title="Invite link landing" />,
+  component: InviteLandingContainer,
+});
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "login",
+  // The screen to return to after logging in.
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
+  component: LoginContainer,
 });
 const authCompleteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "auth/complete",
-  component: () => <Placeholder title="Completing login" />,
+  // What the LINE callback redirects with (docs/design/api.md).
+  validateSearch: (search: Record<string, unknown>): { code?: string; error?: string } => ({
+    code: typeof search.code === "string" ? search.code : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
+  }),
+  component: AuthCompleteContainer,
 });
 const waitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "waiting",
-  component: () => <Placeholder screen="A2" title="Waiting for approval" />,
+  component: () => (
+    <AuthMessage title="Waiting for approval" message="Waiting for an organizer to approve you." />
+  ),
 });
 const rejectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "rejected",
-  component: () => <Placeholder screen="A3" title="Rejected" />,
+  component: () => <AuthMessage title="You were rejected" />,
 });
 const unavailableRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "unavailable",
-  component: () => <Placeholder screen="A4" title="Cannot use tasuki" />,
+  component: () => (
+    <AuthMessage title="tasuki cannot be used" message="Please contact an organizer." />
+  ),
+});
+
+// ---- The team's screens, behind the route guard (#113) --------------------
+
+const teamRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "team",
+  component: () => <TeamGuard access="team" />,
+});
+const organizerRoute = createRoute({
+  getParentRoute: () => teamRoute,
+  id: "organizer",
+  component: () => <TeamGuard access="organizer" />,
+});
+const linkedRoute = createRoute({
+  getParentRoute: () => teamRoute,
+  id: "linked",
+  component: () => <TeamGuard access="linked" />,
 });
 
 // Until the race list (#119) replaces it, the home page also shows the
 // backend health, to check frontend → backend → databases (#36).
 const homeRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => teamRoute,
   path: "/",
   component: () => (
     <>
@@ -53,12 +96,12 @@ const homeRoute = createRoute({
   ),
 });
 const raceNewRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => organizerRoute,
   path: "races/new",
   component: () => <Placeholder screen="R3" title="Register race" />,
 });
 const raceRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => teamRoute,
   path: "races/$raceId",
 });
 const raceDetailRoute = createRoute({
@@ -66,80 +109,92 @@ const raceDetailRoute = createRoute({
   path: "/",
   component: () => <Placeholder screen="R2" title="Race detail" />,
 });
-const raceEditRoute = createRoute({
+const raceOrganizerRoute = createRoute({
   getParentRoute: () => raceRoute,
+  id: "race-organizer",
+  component: () => <TeamGuard access="organizer" />,
+});
+const raceEditRoute = createRoute({
+  getParentRoute: () => raceOrganizerRoute,
   path: "edit",
   component: () => <Placeholder screen="R3" title="Edit race" />,
 });
 const raceInvitationsRoute = createRoute({
-  getParentRoute: () => raceRoute,
+  getParentRoute: () => raceOrganizerRoute,
   path: "invitations",
   component: () => <Placeholder screen="R4" title="Race invitations" />,
 });
 const raceAttendanceRoute = createRoute({
-  getParentRoute: () => raceRoute,
+  getParentRoute: () => raceOrganizerRoute,
   path: "attendance",
   component: () => <Placeholder screen="R5" title="Attendance list" />,
 });
 const raceEntryRoute = createRoute({
-  getParentRoute: () => raceRoute,
+  getParentRoute: () => raceOrganizerRoute,
   path: "entry",
   component: () => <Placeholder screen="R6" title="Entry" />,
 });
 const raceRunningOrderRoute = createRoute({
-  getParentRoute: () => raceRoute,
+  getParentRoute: () => raceOrganizerRoute,
   path: "running-order",
   component: () => <Placeholder screen="R7" title="Running order editor" />,
 });
-const raceLapsRoute = createRoute({
+const raceLinkedRoute = createRoute({
   getParentRoute: () => raceRoute,
+  id: "race-linked",
+  component: () => <TeamGuard access="linked" />,
+});
+const raceLapsRoute = createRoute({
+  getParentRoute: () => raceLinkedRoute,
   path: "laps",
   component: () => <Placeholder screen="L1" title="My lap times" />,
 });
 
 const profileRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => linkedRoute,
   path: "me",
   component: () => <Placeholder screen="P1" title="My profile" />,
 });
 
 const rosterRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => organizerRoute,
   path: "roster",
   component: () => <Placeholder screen="M1" title="Roster" />,
 });
 const rosterMemberRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => organizerRoute,
   path: "roster/$rosterMemberId",
   component: () => <Placeholder screen="M2" title="Member profile" />,
 });
 const approvalsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => organizerRoute,
   path: "approvals",
   component: () => <Placeholder screen="M3" title="Approvals" />,
 });
 
 const routeTree = rootRoute.addChildren([
   inviteRoute,
+  loginRoute,
   authCompleteRoute,
   waitingRoute,
   rejectedRoute,
   unavailableRoute,
-  homeRoute,
-  raceNewRoute,
-  raceRoute.addChildren([
-    raceDetailRoute,
-    raceEditRoute,
-    raceInvitationsRoute,
-    raceAttendanceRoute,
-    raceEntryRoute,
-    raceRunningOrderRoute,
-    raceLapsRoute,
+  teamRoute.addChildren([
+    homeRoute,
+    raceRoute.addChildren([
+      raceDetailRoute,
+      raceOrganizerRoute.addChildren([
+        raceEditRoute,
+        raceInvitationsRoute,
+        raceAttendanceRoute,
+        raceEntryRoute,
+        raceRunningOrderRoute,
+      ]),
+      raceLinkedRoute.addChildren([raceLapsRoute]),
+    ]),
+    organizerRoute.addChildren([raceNewRoute, rosterRoute, rosterMemberRoute, approvalsRoute]),
+    linkedRoute.addChildren([profileRoute]),
   ]),
-  profileRoute,
-  rosterRoute,
-  rosterMemberRoute,
-  approvalsRoute,
 ]);
 
 // Tests pass a memory history; the app uses the browser's.
