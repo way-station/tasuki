@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -7,7 +8,7 @@ const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8080";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     // Listen on all interfaces so the dev server is reachable from outside the Dev Container.
     host: true,
