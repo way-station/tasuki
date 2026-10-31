@@ -103,6 +103,7 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 - Hooks call the backend only through the `ApiClient` interface (`src/api/client.ts`), which they get with `useApiClient()` (ADR-0012). It has one method per endpoint, such as `getHealth()`; each feature adds the methods its hooks need. The implementation uses openapi-fetch, so paths, parameters, and bodies are checked against the OpenAPI document.
 - Error responses become an `ApiError` with the `status` and the problem+json `code` (`docs/design/api.md`).
 - Query keys are all in `src/api/queryKeys.ts` (ADR-0013).
+- Logging in (`useCreateSession`) and logging out (`useLogout`) clear the whole cache on success, because the signed-in user changed (ADR-0013).
 - The `QueryClient` (`src/api/queryClient.ts`) does not retry 4xx responses, removes every query that holds data on any `401` (queries without data stay, since a screen would fetch a removed query again at once and loop on `401`), and keeps the default `staleTime` of `0`, so screens fetch again when they open or the window regains focus (ADR-0013).
 - Tests pass `createFakeApiClient({ ... })` (`src/api/fakeApiClient.ts`) with only the methods they need, and report errors with `problem(status, code)`, the same `ApiError` the real client throws.
 - `pnpm dev` and `pnpm preview` proxy `/api` and `/health` to the backend (`BACKEND_URL`, set in `infra/compose.dev.yaml`), so the browser sees one origin as in production (ADR-0018). Start the backend with `make run` in its container.
@@ -111,7 +112,7 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 - Vitest runs the tests, with Testing Library and jsdom for components, so no browser is needed. Settings are in the `test` block of `vite.config.ts`; `src/test/setup.ts` adds the DOM matchers (`toBeInTheDocument()` and others).
 - Test files sit next to what they test, as `*.test.ts` / `*.test.tsx`.
-- Tests that render containers or routes wrap them in `TestProviders` (`src/test/TestProviders.tsx`), which gives the app's providers with a fake `ApiClient`, a fresh cache, and retries without waiting.
+- Tests that render containers or routes wrap them in `TestProviders` (`src/test/TestProviders.tsx`), which gives the app's providers with a fake `ApiClient`, a fresh cache, and retries without waiting. To check the cache, make one with `createTestQueryClient()` (`src/test/testQueryClient.ts`) and pass it as `queryClient`.
 - `src/features/health/` is the smallest feature with all five layers; use it as the example for the others.
 - Predictions are calculated by the backend, so frontend tests cover mappers, hooks with a fake `ApiClient` (#32), containers, and UI components.
 - CI runs `pnpm test --bail=1`, which stops at the first failing test.
@@ -251,6 +252,7 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 - Hooks は `ApiClient` の interface（`src/api/client.ts`）だけを通して backend を呼ぶ。`useApiClient()` で受け取る（ADR-0012）。エンドポイントごとに `getHealth()` のようなメソッドを 1 つ持ち、各機能が自分の Hooks に要るメソッドを足す。実装は openapi-fetch で、パス、パラメータ、body は OpenAPI と照らして型で確かめられる
 - エラーの応答は、`status` と problem+json の `code` を持つ `ApiError` になる（`docs/design/api.md`）
 - query key はすべて `src/api/queryKeys.ts` に置く（ADR-0013）
+- ログイン（`useCreateSession`）とログアウト（`useLogout`）が成功したら、ログインしている人が変わったので、キャッシュをすべて消す（ADR-0013）
 - `QueryClient`（`src/api/queryClient.ts`）は 4xx を再試行せず、`401` でデータを持つクエリをすべて消し（データのないクエリは残す。消したクエリは画面がすぐ取り直すので、残さないと `401` で取り直しが止まらない）、`staleTime` は既定の `0` のまま。画面を開いたときとウィンドウに戻ったときに取り直す（ADR-0013）
 - テストでは、要るメソッドだけを渡した `createFakeApiClient({ ... })`（`src/api/fakeApiClient.ts`）を使い、エラーは `problem(status, code)` で返す。本物のクライアントと同じ `ApiError` になる
 - `pnpm dev` と `pnpm preview` は `/api` と `/health` を backend に中継する（`BACKEND_URL`、`infra/compose.dev.yaml` で設定）。本番と同じく、ブラウザからは 1 つのオリジンに見える（ADR-0018）。backend はそのコンテナで `make run` で起動する
@@ -259,7 +261,7 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 - テストは Vitest で実行する。部品は Testing Library と jsdom で描画するので、ブラウザは要らない。設定は `vite.config.ts` の `test`。`src/test/setup.ts` で DOM 用の matcher（`toBeInTheDocument()` など）を足している
 - テストファイルは、テストする対象の隣に `*.test.ts` / `*.test.tsx` として置く
-- Container やルートを描画するテストは `TestProviders`（`src/test/TestProviders.tsx`）で包む。アプリと同じ provider を、偽の `ApiClient`、テストごとの新しいキャッシュ、待たない再試行で用意する
+- Container やルートを描画するテストは `TestProviders`（`src/test/TestProviders.tsx`）で包む。アプリと同じ provider を、偽の `ApiClient`、テストごとの新しいキャッシュ、待たない再試行で用意する。キャッシュを確かめるときは、`createTestQueryClient()`（`src/test/testQueryClient.ts`）で作って `queryClient` に渡す
 - `src/features/health/` は、5 層をすべて持つ一番小さい機能。ほかの機能の見本にする
 - 予想は backend が計算するので、frontend のテストは Mapper、偽の `ApiClient`（#32）を使う Hooks、Container、UI の部品を対象にする
 - CI では `pnpm test --bail=1` を実行し、最初に落ちたテストで止める
