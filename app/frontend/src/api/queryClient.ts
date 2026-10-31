@@ -13,12 +13,16 @@ function shouldRetry(failureCount: number, error: Error): boolean {
 }
 
 export function createQueryClient(): QueryClient {
-  // A 401 means the session ended. Clearing the whole cache leaves nothing the
-  // previous user could see, and the route guard (#113) picks the next screen
-  // (ADR-0013). Handled here once, not in each screen.
+  // A 401 means the session ended. Every query that holds data is removed, so
+  // nothing the previous user could see stays, and the route guard (#113)
+  // picks the next screen (ADR-0013). Handled here once, not in each screen.
+  //
+  // Queries without data stay. A screen fetches a removed query again at
+  // once, so removing a query that keeps failing with 401 would fetch it
+  // again and again.
   const clearOnUnauthenticated = (error: Error) => {
     if (error instanceof ApiError && error.status === 401) {
-      queryClient.clear();
+      queryClient.removeQueries({ predicate: (query) => query.state.data !== undefined });
     }
   };
 
