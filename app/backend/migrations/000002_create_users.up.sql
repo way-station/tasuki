@@ -1,4 +1,4 @@
-CREATE TABLE accounts (
+CREATE TABLE users (
   id           uuid PRIMARY KEY,
   line_user_id text NOT NULL UNIQUE,
   display_name text NOT NULL,
