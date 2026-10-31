@@ -1,6 +1,14 @@
-.env
-.env.*
-!.env.example
-bin/
-coverage.out
-*_test.go
+# The production image is built from the repository root; send only the two apps.
+# The dev stage (context app/backend, infra/compose.dev.yaml) copies nothing from its context.
+*
+!app/backend/
+!app/frontend/
+
+app/frontend/node_modules
+app/frontend/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/bin/
+**/coverage.out
+**/*_test.go
