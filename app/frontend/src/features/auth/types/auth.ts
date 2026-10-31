@@ -26,3 +26,6 @@ export type InviteLink = {
 // Why LINE Login did not finish, from `/auth/complete?error=<code>`.
 // "unavailable" goes to A4; "failed" means LINE Login failed or was cancelled.
 export type LoginError = "unavailable" | "failed";
+
+// Where finishing a login at `/auth/complete` stands.
+export type LoginState = "pending" | "done" | LoginError;
