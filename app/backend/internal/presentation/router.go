@@ -2,10 +2,11 @@
 package presentation
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 )
@@ -13,24 +14,47 @@ import (
 // Controllers holds every controller the router serves.
 type Controllers struct {
 	Health *controller.HealthController
+	Auth   *controller.AuthController
+}
+
+// Options configures the router.
+type Options struct {
+	// Authenticate identifies the caller of the API routes that need a session (ADR-0014).
+	Authenticate func(http.Handler) http.Handler
+	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
+	DevLogin bool
+	// Frontend serves every GET and HEAD outside /api and /health, so the API and the
+	// frontend share one origin (ADR-0018). In development it is nil, and the Vite dev
+	// server serves the frontend.
+	Frontend http.Handler
+	Logger   *slog.Logger
 }
 
 // NewRouter returns the HTTP handler with all backend routes registered.
-// When frontend is not nil, it serves every GET and HEAD outside /api and /health, so
-// the API and the frontend share one origin (ADR-0018). In development it is
-// nil, and the Vite dev server serves the frontend.
-func NewRouter(controllers Controllers, frontend http.Handler) http.Handler {
+func NewRouter(controllers Controllers, options Options) http.Handler {
 	router := chi.NewRouter()
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Recoverer)
+	router.Use(chimiddleware.RequestID)
+	router.Use(chimiddleware.Recoverer)
 
 	router.Get("/health", controllers.Health.Get)
 
-	if frontend != nil {
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth}, options.Logger)
+	router.Route("/api/v1", func(apiRouter chi.Router) {
+		if options.DevLogin {
+			apiRouter.Post("/dev/login", apiHandler.DevLogin)
+		}
+		apiRouter.Group(func(accountRouter chi.Router) {
+			accountRouter.Use(options.Authenticate)
+			accountRouter.Get("/me", apiHandler.GetMe)
+			accountRouter.Delete("/session", apiHandler.Logout)
+		})
+	})
+
+	if options.Frontend != nil {
 		// An unknown API path is a 404, never the frontend.
 		router.Handle("/api/*", http.NotFoundHandler())
-		router.Get("/*", frontend.ServeHTTP)
-		router.Head("/*", frontend.ServeHTTP)
+		router.Get("/*", options.Frontend.ServeHTTP)
+		router.Head("/*", options.Frontend.ServeHTTP)
 	}
 	return router
 }
