@@ -103,7 +103,7 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 - Hooks call the backend only through the `ApiClient` interface (`src/api/client.ts`), which they get with `useApiClient()` (ADR-0012). It has one method per endpoint, such as `getHealth()`; each feature adds the methods its hooks need. The implementation uses openapi-fetch, so paths, parameters, and bodies are checked against the OpenAPI document.
 - Error responses become an `ApiError` with the `status` and the problem+json `code` (`docs/design/api.md`).
 - Query keys are all in `src/api/queryKeys.ts` (ADR-0013).
-- The `QueryClient` (`src/api/queryClient.ts`) does not retry 4xx responses, clears the whole cache on any `401`, and keeps the default `staleTime` of `0`, so screens fetch again when they open or the window regains focus (ADR-0013).
+- The `QueryClient` (`src/api/queryClient.ts`) does not retry 4xx responses, removes every query that holds data on any `401` (queries without data stay, since a screen would fetch a removed query again at once and loop on `401`), and keeps the default `staleTime` of `0`, so screens fetch again when they open or the window regains focus (ADR-0013).
 - Tests pass `createFakeApiClient({ ... })` (`src/api/fakeApiClient.ts`) with only the methods they need, and report errors with `problem(status, code)`, the same `ApiError` the real client throws.
 - `pnpm dev` and `pnpm preview` proxy `/api` and `/health` to the backend (`BACKEND_URL`, set in `infra/compose.dev.yaml`), so the browser sees one origin as in production (ADR-0018). Start the backend with `make run` in its container.
 
@@ -251,7 +251,7 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 - Hooks は `ApiClient` の interface（`src/api/client.ts`）だけを通して backend を呼ぶ。`useApiClient()` で受け取る（ADR-0012）。エンドポイントごとに `getHealth()` のようなメソッドを 1 つ持ち、各機能が自分の Hooks に要るメソッドを足す。実装は openapi-fetch で、パス、パラメータ、body は OpenAPI と照らして型で確かめられる
 - エラーの応答は、`status` と problem+json の `code` を持つ `ApiError` になる（`docs/design/api.md`）
 - query key はすべて `src/api/queryKeys.ts` に置く（ADR-0013）
-- `QueryClient`（`src/api/queryClient.ts`）は 4xx を再試行せず、`401` でキャッシュをすべて消し、`staleTime` は既定の `0` のまま。画面を開いたときとウィンドウに戻ったときに取り直す（ADR-0013）
+- `QueryClient`（`src/api/queryClient.ts`）は 4xx を再試行せず、`401` でデータを持つクエリをすべて消し（データのないクエリは残す。消したクエリは画面がすぐ取り直すので、残さないと `401` で取り直しが止まらない）、`staleTime` は既定の `0` のまま。画面を開いたときとウィンドウに戻ったときに取り直す（ADR-0013）
 - テストでは、要るメソッドだけを渡した `createFakeApiClient({ ... })`（`src/api/fakeApiClient.ts`）を使い、エラーは `problem(status, code)` で返す。本物のクライアントと同じ `ApiError` になる
 - `pnpm dev` と `pnpm preview` は `/api` と `/health` を backend に中継する（`BACKEND_URL`、`infra/compose.dev.yaml` で設定）。本番と同じく、ブラウザからは 1 つのオリジンに見える（ADR-0018）。backend はそのコンテナで `make run` で起動する
 
