@@ -12,8 +12,8 @@ With LINE Login (ADR-0007) and the access policy (ADR-0006), almost every screen
 During local development, real LINE Login is impractical:
 
 - Developers need to try the app as different people: an organizer, an approved member, a member waiting for approval, someone not yet linked.
-- A published production LINE Login channel would give developers real accounts with real permissions. The developer of tasuki is one of the production organizers only because they build the app, and should not need production organizer rights to develop.
-- A separate development channel would only allow its Admins and Testers to log in, and still gives one fixed identity per LINE account.
+- A published production LINE Login channel would give developers real users with real permissions. The developer of tasuki is one of the production organizers only because they build the app, and should not need production organizer rights to develop.
+- A separate development channel would only allow its Admins and Testers to log in, and still gives one fixed identity per LINE user.
 
 ## Decision
 
@@ -29,13 +29,13 @@ Local development uses a **dev-only login** that signs in as any user without LI
 
 | Option | Why it was not chosen |
 | --- | --- |
-| A separate LINE Login channel for development | Only its Admins / Testers can log in; one identity per LINE account; every contributor needs a LINE Developers setup |
-| Using production accounts | Developers would need production organizer rights; risk of changing real data |
+| A separate LINE Login channel for development | Only its Admins / Testers can log in; one identity per LINE user; every contributor needs a LINE Developers setup |
+| Using production users | Developers would need production organizer rights; risk of changing real data |
 | Mocking authentication only in automated tests | Does not help when trying the app by hand in the browser |
 
 ## Consequences
 
-- Developers and contributors can work on every screen and permission case without a LINE account or production rights.
+- Developers and contributors can work on every screen and permission case without a LINE user or production rights.
 - If the dev login were ever enabled in production, anyone could log in as an organizer. This risk is contained by the default-off flag, keeping the flag out of production configuration, the startup warning, and the test in CI.
 - The real LINE Login flow still needs to be checked separately (for example on a staging deployment) before release.
 
@@ -58,8 +58,8 @@ LINE ログイン（ADR-0007）とアクセスの方針（ADR-0006）により�
 ローカル開発で本物の LINE ログインを使うのは現実的ではありません。
 
 - 開発者は、さまざまな立場でアプリを試す必要がある。幹事、承認済みのメンバー、承認待ちのメンバー、まだ紐付いていない人など
-- 公開済みの本番の LINE ログインチャネルを使うと、開発者が本物の権限を持つ本物のアカウントで動くことになる。tasuki の開発者が本番の幹事の1人なのは、アプリを作っているからにすぎず、開発のために本番の幹事権限が必要であってはならない
-- 開発用のチャネルを別に作っても、ログインできるのはその Admin と Tester だけで、LINE アカウント1つにつき1つの立場しか試せない
+- 公開済みの本番の LINE ログインチャネルを使うと、開発者が本物の権限を持つ本物のユーザーで動くことになる。tasuki の開発者が本番の幹事の1人なのは、アプリを作っているからにすぎず、開発のために本番の幹事権限が必要であってはならない
+- 開発用のチャネルを別に作っても、ログインできるのはその Admin と Tester だけで、LINE ユーザー1つにつき1つの立場しか試せない
 
 ## Decision（決定）
 
@@ -75,13 +75,13 @@ LINE ログイン（ADR-0007）とアクセスの方針（ADR-0006）により�
 
 | 案 | 採用しなかった理由 |
 | --- | --- |
-| 開発用の LINE ログインチャネルを別に作る | ログインできるのはその Admin / Tester だけ。LINE アカウント1つにつき1つの立場しか試せない。コントリビューター全員に LINE Developers の準備が必要 |
-| 本番のアカウントを使う | 開発者に本番の幹事権限が必要になる。本物のデータを変えてしまう危険がある |
+| 開発用の LINE ログインチャネルを別に作る | ログインできるのはその Admin / Tester だけ。LINE ユーザー1つにつき1つの立場しか試せない。コントリビューター全員に LINE Developers の準備が必要 |
+| 本番のユーザーを使う | 開発者に本番の幹事権限が必要になる。本物のデータを変えてしまう危険がある |
 | 自動テストの中だけ認証をモックする | ブラウザで手動で試すときの役に立たない |
 
 ## Consequences（影響）
 
-- 開発者もコントリビューターも、LINE アカウントや本番の権限なしで、すべての画面と権限のパターンを試せる
+- 開発者もコントリビューターも、LINE ユーザーや本番の権限なしで、すべての画面と権限のパターンを試せる
 - 仮ログインが本番で有効になれば、誰でも幹事としてログインできてしまう。この危険は、デフォルトで無効なフラグ、本番の設定に書かないこと、起動時の警告、CI のテストで抑える
 - 本物の LINE ログインの流れは、リリース前に別途（例えばステージング環境で）確認する必要がある
 

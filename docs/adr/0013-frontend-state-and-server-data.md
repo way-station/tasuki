@@ -48,7 +48,7 @@ Without a rule, each screen would decide for itself where to keep data and when 
 
 - On screens that edit data and save with a button, the draft is written to `localStorage` on every edit. Saving to the backend still happens only when the user presses save.
 - A draft is kept when the token expires or the page is reloaded or closed. After logging in again, the user returns to the screen and the draft is restored.
-- A draft is stored per account and per edited resource, so one account never sees another's draft. It is deleted when it is saved successfully and when the user logs out.
+- A draft is stored per user and per edited resource, so one user never sees another's draft. It is deleted when it is saved successfully and when the user logs out.
 - A draft remembers the `version` it was based on. If someone else saved in the meantime, saving it returns `409 version_conflict` and the user is told.
 - A draft is copied from the query data once, when editing starts. Data fetched again in the background does not overwrite it.
 
@@ -132,7 +132,7 @@ tasuki の画面に出るデータは、ほとんどが backend から来る：�
 
 - データを編集してボタンで保存する画面では、編集のたびに下書きを `localStorage` に書く。backend への保存は、今までどおり保存を押したときだけ
 - 下書きは、トークンが切れても、ページをリロードしたり閉じたりしても残る。ログインし直した後は元の画面に戻り、下書きが戻る
-- 下書きはアカウントごと、編集しているリソースごとに保存する。あるアカウントの下書きを、ほかのアカウントに見せないため。保存に成功したときと、ログアウトしたときに消す
+- 下書きはユーザーごと、編集しているリソースごとに保存する。あるユーザーの下書きを、ほかのユーザーに見せないため。保存に成功したときと、ログアウトしたときに消す
 - 下書きは、元にした `version` を覚えておく。その間にほかの人が保存していたら、保存したときに `409 version_conflict` が返り、そのことを伝える
 - 下書きは、編集を始めたときに query のデータから 1 回だけ写す。裏で取り直したデータで上書きしない
 

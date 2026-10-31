@@ -28,9 +28,9 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Caller | Meaning |
 | --- | --- |
 | Public | No session |
-| Account | Any valid session, including accounts waiting for approval or rejected |
-| Member | Account whose link to a roster member is approved and who has not left |
-| Organizer | Account listed as an organizer in configuration. Does not need a link |
+| User | Any valid session, including users waiting for approval or rejected |
+| Member | User whose link to a roster member is approved and who has not left |
+| Organizer | User listed as an organizer in configuration. Does not need a link |
 
 An organizer who is linked is also a member. "Member" endpoints below are open to such organizers too.
 
@@ -40,7 +40,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | --- | --- | --- |
 | 400 | `invalid_request` | Malformed body or parameters |
 | 401 | `unauthenticated` | No session cookie, or the session is unknown, expired, or revoked |
-| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting account calling a member endpoint), or a request that changes data has a missing or foreign `Origin` |
+| 403 | `forbidden` | The caller's role does not allow the endpoint (e.g. a member calling an organizer endpoint, a waiting user calling a member endpoint), or a request that changes data has a missing or foreign `Origin` |
 | 404 | `not_found` | Does not exist, or the caller may not see it |
 | 404 | `invite_unusable` | Invite link expired, used, or replaced |
 | 409 | `version_conflict` | Someone else changed it since it was read |
@@ -56,8 +56,8 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | `GET /auth/line/callback` | Public (LINE redirects here) | — | Finish LINE Login, redirect to the frontend |
 | `POST /session` | Public | — | Exchange the one-time code for a session |
 | `POST /dev/login` | Public, development only | — | Dev-only login (ADR-0009) |
-| `DELETE /session` | Account | — | Log out |
-| `GET /me` | Account | All | Who am I, and which screens to show |
+| `DELETE /session` | User | — | Log out |
+| `GET /me` | User | All | Who am I, and which screens to show |
 
 ### `GET /invite-links/{token}`
 
@@ -72,10 +72,10 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 ### `GET /auth/line/callback`
 
 - LINE redirects here with `code` and `state`. The backend verifies the ID token (ADR-0007).
-- With an invite token: creates a pending link between the account and the roster member and makes the invite link unusable. If the link became unusable in the meantime, redirects with an error.
+- With an invite token: creates a pending link between the user and the roster member and makes the invite link unusable. If the link became unusable in the meantime, redirects with an error.
 - Redirects to the frontend `/auth/complete?code=<one-time code>`, or `/auth/complete?error=<code>`:
   - `invite_unusable`: the invite link cannot be used → A4
-  - `left`: the account's roster member has left → A4 (no session is created)
+  - `left`: the user's roster member has left → A4 (no session is created)
   - `login_failed`: LINE Login failed or was cancelled
 - The one-time code is short-lived and can be exchanged once.
 
@@ -349,12 +349,12 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 ### `PATCH /roster-members/{roster_member_id}`
 
 - Body: `{ left: true | false }`. Names cannot be changed. `200` roster member.
-- `left: true`: cancels invitations to races dated today or later, with the side effects of cancelling an invitation. The member can no longer log in, and all of their account's sessions are revoked.
+- `left: true`: cancels invitations to races dated today or later, with the side effects of cancelling an invitation. The member can no longer log in, and all of their user's sessions are revoked.
 - `left: false`: the member can log in again. Cancelled invitations do not come back.
 
 ### `DELETE /roster-members/{roster_member_id}/link`
 
-- Removes the approved link. `204`. The account can no longer act as a member; its sessions stay valid.
+- Removes the approved link. `204`. The user can no longer act as a member; its sessions stay valid.
 - `409 state_conflict`: no approved link.
 
 ### `POST /roster-members/{roster_member_id}/invite-links`
@@ -423,9 +423,9 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 呼ぶ人 | 意味 |
 | --- | --- |
 | 公開 | セッションなし |
-| アカウント | 有効なセッションがあれば誰でも。承認待ちや却下のアカウントも含む |
-| メンバー | 名簿のメンバーとの紐付けが承認され、退会していないアカウント |
-| 幹事 | 設定で幹事として並べられたアカウント。紐付けは不要 |
+| ユーザー | 有効なセッションがあれば誰でも。承認待ちや却下のユーザーも含む |
+| メンバー | 名簿のメンバーとの紐付けが承認され、退会していないユーザー |
+| 幹事 | 設定で幹事として並べられたユーザー。紐付けは不要 |
 
 紐付いた幹事はメンバーでもある。下の「メンバー」のエンドポイントは、そういう幹事も呼べる。
 
@@ -451,8 +451,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `GET /auth/line/callback` | 公開（LINE がここに戻す） | — | LINE ログインを終え、frontend に戻す |
 | `POST /session` | 公開 | — | 一度きりのコードをセッションに交換する |
 | `POST /dev/login` | 公開、開発のときだけ | — | ローカル開発専用の仮ログイン（ADR-0009） |
-| `DELETE /session` | アカウント | — | ログアウト |
-| `GET /me` | アカウント | すべて | 自分は誰か、どの画面を出すか |
+| `DELETE /session` | ユーザー | — | ログアウト |
+| `GET /me` | ユーザー | すべて | 自分は誰か、どの画面を出すか |
 
 ### `GET /invite-links/{token}`
 
@@ -467,10 +467,10 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 ### `GET /auth/line/callback`
 
 - LINE が `code` と `state` を付けてここに戻す。backend は ID トークンを検証する（ADR-0007）
-- 招待トークンがあれば、アカウントと名簿のメンバーの紐付けを承認待ちで作り、招待リンクを使えなくする。その間にリンクが使えなくなっていたら、エラーで戻す
+- 招待トークンがあれば、ユーザーと名簿のメンバーの紐付けを承認待ちで作り、招待リンクを使えなくする。その間にリンクが使えなくなっていたら、エラーで戻す
 - frontend の `/auth/complete?code=<一度きりのコード>` か、`/auth/complete?error=<コード>` に戻す
   - `invite_unusable`：招待リンクが使えない → A4
-  - `left`：アカウントの名簿のメンバーが退会している → A4（セッションは作らない）
+  - `left`：ユーザーの名簿のメンバーが退会している → A4（セッションは作らない）
   - `login_failed`：LINE ログインが失敗した、または取り消された
 - 一度きりのコードは短い期限で、1回だけ交換できる
 
@@ -628,8 +628,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `GET /roster-members`：名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
 - `POST /roster-members`：本文 `{ name }` → `201`
 - `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ
-- `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのアカウントのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
-- `DELETE .../link`：承認済みの紐付けを外す。`204`。アカウントはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
+- `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのユーザーのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
+- `DELETE .../link`：承認済みの紐付けを外す。`204`。ユーザーはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
 - `POST .../invite-links`：`201`：`{ url, expires_at }`。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
 - `GET /member-links`：承認待ちの紐付け（LINE の表示名、名簿のメンバー、日時）
 - `POST .../approve`、`.../reject`：`204`。承認待ちでなければ `409 state_conflict`

@@ -2,7 +2,7 @@
 
 - Status: Draft
 - Issue: #64 (ADR-0006 and the database design were aligned in #65)
-- Related: ADR-0006 (access policy), ADR-0007 (LINE Login), ADR-0008 (accounts and roster members), ADR-0010 (spec-first OpenAPI), `docs/design/database.md`
+- Related: ADR-0006 (access policy), ADR-0007 (LINE Login), ADR-0008 (users and roster members), ADR-0010 (spec-first OpenAPI), `docs/design/database.md`
 
 This document lists tasuki's MVP screens: what each screen shows, what it lets the user do, and who can open it. Visual design is out of scope. The API is designed from this document (ADR-0010).
 
@@ -10,12 +10,12 @@ This document lists tasuki's MVP screens: what each screen shows, what it lets t
 
 | User | Who they are |
 | --- | --- |
-| Organizer | An account listed as an organizer in configuration (ADR-0006). Can open organizer screens even before their own account is linked to a roster member |
-| Member | An account whose link to a roster member is approved, and who has not left |
-| Waiting | An account that logged in through an invite link and is waiting for approval |
-| Rejected | An account whose link was rejected |
+| Organizer | A user listed as an organizer in configuration (ADR-0006). Can open organizer screens even before they are linked to a roster member |
+| Member | A user whose link to a roster member is approved, and who has not left |
+| Waiting | A user that logged in through an invite link and is waiting for approval |
+| Rejected | A user whose link was rejected |
 
-An organizer who also runs links their account the same way as everyone else (invite link → LINE login → approval) and may approve their own link. Once linked, an organizer also has every member screen (their own attendance, lap times, and profile).
+An organizer who also runs links their user the same way as everyone else (invite link → LINE login → approval) and may approve their own link. Once linked, an organizer also has every member screen (their own attendance, lap times, and profile).
 
 ## Screen list
 
@@ -45,7 +45,7 @@ An organizer who also runs links their account the same way as everyone else (in
 
 - Opened from a personal invite link.
 - Shows: the team name and a "Log in with LINE" button. It does not show the roster member's name.
-- Action: log in with LINE. After login, a pending link between the account and the roster member is created, the invite link becomes unusable, and the user goes to A2.
+- Action: log in with LINE. After login, a pending link between the user and the roster member is created, the invite link becomes unusable, and the user goes to A2.
 - If the link is expired, already used, or replaced by a newer link, the user goes to A4.
 
 ### A2 Waiting for approval
@@ -170,13 +170,13 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 
 ### M1 Roster
 
-- Shows each roster member: name, left or not, link status (no account / waiting / approved), and the invite link's expiry if one is active.
+- Shows each roster member: name, left or not, link status (no user / waiting / approved), and the invite link's expiry if one is active.
 - Actions:
   - Add a roster member (name only).
-  - Create an invite link and copy it to send directly. Not available for members who already have an approved account or who have left. Creating a new link makes the old one unusable.
+  - Create an invite link and copy it to send directly. Not available for members who already have an approved user or who have left. Creating a new link makes the old one unusable.
   - Mark as left. Invitations to races whose date is today or later are cancelled automatically, with the same effects as cancelling on R4. Past races are not changed.
   - Undo left. Cancelled invitations do not come back.
-  - Unlink the approved account (for example when someone changes their LINE account).
+  - Unlink the approved user (for example when someone changes their LINE account).
   - Open a member's profile (M2).
 - Names cannot be changed.
 
@@ -226,7 +226,7 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 
 - Status: Draft
 - Issue: #64（ADR-0006 とデータベースの設計は #65 で合わせた）
-- 関連：ADR-0006（アクセスの方針）、ADR-0007（LINE ログイン）、ADR-0008（アカウントと名簿のメンバー）、ADR-0010（仕様を先に書く OpenAPI）、`docs/design/database.md`
+- 関連：ADR-0006（アクセスの方針）、ADR-0007（LINE ログイン）、ADR-0008（ユーザーと名簿のメンバー）、ADR-0010（仕様を先に書く OpenAPI）、`docs/design/database.md`
 
 tasuki の MVP の画面を一覧にする。各画面に出すもの、できる操作、誰が開けるか。見た目のデザインは範囲外。API はこの文書から設計する（ADR-0010）。
 
@@ -234,12 +234,12 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 | 人 | どんな人か |
 | --- | --- |
-| 幹事 | 設定で幹事として並べられたアカウント（ADR-0006）。自分のアカウントが名簿のメンバーに紐付く前でも、幹事の画面を開ける |
-| メンバー | 名簿のメンバーとの紐付けが承認され、退会していないアカウント |
-| 承認待ち | 招待リンクからログインし、承認を待っているアカウント |
-| 却下 | 紐付けを却下されたアカウント |
+| 幹事 | 設定で幹事として並べられたユーザー（ADR-0006）。自分が名簿のメンバーに紐付く前でも、幹事の画面を開ける |
+| メンバー | 名簿のメンバーとの紐付けが承認され、退会していないユーザー |
+| 承認待ち | 招待リンクからログインし、承認を待っているユーザー |
+| 却下 | 紐付けを却下されたユーザー |
 
-走る幹事も、ほかの人と同じ手順（招待リンク → LINE ログイン → 承認）で自分のアカウントを紐付ける。自分の紐付けを自分で承認してよい。紐付いた後は、幹事もメンバーの画面（自分の出欠、ラップタイム、プロフィール）をすべて使える。
+走る幹事も、ほかの人と同じ手順（招待リンク → LINE ログイン → 承認）で自分を名簿のメンバーに紐付ける。自分の紐付けを自分で承認してよい。紐付いた後は、幹事もメンバーの画面（自分の出欠、ラップタイム、プロフィール）をすべて使える。
 
 ## 画面の一覧
 
@@ -269,7 +269,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 - 個人の招待リンクから開く
 - 表示：チーム名と「LINE でログイン」のボタン。名簿のメンバーの名前は出さない
-- 操作：LINE でログインする。ログイン後、アカウントと名簿のメンバーの紐付けが承認待ちで作られ、招待リンクは使えなくなり、A2 に進む
+- 操作：LINE でログインする。ログイン後、ユーザーと名簿のメンバーの紐付けが承認待ちで作られ、招待リンクは使えなくなり、A2 に進む
 - リンクが期限切れ、使用済み、新しいリンクに置き換え済みのときは A4 に進む
 
 ### A2 承認待ち
@@ -394,13 +394,13 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 ### M1 名簿
 
-- 名簿のメンバーごとに出す：名前、退会したかどうか、紐付けの状態（アカウントなし／承認待ち／承認済み）、有効な招待リンクがあればその期限
+- 名簿のメンバーごとに出す：名前、退会したかどうか、紐付けの状態（ユーザーなし／承認待ち／承認済み）、有効な招待リンクがあればその期限
 - 操作：
   - 名簿のメンバーを追加する（名前だけ）
-  - 招待リンクを作り、コピーして本人に直接送る。承認済みのアカウントがあるメンバーと、退会したメンバーには作れない。新しいリンクを作ると、古いリンクは使えなくなる
+  - 招待リンクを作り、コピーして本人に直接送る。承認済みのユーザーがあるメンバーと、退会したメンバーには作れない。新しいリンクを作ると、古いリンクは使えなくなる
   - 退会にする。開催日が今日以降の大会への招待は自動で取り消され、R4 で取り消したときと同じことが起きる。過去の大会は変えない
   - 退会を取り消す。取り消された招待は戻らない
-  - 承認済みのアカウントとの紐付けを解除する（LINE のアカウントを変えた人など）
+  - 承認済みのユーザーとの紐付けを解除する（LINE のアカウントを変えた人など）
   - メンバーのプロフィールを開く（M2）
 - 名前は変えられない
 

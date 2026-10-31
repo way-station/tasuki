@@ -41,7 +41,7 @@ Organizers decide who runs in each race. They ask members directly, and only the
 
 1. An organizer creates a personal invite link for a roster member and sends it to that person directly. The link is valid for one week and can be used once. Creating a new link for the same person makes the old one unusable.
 2. The person opens it and logs in (ADR-0007). The link identifies the roster member, so the person does not pick a name.
-3. An organizer approves the link between the account and the roster member (ADR-0008). Until then, the person cannot use the app.
+3. An organizer approves the link between the user and the roster member (ADR-0008). Until then, the person cannot use the app.
 4. If an organizer rejects it, the organizer tells the person outside the app.
 
 ## Alternatives considered
@@ -51,8 +51,8 @@ Organizers decide who runs in each race. They ask members directly, and only the
 | No login; pick a name each time (original draft) | Anyone with the URL can answer as anyone; cannot protect personal data that accumulates over time |
 | Every member sees every race's details | Members who were not asked would see details, including the deadline, meant only for the members the organizers chose |
 | Inviting members to a race only on LINE, outside the app | The app cannot know who was invited, so it cannot limit who sees the description or who answers attendance |
-| One invite link posted to the team's LINE group, then picking a name | The link can be forwarded, and picking the wrong name links an account to someone else's records |
-| No organizer approval | A leaked invite link links an account to someone else's records |
+| One invite link posted to the team's LINE group, then picking a name | The link can be forwarded, and picking the wrong name links a user to someone else's records |
+| No organizer approval | A leaked invite link links a user to someone else's records |
 | Managing organizers in the app | In the single-team MVP (ADR-0005) the team has two fixed organizers; an in-app role management feature is not worth its cost and risk yet |
 
 ## Consequences
@@ -113,7 +113,7 @@ tasuki はチームのメンバーの個人データを扱います。出欠、�
 
 1. 幹事が名簿のメンバーごとに個人の招待リンクを作り、本人に直接送る。リンクの期限は1週間で、使えるのは1回だけ。同じ人に新しいリンクを作ると、古いリンクは使えなくなる
 2. 本人がリンクを開いてログインする（ADR-0007）。リンクで名簿の誰かが決まっているので、名前は選ばない
-3. アカウントと名簿のメンバーの紐付けを、幹事が承認する（ADR-0008）。承認されるまでアプリは使えない
+3. ユーザーと名簿のメンバーの紐付けを、幹事が承認する（ADR-0008）。承認されるまでアプリは使えない
 4. 幹事が却下した場合は、幹事がアプリの外で本人に伝える
 
 ## Alternatives considered（検討した他の案）
@@ -123,8 +123,8 @@ tasuki はチームのメンバーの個人データを扱います。出欠、�
 | ログインなし、毎回名前を選ぶ（最初の草案） | URL を知っていれば誰でも他人として回答できる。積み上がる個人データを守れない |
 | メンバー全員がすべての大会の詳細を見られる | 誘われていないメンバーにも、幹事が選んだメンバーだけに向けた詳細（締め切りを含む）が見えてしまう |
 | 大会への招待は LINE だけで行い、アプリの外にとどめる | アプリが誰を誘ったかを知らないので、説明欄を見られる人も、出欠を答えられる人も制限できない |
-| チームの LINE グループに1つの招待リンクを流し、名前を選ぶ | リンクが転送されることがあり、名前を選び間違えると、アカウントが他人の記録に紐付く |
-| 幹事の承認なし | 招待リンクが漏れると、アカウントが他人の記録に紐付く |
+| チームの LINE グループに1つの招待リンクを流し、名前を選ぶ | リンクが転送されることがあり、名前を選び間違えると、ユーザーが他人の記録に紐付く |
+| 幹事の承認なし | 招待リンクが漏れると、ユーザーが他人の記録に紐付く |
 | アプリの中で幹事を管理する | 1チームの MVP（ADR-0005）では幹事は2人で固定されている。アプリ内で役割を管理する機能は、今はコストとリスクに見合わない |
 
 ## Consequences（影響）

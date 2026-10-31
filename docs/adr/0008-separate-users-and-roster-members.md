@@ -1,4 +1,4 @@
-# ADR-0008: Separate accounts from roster members
+# ADR-0008: Separate users from roster members
 
 - Status: Accepted
 - Type: technical
@@ -21,17 +21,17 @@ These do not always match one-to-one in time or in role:
 
 ## Decision
 
-Keep **accounts** and **roster members** as separate entities, linked to each other.
+Keep **users** and **roster members** as separate entities, linked to each other.
 
 | Entity | Holds |
 | --- | --- |
-| Account | The login identity (LINE user ID), display name from LINE, organizer flag (from configuration) |
+| User | The login identity (LINE user ID), display name from LINE, organizer flag (from configuration) |
 | Roster member | The team it belongs to, name, whether they have left, average time and lap count, and everything related to races (invitations, attendance, running order, lap times) |
-| Link | Which account belongs to which roster member, and whether an organizer has approved it |
+| Link | Which user belongs to which roster member, and whether an organizer has approved it |
 
-- Race data (invitations, attendance, running order, lap times) always refers to the **roster member**, never to the account.
+- Race data (invitations, attendance, running order, lap times) always refers to the **roster member**, never to the user.
 - A link is created when a person logs in through the personal invite link an organizer made for that roster member (ADR-0006).
-- A roster member has at most one approved account, and an account belongs to at most one roster member.
+- A roster member has at most one approved user, and a user belongs to at most one roster member.
 
 ## Alternatives considered
 
@@ -44,16 +44,16 @@ Keep **accounts** and **roster members** as separate entities, linked to each ot
 
 - Runner history is independent of how people log in.
 - Organizers can prepare the roster before anyone logs in.
-- A linking step with an approval state is needed, and screens that show "who am I" must join the account and the roster member.
-- Uniqueness of the link (one account ↔ one roster member) should be enforced by database constraints.
-- Accounts are not owned by a team; roster members are. Whether one account can be linked to roster members in several teams is decided when tasuki becomes a SaaS (ADR-0005).
+- A linking step with an approval state is needed, and screens that show "who am I" must join the user and the roster member.
+- Uniqueness of the link (one user ↔ one roster member) should be enforced by database constraints.
+- Users are not owned by a team; roster members are. Whether one user can be linked to roster members in several teams is decided when tasuki becomes a SaaS (ADR-0005).
 
 ---
 
 <details>
 <summary>日本語</summary>
 
-# ADR-0008: アカウントと名簿のメンバーを分ける
+# ADR-0008: ユーザーと名簿のメンバーを分ける
 
 - Status: Accepted
 - Type: technical
@@ -76,17 +76,17 @@ tasuki には、「人」に当たるものが2種類あります。
 
 ## Decision（決定）
 
-**アカウント**と**名簿のメンバー**を別のものとして持ち、互いに紐付ける。
+**ユーザー**と**名簿のメンバー**を別のものとして持ち、互いに紐付ける。
 
 | もの | 持つ情報 |
 | --- | --- |
-| アカウント | ログインの識別子（LINE のユーザー ID）、LINE の表示名、幹事かどうか（設定から） |
+| ユーザー | ログインの識別子（LINE のユーザー ID）、LINE の表示名、幹事かどうか（設定から） |
 | 名簿のメンバー | 所属するチーム、名前、退会したかどうか、平均タイムとラップ数、大会に関わるすべて（招待、出欠、走順、ラップタイム） |
-| 紐付け | どのアカウントがどの名簿のメンバーか、幹事が承認したかどうか |
+| 紐付け | どのユーザーがどの名簿のメンバーか、幹事が承認したかどうか |
 
-- 大会のデータ（招待、出欠、走順、ラップタイム）は、常に**名簿のメンバー**を参照し、アカウントは参照しない
+- 大会のデータ（招待、出欠、走順、ラップタイム）は、常に**名簿のメンバー**を参照し、ユーザーは参照しない
 - 紐付けは、幹事がその名簿のメンバーのために作った個人の招待リンクから、本人がログインしたときに作られる（ADR-0006）
-- 名簿のメンバーには、承認済みのアカウントが最大1つ。アカウントが属する名簿のメンバーも最大1人
+- 名簿のメンバーには、承認済みのユーザーが最大1人。ユーザーが属する名簿のメンバーも最大1人
 
 ## Alternatives considered（検討した他の案）
 
@@ -99,8 +99,8 @@ tasuki には、「人」に当たるものが2種類あります。
 
 - 選手の履歴が、ログインの方法から独立する
 - 誰もログインしていないうちから、幹事が名簿を用意できる
-- 承認の状態を持つ紐付けの手順が必要になる。「自分は誰か」を表示する画面では、アカウントと名簿のメンバーを結合する必要がある
-- 紐付けの一意性（1つのアカウント ↔ 1人の名簿のメンバー）は、データベースの制約で守る
-- アカウントはチームに属さず、名簿のメンバーがチームに属する。1つのアカウントを複数のチームの名簿のメンバーに紐付けられるかは、tasuki を SaaS にするときに決める（ADR-0005）
+- 承認の状態を持つ紐付けの手順が必要になる。「自分は誰か」を表示する画面では、ユーザーと名簿のメンバーを結合する必要がある
+- 紐付けの一意性（1人のユーザー ↔ 1人の名簿のメンバー）は、データベースの制約で守る
+- ユーザーはチームに属さず、名簿のメンバーがチームに属する。1人のユーザーを複数のチームの名簿のメンバーに紐付けられるかは、tasuki を SaaS にするときに決める（ADR-0005）
 
 </details>

@@ -11,7 +11,7 @@ After LINE Login, the backend issues its own session; ADR-0007 left how the sess
 
 The forces:
 
-- **Sessions must end before they expire.** Logging out makes the session unusable (`DELETE /session`), a member who leaves can no longer use tasuki, and an account whose link is removed stops working as a member (`docs/design/api.md`, ADR-0006).
+- **Sessions must end before they expire.** Logging out makes the session unusable (`DELETE /session`), a member who leaves can no longer use tasuki, and a user whose link is removed stops working as a member (`docs/design/api.md`, ADR-0006).
 - **Members open tasuki in the LINE in-app browser.** Invite links arrive in LINE (ADR-0007). If the login is lost on every reload or every time LINE is closed, members have to log in again each time.
 - **A script injected into the page (XSS) can read anything that page scripts can read**, including a token kept in `localStorage`, and use it from elsewhere until it expires.
 - **There is one client (the browser) and one backend.** No other service or app needs to verify the session.
@@ -23,10 +23,10 @@ The forces:
 
 **Sessions**
 
-- A session is a row in PostgreSQL: the account, a SHA-256 hash of the session token, when it expires, and when it was revoked. The session token itself is not stored, so a leaked database does not give usable tokens.
+- A session is a row in PostgreSQL: the user, a SHA-256 hash of the session token, when it expires, and when it was revoked. The session token itself is not stored, so a leaked database does not give usable tokens.
 - The session token is a random value from a cryptographically secure generator. It means nothing by itself; only the row says whose it is.
-- A session is revoked by setting its revocation time: on logout (`DELETE /session`), and for all of an account's sessions when its roster member leaves.
-- What an account may do (member, organizer) is read from current data on every request, so removing a link takes effect on the next request without touching sessions.
+- A session is revoked by setting its revocation time: on logout (`DELETE /session`), and for all of a user's sessions when its roster member leaves.
+- What a user may do (member, organizer) is read from current data on every request, so removing a link takes effect on the next request without touching sessions.
 - How long a session lasts is decided in #84. There is no refresh token (api.md).
 
 **Cookie**
@@ -42,9 +42,9 @@ The forces:
   - Requests that change data (`POST`, `PUT`, `PATCH`, `DELETE`) must carry an `Origin` header equal to the frontend's origin; otherwise `403 forbidden`.
 - `GET` requests never change data.
 
-**Identifying the account**
+**Identifying the user**
 
-- A middleware in Presentation reads the cookie and passes the account ID to the controllers through the request context. It is a closure that captures its dependencies (`func Authenticate(uc) func(http.Handler) http.Handler`).
+- A middleware in Presentation reads the cookie and passes the user ID to the controllers through the request context. It is a closure that captures its dependencies (`func Authenticate(uc) func(http.Handler) http.Handler`).
 - The middleware does not read the database itself. Looking up the session goes through an Application use case and a query service (ADR-0011).
 - Missing, unknown, expired, or revoked sessions return `401 unauthenticated`.
 
@@ -87,7 +87,7 @@ LINE ログインの後、backend は自前のセッションを出す。どう�
 
 考慮したこと：
 
-- **セッションは期限の前に終わらせる必要がある。** ログアウトするとセッションは使えなくなる（`DELETE /session`）。退会したメンバーは tasuki を使えなくなる。紐付けを外されたアカウントはメンバーとして使えなくなる（`docs/design/api.md`、ADR-0006）
+- **セッションは期限の前に終わらせる必要がある。** ログアウトするとセッションは使えなくなる（`DELETE /session`）。退会したメンバーは tasuki を使えなくなる。紐付けを外されたユーザーはメンバーとして使えなくなる（`docs/design/api.md`、ADR-0006）
 - **メンバーは LINE のアプリ内ブラウザで tasuki を開く。** 招待リンクは LINE で届く（ADR-0007）。リロードや LINE を閉じるたびにログインが消えると、そのたびにログインし直すことになる
 - **ページに埋め込まれたスクリプト（XSS）は、ページのスクリプトが読めるものを何でも読める。** `localStorage` のトークンも読まれ、期限が来るまでほかの場所から使われる
 - **クライアントはブラウザ 1 つ、backend も 1 つ。** セッションを確かめる必要のある、ほかのサービスやアプリはない
@@ -99,10 +99,10 @@ LINE ログインの後、backend は自前のセッションを出す。どう�
 
 **セッション**
 
-- セッションは PostgreSQL の行：アカウント、セッショントークンの SHA-256 ハッシュ、期限、無効にした時刻。セッショントークンそのものは保存しないので、DB が漏れても使えるトークンは出ない
+- セッションは PostgreSQL の行：ユーザー、セッショントークンの SHA-256 ハッシュ、期限、無効にした時刻。セッショントークンそのものは保存しないので、DB が漏れても使えるトークンは出ない
 - セッショントークンは、暗号学的に安全な乱数生成器で作るランダムな値。それ自体は意味を持たず、誰のものかは行だけが知っている
-- セッションは、無効にした時刻を入れて無効にする：ログアウトのとき（`DELETE /session`）、名簿のメンバーが退会したときはそのアカウントのすべてのセッション
-- アカウントが何をできるか（メンバー、幹事）は、リクエストのたびに今のデータから読む。紐付けを外すと、セッションに触れなくても次のリクエストから効く
+- セッションは、無効にした時刻を入れて無効にする：ログアウトのとき（`DELETE /session`）、名簿のメンバーが退会したときはそのユーザーのすべてのセッション
+- ユーザーが何をできるか（メンバー、幹事）は、リクエストのたびに今のデータから読む。紐付けを外すと、セッションに触れなくても次のリクエストから効く
 - セッションの期限の長さは #84 で決める。リフレッシュトークンはない（api.md）
 
 **Cookie**
@@ -118,9 +118,9 @@ LINE ログインの後、backend は自前のセッションを出す。どう�
   - データを変えるリクエスト（`POST`、`PUT`、`PATCH`、`DELETE`）は、frontend のオリジンと同じ `Origin` ヘッダーを持つ必要がある。なければ `403 forbidden`
 - `GET` のリクエストはデータを変えない
 
-**アカウントの判定**
+**ユーザーの判定**
 
-- Presentation のミドルウェアが Cookie を読み、アカウント ID をリクエストの context でコントローラに渡す。依存を閉じ込めたクロージャ（`func Authenticate(uc) func(http.Handler) http.Handler`）にする
+- Presentation のミドルウェアが Cookie を読み、ユーザー ID をリクエストの context でコントローラに渡す。依存を閉じ込めたクロージャ（`func Authenticate(uc) func(http.Handler) http.Handler`）にする
 - ミドルウェアは DB を直接読まない。セッションの照合は Application のユースケースと QueryService を通す（ADR-0011）
 - セッションがない、知らない、期限切れ、無効のときは `401 unauthenticated`
 

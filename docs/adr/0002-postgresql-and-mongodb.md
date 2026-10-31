@@ -9,7 +9,7 @@
 
 tasuki stores two kinds of data with very different shapes.
 
-**Relational data with rules the database must guarantee.** Teams, accounts, roster members (ADR-0005, ADR-0008), races, attendance, and the running order are connected to each other, and they come with rules:
+**Relational data with rules the database must guarantee.** Teams, users, roster members (ADR-0005, ADR-0008), races, attendance, and the running order are connected to each other, and they come with rules:
 
 - one attendance answer per member per race;
 - only members who attend can be placed in the running order;
@@ -30,7 +30,7 @@ We will place data according to its shape.
 
 | Store | Data |
 | --- | --- |
-| **PostgreSQL** (source of truth) | Teams, accounts, roster members, account links, invitations, races, attendance, running order |
+| **PostgreSQL** (source of truth) | Teams, users, roster members, user links, invitations, races, attendance, running order |
 | **MongoDB** (secondary) | Race-day lap records, running order history, raw data from external integrations |
 
 The PostgreSQL schema stays focused on relational data. Data whose shape changes often, or is defined by external services, is not mixed into the core tables.
@@ -72,7 +72,7 @@ Rules between the two stores:
 
 tasuki は、形がまったく違う2種類のデータを扱います。
 
-**DB で守るべきルールを持つ、関係のデータ。** チーム、アカウント、名簿のメンバー（ADR-0005、ADR-0008）、大会、出欠、走順は互いにつながっていて、次のようなルールがあります。
+**DB で守るべきルールを持つ、関係のデータ。** チーム、ユーザー、名簿のメンバー（ADR-0005、ADR-0008）、大会、出欠、走順は互いにつながっていて、次のようなルールがあります。
 
 - 1人1大会につき、出欠の回答は1件
 - 走順に入れられるのは、出席するメンバーだけ
@@ -93,7 +93,7 @@ tasuki は、形がまったく違う2種類のデータを扱います。
 
 | ストア | データ |
 | --- | --- |
-| **PostgreSQL**（正） | チーム、アカウント、名簿のメンバー、アカウントの紐付け、招待、大会、出欠、走順 |
+| **PostgreSQL**（正） | チーム、ユーザー、名簿のメンバー、ユーザーの紐付け、招待、大会、出欠、走順 |
 | **MongoDB**（従） | 当日のラップ記録、走順の変更履歴、外部連携の生データ |
 
 PostgreSQL のスキーマは関係のデータに集中させる。形がよく変わるデータや、外部のサービスが形を決めるデータは、中心のテーブルに混ぜない。
