@@ -17,7 +17,7 @@ The tasuki frontend is a single-page app built with Vite + React + TypeScript. I
 | Runtime / package manager | Node / pnpm | see `mise.toml` (24 LTS / 10) |
 | Toolchain versions | mise (`mise.toml`) | — |
 | Lint / format | oxlint and oxfmt (ADR-0019) | oxlint 1.x / oxfmt 0.73.0 (exact, pre-1.0) |
-| Routing | React Router, without data mode (ADR-0013) | 7 |
+| Routing | TanStack Router, without loaders (ADR-0013) | 1.170.45 |
 | Server data | TanStack Query (ADR-0013) | 5 |
 | Tests | Vitest, Testing Library, jsdom | Vitest 5 |
 | API types | openapi-typescript, generated from `app/backend/api/openapi.yaml` (ADR-0017) | 7.13.0 (exact) |
@@ -44,6 +44,7 @@ Each feature is split into Types, Mapper, Hooks, Container, and UI. Imports go C
 src/
   features/<feature>/     # auth, races, participation, running-orders, laps, roster
     types/  mapper/  hooks/  container/  ui/
+  app/                    # routes, the common layout, the not-found page
   api/                    # ApiClient interface and implementation, query keys
   shared/                 # only what more than one feature needs
 ```
@@ -77,6 +78,14 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 | `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Inside the Dev Container |
 | `make dev-up` / `dev-shell` / `dev-down` | Host (Docker only) |
 
+### Routes
+
+- `src/app/router.tsx` defines the routes in code (no generated route tree): one route per screen in `docs/design/screens.md`, all inside the common layout (`src/app/Layout.tsx`). Unknown URLs show the not-found page.
+- The router is registered for types, so a link to a path that does not exist, or without a required param, is a compile error.
+- Until a feature's container exists, its routes show a placeholder page with the screen ID.
+- Routes only pick the screen: no loaders (ADR-0013). Containers read the URL with `useParams` / `useSearch` and fetch through hooks.
+- Reloading on any URL works because the server returns `index.html` for every path. Vite does this in `pnpm dev` and `pnpm preview`; in production the backend does it for every path outside `/api` (ADR-0018, #197).
+
 ### Tests
 
 - Vitest runs the tests, with Testing Library and jsdom for components, so no browser is needed. Settings are in the `test` block of `vite.config.ts`; `src/test/setup.ts` adds the DOM matchers (`toBeInTheDocument()` and others).
@@ -92,7 +101,7 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 | Files in | May not import |
 | --- | --- |
-| `src/features/*/ui/` | `container/`, `hooks/`, `mapper/`, anything in `api/` (including the generated types), `react-router`, `@tanstack/react-query` |
+| `src/features/*/ui/` | `container/`, `hooks/`, `mapper/`, anything in `api/` (including the generated types), `@tanstack/react-router`, `@tanstack/react-query` |
 | `src/features/*/container/` | `mapper/`, anything in `api/` |
 | `src/features/*/hooks/` | `container/`, `ui/` |
 | `src/features/*/mapper/` | `hooks/`, `container/`, `ui/`, `api/` except the generated types |
@@ -131,7 +140,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 | ランタイム / パッケージマネージャー | Node / pnpm | `mise.toml` 参照（24 LTS / 10） |
 | ツールのバージョン管理 | mise（`mise.toml`） | — |
 | Lint / Format | oxlint と oxfmt（ADR-0019） | oxlint 1.x / oxfmt 0.73.0（固定、1.0 より前） |
-| ルーティング | React Router。data mode は使わない（ADR-0013） | 7 |
+| ルーティング | TanStack Router。loader は使わない（ADR-0013） | 1.170.45 |
 | サーバーのデータ | TanStack Query（ADR-0013） | 5 |
 | テスト | Vitest、Testing Library、jsdom | Vitest 5 |
 | API の型 | openapi-typescript。`app/backend/api/openapi.yaml` から生成（ADR-0017） | 7.13.0（固定） |
@@ -158,6 +167,7 @@ tasuki のフロントエンドは、Vite + React + TypeScript で作る SPA で
 src/
   features/<feature>/     # auth, races, participation, running-orders, laps, roster
     types/  mapper/  hooks/  container/  ui/
+  app/                    # ルート、共通のレイアウト、not found ページ
   api/                    # ApiClient の interface と実装、query key
   shared/                 # 複数の機能が必要とするものだけ
 ```
@@ -191,6 +201,14 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 | `pnpm install` / `dev` / `build` / `test` / `test:watch` / `lint` / `format` / `format:check` / `preview` / `generate:api` | Dev Container の中 |
 | `make dev-up` / `dev-shell` / `dev-down` | ホスト（Docker だけ） |
 
+### ルート
+
+- `src/app/router.tsx` に、ルートをコードで定義する（ルートの木は生成しない）。`docs/design/screens.md` の画面ごとに 1 つのルートを、すべて共通のレイアウト（`src/app/Layout.tsx`）の中に置く。知らない URL は not found ページを出す
+- ルーターを型に登録しているので、存在しないパスへのリンクや、必要な引数のないリンクはコンパイルエラーになる
+- 機能の Container ができるまでは、画面 ID を出す仮のページを出す
+- ルートは画面を選ぶだけで、loader は使わない（ADR-0013）。Container が `useParams` / `useSearch` で URL を読み、Hooks を通してデータを取る
+- どの URL で再読み込みしても画面が出るのは、サーバーがどのパスにも `index.html` を返すから。`pnpm dev` と `pnpm preview` では Vite がそうする。本番では backend が `/api` 以外のパスでそうする（ADR-0018、#197）
+
 ### テスト
 
 - テストは Vitest で実行する。部品は Testing Library と jsdom で描画するので、ブラウザは要らない。設定は `vite.config.ts` の `test`。`src/test/setup.ts` で DOM 用の matcher（`toBeInTheDocument()` など）を足している
@@ -206,7 +224,7 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 | 対象のファイル | import してはいけないもの |
 | --- | --- |
-| `src/features/*/ui/` | `container/`、`hooks/`、`mapper/`、`api/` のすべて（生成した型も含む）、`react-router`、`@tanstack/react-query` |
+| `src/features/*/ui/` | `container/`、`hooks/`、`mapper/`、`api/` のすべて（生成した型も含む）、`@tanstack/react-router`、`@tanstack/react-query` |
 | `src/features/*/container/` | `mapper/`、`api/` のすべて |
 | `src/features/*/hooks/` | `container/`、`ui/` |
 | `src/features/*/mapper/` | `hooks/`、`container/`、`ui/`、生成した型以外の `api/` |
