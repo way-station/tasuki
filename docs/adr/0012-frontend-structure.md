@@ -70,7 +70,7 @@ src/
 **Shared code**
 
 - Code is moved to `shared/` only when a second feature needs the same thing, and then it is not duplicated (DRY). It is not moved before that happens, because what will actually be shared is not known yet (YAGNI).
-- Exceptions decided elsewhere: the API client and query keys are in `api/` from the start (ADR-0013: query keys in one place), and the common UI components from the UI design (#147) are in `shared/ui/`.
+- Exceptions decided elsewhere: the API client and query keys are in `api/` from the start (ADR-0013: query keys in one place), and the common UI components from the UI design (#147) are in `shared/ui/`, and draft storage is in `shared/draft/` (ADR-0013: R3, R7, and L1 in three features keep drafts the same way, #201).
 
 ## Alternatives considered
 
@@ -168,7 +168,7 @@ src/
 **共通の処理**
 
 - 2 つ目の機能が同じものを必要としたときにだけ `shared/` に移し、重複させない（DRY）。それより前には移さない。何が本当に共通になるかは、まだ分からないため（YAGNI）
-- ほかで決まっている例外：API クライアントと query key は最初から `api/` に置く（ADR-0013：query key は 1 か所）。UI のデザイン（#147）の共通の部品は `shared/ui/` に置く
+- ほかで決まっている例外：API クライアントと query key は最初から `api/` に置く（ADR-0013：query key は 1 か所）。UI のデザイン（#147）の共通の部品は `shared/ui/` に置く。下書きの保存は `shared/draft/` に置く（ADR-0013：3 つの機能の R3・R7・L1 が同じ方法で下書きを残す、#201）
 
 ## Alternatives considered（検討した他の案）
 
