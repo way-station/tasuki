@@ -9,11 +9,15 @@ import (
 
 // MeDTO is the caller as GET /me returns it. It is created by MeDTOFactory.
 type MeDTO struct {
+	userID       shared.UserID
 	displayName  string
 	isOrganizer  bool
 	status       identity.CallerStatus
 	rosterMember *RosterMemberDTO
 }
+
+// UserID returns the caller's user ID.
+func (dto MeDTO) UserID() shared.UserID { return dto.userID }
 
 // DisplayName returns the LINE display name.
 func (dto MeDTO) DisplayName() string { return dto.displayName }

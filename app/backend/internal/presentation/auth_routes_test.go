@@ -205,7 +205,7 @@ func TestMeAndLogout(t *testing.T) {
 
 	t.Run("me returns the caller", func(t *testing.T) {
 		rec := serve(router, http.MethodGet, "/api/v1/me", "", cookie)
-		want := `{"display_name":"Taro","is_organizer":true,"roster_member":null,"status":"none"}`
+		want := `{"display_name":"Taro","is_organizer":true,"roster_member":null,"status":"none","user_id":"id1"}`
 		if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != want {
 			t.Errorf("status = %d, body %s, want %s", rec.Code, rec.Body, want)
 		}

@@ -114,6 +114,9 @@ func TestGetMeUseCase(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if got.UserID() != "a1" {
+				t.Errorf("UserID() = %q, want a1", got.UserID())
+			}
 			if got.DisplayName() != "Taro" || got.Status() != testCase.wantStatus || got.IsOrganizer() != testCase.wantOrganizer {
 				t.Errorf("got %q, %s, organizer %v; want %s, organizer %v", got.DisplayName(), got.Status(), got.IsOrganizer(), testCase.wantStatus, testCase.wantOrganizer)
 			}

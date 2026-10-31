@@ -11,11 +11,11 @@ import (
 type MeDTOFactory struct{}
 
 // Create returns the caller. rosterMember is ignored unless status is approved.
-func (MeDTOFactory) Create(displayName string, isOrganizer bool, status identity.CallerStatus, rosterMember *RosterMemberDTO) MeDTO {
+func (MeDTOFactory) Create(userID shared.UserID, displayName string, isOrganizer bool, status identity.CallerStatus, rosterMember *RosterMemberDTO) MeDTO {
 	if status != identity.CallerApproved {
 		rosterMember = nil
 	}
-	return MeDTO{displayName: displayName, isOrganizer: isOrganizer, status: status, rosterMember: rosterMember}
+	return MeDTO{userID: userID, displayName: displayName, isOrganizer: isOrganizer, status: status, rosterMember: rosterMember}
 }
 
 // CreateRosterMember returns a roster member.
