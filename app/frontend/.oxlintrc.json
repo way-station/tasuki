@@ -116,6 +116,12 @@
           }
         ]
       }
+    },
+    {
+      "files": ["src/features/**/*.test.ts", "src/features/**/*.test.tsx"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }

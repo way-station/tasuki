@@ -111,6 +111,8 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 
 - Vitest runs the tests, with Testing Library and jsdom for components, so no browser is needed. Settings are in the `test` block of `vite.config.ts`; `src/test/setup.ts` adds the DOM matchers (`toBeInTheDocument()` and others).
 - Test files sit next to what they test, as `*.test.ts` / `*.test.tsx`.
+- Tests that render containers or routes wrap them in `TestProviders` (`src/test/TestProviders.tsx`), which gives the app's providers with a fake `ApiClient`, a fresh cache, and retries without waiting.
+- `src/features/health/` is the smallest feature with all five layers; use it as the example for the others.
 - Predictions are calculated by the backend, so frontend tests cover mappers, hooks with a fake `ApiClient` (#32), containers, and UI components.
 - CI runs `pnpm test --bail=1`, which stops at the first failing test.
 
@@ -127,6 +129,8 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 | `src/features/*/hooks/` | `container/`, `ui/` |
 | `src/features/*/mapper/` | `hooks/`, `container/`, `ui/`, `api/` except the generated types |
 | `src/features/*/types/` | `mapper/`, `hooks/`, `container/`, `ui/`, `api/` except the generated types |
+
+Test files (`*.test.ts` / `*.test.tsx`) are exempt: they wire fakes into the layer under test, for example a container test passes a fake `ApiClient`.
 
 ### Generated API types
 
@@ -255,6 +259,8 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 
 - テストは Vitest で実行する。部品は Testing Library と jsdom で描画するので、ブラウザは要らない。設定は `vite.config.ts` の `test`。`src/test/setup.ts` で DOM 用の matcher（`toBeInTheDocument()` など）を足している
 - テストファイルは、テストする対象の隣に `*.test.ts` / `*.test.tsx` として置く
+- Container やルートを描画するテストは `TestProviders`（`src/test/TestProviders.tsx`）で包む。アプリと同じ provider を、偽の `ApiClient`、テストごとの新しいキャッシュ、待たない再試行で用意する
+- `src/features/health/` は、5 層をすべて持つ一番小さい機能。ほかの機能の見本にする
 - 予想は backend が計算するので、frontend のテストは Mapper、偽の `ApiClient`（#32）を使う Hooks、Container、UI の部品を対象にする
 - CI では `pnpm test --bail=1` を実行し、最初に落ちたテストで止める
 
@@ -271,6 +277,8 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 | `src/features/*/hooks/` | `container/`、`ui/` |
 | `src/features/*/mapper/` | `hooks/`、`container/`、`ui/`、生成した型以外の `api/` |
 | `src/features/*/types/` | `mapper/`、`hooks/`、`container/`、`ui/`、生成した型以外の `api/` |
+
+テストファイル（`*.test.ts` / `*.test.tsx`）は対象外。テストする層に偽物をつなぐ側だから（たとえば Container のテストは偽の `ApiClient` を渡す）。
 
 ### 生成する API の型
 

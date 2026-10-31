@@ -1,11 +1,20 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { createFakeApiClient } from "../api/fakeApiClient.ts";
+import { TestProviders } from "../test/TestProviders.tsx";
 import { createAppRouter } from "./router.tsx";
 
 function renderAt(path: string) {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
-  render(<RouterProvider router={router} />);
+  const client = createFakeApiClient({
+    getHealth: () => Promise.resolve({ status: "ok", mongo: "ok", postgres: "ok" }),
+  });
+  render(
+    <TestProviders client={client}>
+      <RouterProvider router={router} />
+    </TestProviders>,
+  );
 }
 
 describe("createAppRouter", () => {
@@ -49,6 +58,12 @@ describe("createAppRouter", () => {
     const heading = await screen.findByRole("heading", { name: "R2 Race detail" });
     expect(screen.getByRole("banner")).toHaveTextContent("tasuki");
     expect(screen.getByRole("main")).toContainElement(heading);
+  });
+
+  it("shows the backend health on the home page", async () => {
+    renderAt("/");
+
+    expect(await screen.findByRole("region", { name: "Backend health" })).toBeInTheDocument();
   });
 
   it("shows the not-found page inside the common layout", async () => {

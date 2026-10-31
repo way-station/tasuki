@@ -4,6 +4,7 @@ import {
   createRouter,
   type RouterHistory,
 } from "@tanstack/react-router";
+import { HealthContainer } from "../features/health/container/HealthContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
 import { Placeholder } from "./Placeholder.tsx";
@@ -39,10 +40,17 @@ const unavailableRoute = createRoute({
   component: () => <Placeholder screen="A4" title="Cannot use tasuki" />,
 });
 
+// Until the race list (#119) replaces it, the home page also shows the
+// backend health, to check frontend → backend → databases (#36).
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => <Placeholder screen="R1" title="Race list" />,
+  component: () => (
+    <>
+      <Placeholder screen="R1" title="Race list" />
+      <HealthContainer />
+    </>
+  ),
 });
 const raceNewRoute = createRoute({
   getParentRoute: () => rootRoute,
