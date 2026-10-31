@@ -41,7 +41,7 @@ func TestHealth(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			check := health.NewCheckUseCase(fakeMongoQueryService{err: testCase.mongoErr}, fakePostgresQueryService{err: testCase.postgresErr}, health.StatusDTOFactory{}, logger)
-			handler := NewRouter(Controllers{Health: controller.NewHealthController(check)})
+			handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, nil)
 			rec := httptest.NewRecorder()
 			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
 
@@ -52,5 +52,53 @@ func TestHealth(t *testing.T) {
 				t.Errorf("body = %s, want %s", got, testCase.wantBody)
 			}
 		})
+	}
+}
+
+func TestRouterWithFrontend(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	check := health.NewCheckUseCase(fakeMongoQueryService{}, fakePostgresQueryService{}, health.StatusDTOFactory{}, logger)
+	frontend := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "frontend")
+	})
+	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, frontend)
+
+	tests := []struct {
+		name     string
+		method   string
+		path     string
+		want     int
+		wantBody string
+	}{
+		{name: "frontend route", method: http.MethodGet, path: "/races/123", want: http.StatusOK, wantBody: "frontend"},
+		{name: "health", method: http.MethodGet, path: "/health", want: http.StatusOK, wantBody: `{"mongo":"ok","postgres":"ok","status":"ok"}`},
+		{name: "unknown API path", method: http.MethodGet, path: "/api/v1/unknown", want: http.StatusNotFound},
+		{name: "frontend serves GET only", method: http.MethodPost, path: "/races/123", want: http.StatusMethodNotAllowed},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(testCase.method, testCase.path, nil))
+
+			if rec.Code != testCase.want {
+				t.Fatalf("status = %d, want %d", rec.Code, testCase.want)
+			}
+			if testCase.wantBody != "" && strings.TrimSpace(rec.Body.String()) != testCase.wantBody {
+				t.Errorf("body = %q, want %q", rec.Body.String(), testCase.wantBody)
+			}
+		})
+	}
+}
+
+func TestRouterWithoutFrontend(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	check := health.NewCheckUseCase(fakeMongoQueryService{}, fakePostgresQueryService{}, health.StatusDTOFactory{}, logger)
+	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, nil)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/races/123", nil))
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotFound)
 	}
 }
