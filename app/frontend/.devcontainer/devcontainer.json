@@ -1,9 +1,6 @@
 {
   "name": "tasuki frontend (Node)",
-  "dockerComposeFile": [
-    "../../../infra/compose.yaml",
-    "../../../infra/compose.dev.yaml"
-  ],
+  "dockerComposeFile": ["../../../infra/compose.yaml", "../../../infra/compose.dev.yaml"],
   "service": "frontend-dev",
   "runServices": ["frontend-dev"],
   "workspaceFolder": "/workspaces/tasuki/app/frontend",

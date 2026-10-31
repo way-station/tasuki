@@ -2,18 +2,8 @@ name: backend
 
 on:
   pull_request:
-    paths:
-      - "app/backend/**"
-      - "infra/docker/backend/**"
-      - "infra/compose*.yaml"
-      - ".github/workflows/backend.yml"
   push:
     branches: [main]
-    paths:
-      - "app/backend/**"
-      - "infra/docker/backend/**"
-      - "infra/compose*.yaml"
-      - ".github/workflows/backend.yml"
 
 permissions:
   contents: read
@@ -27,7 +17,44 @@ defaults:
     working-directory: app/backend
 
 jobs:
+  # Decides whether this pull request touches the backend. The workflow itself always runs, so the
+  # required check backend-ok always reports; jobs it skips count as passed.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      # The production image also contains the built frontend (ADR-0018).
+      image: ${{ steps.filter.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: filter
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "image=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          if echo "$changed" | grep -qE '^(app/backend/|infra/docker/backend/|infra/compose[^/]*\.yaml$|\.github/workflows/backend\.yml$)'; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          elif echo "$changed" | grep -qE '^app/frontend/'; then
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+
   lint:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,11 +68,42 @@ jobs:
           version: v2.14.0
           working-directory: app/backend
 
+  generate:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: app/backend/go.mod
+          cache-dependency-path: app/backend/go.sum
+      - uses: sqlc-dev/setup-sqlc@bac53b7fb28c039a6c7f5736fd1e89744021bdd6 # v5.0.0
+        with:
+          # Keep in sync with infra/docker/backend/Dockerfile (dev stage).
+          sqlc-version: "1.31.1"
+      # Generated code is committed (ADR-0017); fail when it is older than its source.
+      - name: Check that generated code is up to date
+        run: |
+          make generate
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            git diff
+            echo "::error::Generated code is out of date. Run make generate and commit the result."
+            exit 1
+          fi
+
   test:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     services:
       mongo:
         image: mongo:8.0
+        # mongo:8.0 refuses to start on Linux 6.19–7.0.13 (SERVER-121912), which the runner
+        # images use since 2026-10-25. Keeping rseq on in glibc avoids the TCMalloc bug.
+        env:
+          GLIBC_TUNABLES: glibc.pthread.rseq=1
         ports:
           - 27017:27017
         options: >-
@@ -53,22 +111,65 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      postgres:
+        # Keep in sync with infra/compose.yaml.
+        image: postgres:18
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: tasuki
+          POSTGRES_DB: tasuki_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d tasuki_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       MONGODB_URI: mongodb://localhost:27017
+      DATABASE_URL: postgres://app:tasuki@localhost:5432/tasuki_test?sslmode=disable
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: app/backend/go.mod
           cache-dependency-path: app/backend/go.sum
+      - name: Install golang-migrate
+        # Keep in sync with infra/docker/backend/Dockerfile (dev stage).
+        run: go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+      - name: Apply migrations
+        run: make db-migrate
       - name: Unit and integration tests
-        run: make test-integration
+        # Stop at the first failing test; the remaining tests, in every package, do not run.
+        run: make test-integration TESTFLAGS=-failfast
 
   docker:
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build production image
-        run: docker build -f ../../infra/docker/backend/Dockerfile .
+        # From the repository root: the image contains app/backend and the built app/frontend.
+        working-directory: .
+        run: docker build -f infra/docker/backend/Dockerfile .
       - name: Build Dev Container image
         run: docker build --target dev -f ../../infra/docker/backend/Dockerfile .
+
+  # The only check main requires (#37): fails when any job above failed or was cancelled.
+  backend-ok:
+    if: always()
+    needs: [changes, lint, generate, test, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - working-directory: .
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) exit 1 ;;
+            esac
+          done

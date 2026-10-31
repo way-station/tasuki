@@ -18,19 +18,19 @@ func TestDomainImportsNoOtherLayer(t *testing.T) {
 		"/internal/presentation",
 	}
 	root := filepath.Join("..") // internal/domain
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		f, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
 		if err != nil {
 			return err
 		}
-		for _, imp := range f.Imports {
-			p, _ := strconv.Unquote(imp.Path.Value)
+		for _, imp := range file.Imports {
+			importPath, _ := strconv.Unquote(imp.Path.Value)
 			for _, layer := range forbidden {
-				if strings.Contains(p, layer) {
-					t.Errorf("%s imports %s", path, p)
+				if strings.Contains(importPath, layer) {
+					t.Errorf("%s imports %s", path, importPath)
 				}
 			}
 		}

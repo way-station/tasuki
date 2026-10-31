@@ -1,5 +1,10 @@
 version: "2"
 
+run:
+  # Lint the integration tests too; they are built only with this tag.
+  build-tags:
+    - integration
+
 linters:
   enable:
     - bodyclose
@@ -8,6 +13,23 @@ linters:
     - misspell
     - revive
     - unconvert
+    - varnamelen
+  settings:
+    # Descriptive names everywhere. Only t (*testing.T), w (http.ResponseWriter), and i in
+    # loops may be shorter than three letters; ok and id are words (app/backend/TECH.md).
+    varnamelen:
+      max-distance: 1
+      min-name-length: 3
+      check-receiver: true
+      check-return: true
+      check-type-param: true
+      ignore-names:
+        - ok
+        - id
+        - i
+      ignore-decls:
+        - t *testing.T
+        - w http.ResponseWriter
 
 formatters:
   enable:

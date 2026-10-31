@@ -14,6 +14,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
 	"github.com/way-station/tasuki/app/backend/internal/presentation"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 )
@@ -37,15 +38,25 @@ func run(logger *slog.Logger) error {
 
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	db, err := mongodb.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
+	mongoClient, err := mongodb.Connect(connectCtx, cfg.MongoURI, cfg.MongoDatabase)
 	if err != nil {
 		return err
 	}
+	postgresClient, err := postgres.Connect(connectCtx, cfg.DatabaseURL)
+	if err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
+	defer postgresClient.Close()
 
-	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(db), health.StatusDTOFactory{}, logger)
+	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
+	var frontend http.Handler
+	if cfg.FrontendDir != "" {
+		frontend = presentation.NewFrontendHandler(cfg.FrontendDir)
+	}
 	router := presentation.NewRouter(presentation.Controllers{
 		Health: controller.NewHealthController(check),
-	})
+	}, frontend)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
@@ -73,5 +84,5 @@ func run(logger *slog.Logger) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
-	return db.Close(shutdownCtx)
+	return mongoClient.Close(shutdownCtx)
 }

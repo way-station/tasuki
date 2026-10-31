@@ -2,7 +2,7 @@
 #
 # Stages:
 #   dev - development environment for the Dev Container
-# The production image is added once hosting is decided (#7).
+# There is no production frontend image: the backend image builds and serves it (ADR-0018).
 
 FROM jdxcode/mise:2026.9.18-debian AS dev
 

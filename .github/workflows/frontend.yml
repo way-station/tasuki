@@ -2,18 +2,8 @@ name: frontend
 
 on:
   pull_request:
-    paths:
-      - "app/frontend/**"
-      - "infra/docker/frontend/**"
-      - "infra/compose*.yaml"
-      - ".github/workflows/frontend.yml"
   push:
     branches: [main]
-    paths:
-      - "app/frontend/**"
-      - "infra/docker/frontend/**"
-      - "infra/compose*.yaml"
-      - ".github/workflows/frontend.yml"
 
 permissions:
   contents: read
@@ -27,7 +17,33 @@ defaults:
     working-directory: app/frontend
 
 jobs:
+  # Decides whether this pull request touches the frontend. The workflow itself always runs, so the
+  # required check frontend-ok always reports; jobs it skips count as passed.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: filter
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/$BASE_REF...HEAD" | grep -qE '^(app/frontend/|app/backend/api/openapi\.yaml$|infra/docker/frontend/|infra/compose[^/]*\.yaml$|\.github/workflows/frontend\.yml$)'; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+          fi
+
   check:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,14 +55,49 @@ jobs:
           working_directory: app/frontend
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Generated code is committed (ADR-0017); fail when it is older than app/backend/api/openapi.yaml.
+      - name: Check that generated API types are up to date
+        run: |
+          pnpm generate:api
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            git diff
+            echo "::error::Generated API types are out of date. Run pnpm generate:api and commit the result."
+            exit 1
+          fi
       - name: Lint
         run: pnpm lint
+      - name: Format
+        run: pnpm format:check
+      # Stop at the first failing test, as the backend CI does.
+      - name: Test
+        run: pnpm test --bail=1
       - name: Typecheck and build
         run: pnpm build
 
   docker:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build Dev Container image
         run: docker build --target dev -f ../../infra/docker/frontend/Dockerfile .
+
+  # The only check main requires (#37): fails when any job above failed or was cancelled.
+  frontend-ok:
+    if: always()
+    needs: [changes, check, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - working-directory: .
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) exit 1 ;;
+            esac
+          done

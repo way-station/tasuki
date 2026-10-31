@@ -18,13 +18,13 @@ func TestConnect(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	s, err := Connect(ctx, uri, "tasuki_test")
+	client, err := Connect(ctx, uri, "tasuki_test")
 	if err != nil {
 		t.Fatalf("Connect: %v", err)
 	}
-	defer func() { _ = s.Close(ctx) }()
+	defer func() { _ = client.Close(ctx) }()
 
-	if err := s.Ping(ctx); err != nil {
+	if err := client.Ping(ctx); err != nil {
 		t.Fatalf("Ping: %v", err)
 	}
 }

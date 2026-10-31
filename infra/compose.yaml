@@ -3,6 +3,10 @@ name: tasuki
 services:
   mongo:
     image: mongo:8.0
+    # mongo:8.0 refuses to start on Linux 6.19–7.0.13 (SERVER-121912). Keeping rseq on in
+    # glibc avoids the TCMalloc bug, so a newer Docker Desktop kernel does not break it.
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
@@ -13,19 +17,43 @@ services:
       timeout: 5s
       retries: 10
 
+  # Same major version as Neon in production (ADR-0015, ADR-0018).
+  # Local credentials only; production uses Neon's connection string.
+  postgres:
+    image: postgres:18
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: tasuki
+      POSTGRES_DB: tasuki
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "app", "-d", "tasuki"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # The production image: the backend serves the API and the built frontend from one origin (ADR-0018).
   backend:
     build:
-      context: ../app/backend
-      dockerfile: ../../infra/docker/backend/Dockerfile
+      context: ..
+      dockerfile: infra/docker/backend/Dockerfile
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     environment:
       PORT: "8080"
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DATABASE: tasuki
+      DATABASE_URL: postgres://app:tasuki@postgres:5432/tasuki?sslmode=disable
     depends_on:
       mongo:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
 volumes:
   mongo-data:
+  postgres-data:

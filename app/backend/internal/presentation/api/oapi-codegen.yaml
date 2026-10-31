@@ -1,0 +1,9 @@
+# oapi-codegen settings for the server code generated from api/openapi.yaml (ADR-0017).
+package: api
+output: openapi.gen.go
+generate:
+  models: true
+  chi-server: true
+  # Controllers take typed requests and return typed responses, so a response that the
+  # document does not define fails to compile.
+  strict-server: true
