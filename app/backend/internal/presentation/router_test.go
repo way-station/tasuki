@@ -73,7 +73,8 @@ func TestRouterWithFrontend(t *testing.T) {
 		{name: "frontend route", method: http.MethodGet, path: "/races/123", want: http.StatusOK, wantBody: "frontend"},
 		{name: "health", method: http.MethodGet, path: "/health", want: http.StatusOK, wantBody: `{"mongo":"ok","postgres":"ok","status":"ok"}`},
 		{name: "unknown API path", method: http.MethodGet, path: "/api/v1/unknown", want: http.StatusNotFound},
-		{name: "frontend serves GET only", method: http.MethodPost, path: "/races/123", want: http.StatusMethodNotAllowed},
+		{name: "frontend answers HEAD", method: http.MethodHead, path: "/races/123", want: http.StatusOK},
+		{name: "frontend serves GET and HEAD only", method: http.MethodPost, path: "/races/123", want: http.StatusMethodNotAllowed},
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
