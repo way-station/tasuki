@@ -235,6 +235,17 @@ CREATE UNIQUE INDEX member_links_one_approved_per_account ON member_links (accou
 CREATE UNIQUE INDEX member_links_one_pending_per_member   ON member_links (roster_member_id) WHERE approved_at IS NULL AND rejected_at IS NULL;
 CREATE UNIQUE INDEX member_links_one_pending_per_account  ON member_links (account_id)       WHERE approved_at IS NULL AND rejected_at IS NULL;
 
+-- Server-side sessions (ADR-0014). Sessions last 30 days; there is no refresh token.
+CREATE TABLE sessions (
+  id         uuid PRIMARY KEY,
+  account_id uuid NOT NULL REFERENCES accounts (id),
+  token_hash bytea NOT NULL UNIQUE,                    -- SHA-256 of the token; the token itself is not stored
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz,                              -- set on logout, and when the roster member leaves
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX sessions_account_id ON sessions (account_id);
+
 CREATE TABLE races (
   id          uuid PRIMARY KEY,
   team_id     uuid NOT NULL REFERENCES teams (id),
@@ -338,7 +349,7 @@ index { running_order_id: 1, changed_at: -1 }
 
 ### Not in this draft
 
-- Storage for login tokens, one-time codes, and the LINE Login state (#84; ADR-0007 leaves session storage to the implementation)
+- Storage for one-time codes and the LINE Login state (#84). Sessions are in `sessions` above
 - Composite keys that also check that two rows belong to the same team (for example a race invitation whose race and roster member are in different teams). In the single-team MVP the application checks this
 
 ---
@@ -505,7 +516,7 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 
 ### この草案に入れていないもの
 
-- ログインのトークン、一度きりのコード、LINE ログインの state の保存（#84。ADR-0007 でセッションの保存方法は実装のときに決めるとした）
+- 一度きりのコードと LINE ログインの state の保存（#84）。セッションは上の英語の SQL の `sessions`（有効期間は 30 日、ADR-0014）
 - 2つの行が同じチームに属することまで確かめる複合キー（例：大会と名簿のメンバーが違うチームの招待）。1チームの MVP では、アプリケーションが確かめる
 
 </details>

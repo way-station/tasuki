@@ -26,6 +26,9 @@ type InviteLinkID string
 // MemberLinkID identifies a link between an account and a roster member.
 type MemberLinkID string
 
+// SessionID identifies a login session (ADR-0014).
+type SessionID string
+
 // RaceID identifies a race.
 type RaceID string
 

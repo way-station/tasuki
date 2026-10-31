@@ -20,6 +20,10 @@ services:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DATABASE: tasuki
       DATABASE_URL: postgres://app:tasuki@postgres:5432/tasuki?sslmode=disable
+      # Development only (ADR-0009): log in as any LINE user with POST /api/v1/dev/login.
+      DEV_LOGIN_ENABLED: "true"
+      # Logging in as this LINE user ID makes you an organizer (ADR-0006).
+      ORGANIZER_LINE_USER_IDS: dev-organizer
     depends_on:
       mongo:
         condition: service_healthy

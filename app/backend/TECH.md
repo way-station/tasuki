@@ -84,6 +84,9 @@ The application reads **only environment variables**; it never loads `.env` itse
 | `MONGODB_DATABASE` | no | `tasuki` | MongoDB database name |
 | `DATABASE_URL` | yes | — | PostgreSQL connection string. Pool sizes go in its parameters (`pool_max_conns`, `pool_min_conns`, `pool_max_conn_lifetime`, `pool_max_conn_idle_time`; ADR-0015) |
 | `PORT` | no | `8080` | HTTP port |
+| `FRONTEND_DIR` | no | — | The built frontend to serve; set to `/frontend` in the production image (ADR-0018) |
+| `ORGANIZER_LINE_USER_IDS` | no | — | Organizers, as comma-separated LINE user IDs (ADR-0006). The Dev Container sets `dev-organizer` |
+| `DEV_LOGIN_ENABLED` | no | — | Only `true` turns on `POST /api/v1/dev/login` (ADR-0009). Set only in `infra/compose.dev.yaml`; never in production |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
 | `POSTGRES_PORT` | no | `5432` | Host port of the PostgreSQL container (`infra/.env`, compose only) |
@@ -238,6 +241,32 @@ Names are descriptive, including method receivers (`func (client *Client) Ping`)
 | Method | Path | Description |
 | --- | --- | --- |
 | GET | `/health` | Pings MongoDB and PostgreSQL at the same time. `200` only when both are reachable, otherwise `503`; the body says which store is unreachable (`{"status":"error","mongo":"ok","postgres":"unreachable"}`) |
+| POST | `/api/v1/dev/login` | Dev-only login as any LINE user (ADR-0009). Exists only with `DEV_LOGIN_ENABLED=true` |
+| GET | `/api/v1/me` | The caller: display name, organizer or not, link status, roster member (`docs/design/api.md`) |
+| DELETE | `/api/v1/session` | Logs out: revokes the session and clears the cookie |
+
+The other operations of `api/openapi.yaml` are not routed yet. Their controllers come with each feature; until then `Server` (`internal/presentation/server.go`) answers them with `501` through `notImplemented`.
+
+### Sessions (ADR-0014)
+
+- A session is a row in `sessions`: the account, the SHA-256 hash of the token, the expiry (30 days, no refresh token), and the revocation time. The token is only in the `tasuki_session` cookie (`HttpOnly; Secure; SameSite=Lax; Path=/api`).
+- `middleware.Authenticate` reads the cookie, identifies the account through `AuthenticateUseCase`, and passes it in the request context; routes that need a session are in its group in `router.go`. A missing, unknown, expired, or revoked session is `401 unauthenticated`.
+- `LoginUseCase` creates the account on the first login and starts a session. The dev-only login uses it now; LINE Login will use the same use case after verifying the ID token (ADR-0007, ADR-0009).
+- Not built yet: the `Origin` check for requests that change data (ADR-0014). It comes with the next endpoints that change data.
+
+### Logging in during development
+
+With the Dev Container (`DEV_LOGIN_ENABLED=true`), start the backend (`make run`) and the frontend (`pnpm dev`), open http://localhost:5173, and run this in the browser console:
+
+```js
+await fetch("/api/v1/dev/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ line_user_id: "dev-organizer", display_name: "Dev Organizer" }),
+});
+```
+
+Then reload. `dev-organizer` is an organizer (`ORGANIZER_LINE_USER_IDS`); any other `line_user_id` is a new account without a link (A4). Delete the cookie or call `DELETE /api/v1/session` to log out.
 
 ---
 
@@ -330,6 +359,9 @@ app/backend/
 | `MONGODB_DATABASE` | — | `tasuki` | MongoDB のデータベース名 |
 | `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列。プールの大きさはそのパラメータで指定する（`pool_max_conns`、`pool_min_conns`、`pool_max_conn_lifetime`、`pool_max_conn_idle_time`、ADR-0015） |
 | `PORT` | — | `8080` | HTTP ポート |
+| `FRONTEND_DIR` | — | — | 配信するビルド済みの frontend。本番用イメージでは `/frontend`（ADR-0018） |
+| `ORGANIZER_LINE_USER_IDS` | — | — | 幹事。LINE のユーザー ID をカンマ区切りで（ADR-0006）。Dev Container では `dev-organizer` |
+| `DEV_LOGIN_ENABLED` | — | — | `true` のときだけ `POST /api/v1/dev/login` を有効にする（ADR-0009）。設定するのは `infra/compose.dev.yaml` だけで、本番には書かない |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `POSTGRES_PORT` | — | `5432` | PostgreSQL コンテナのホスト側ポート（`infra/.env`、compose のみ） |
@@ -484,5 +516,21 @@ make down
 | メソッド | パス | 説明 |
 | --- | --- | --- |
 | GET | `/health` | MongoDB と PostgreSQL に同時に ping します。両方に届くときだけ `200`、それ以外は `503`。どちらに届かないかを本文で返します（`{"status":"error","mongo":"ok","postgres":"unreachable"}`） |
+| POST | `/api/v1/dev/login` | 開発専用。任意の LINE ユーザーとしてログインする（ADR-0009）。`DEV_LOGIN_ENABLED=true` のときだけある |
+| GET | `/api/v1/me` | 呼んだ人：表示名、幹事かどうか、紐付けの状態、名簿のメンバー（`docs/design/api.md`） |
+| DELETE | `/api/v1/session` | ログアウト。セッションを無効にし、cookie を消す |
+
+`api/openapi.yaml` のほかの操作は、まだルートに登録していない。Controller は機能ごとに作る。それまでは `Server`（`internal/presentation/server.go`）が `notImplemented` を通して `501` を返す
+
+### セッション（ADR-0014）
+
+- セッションは `sessions` の行：アカウント、トークンの SHA-256 ハッシュ、期限（30 日、リフレッシュトークンなし）、無効にした時刻。トークンは `tasuki_session` の cookie（`HttpOnly; Secure; SameSite=Lax; Path=/api`）にだけある
+- `middleware.Authenticate` が cookie を読み、`AuthenticateUseCase` でアカウントを調べ、リクエストの context で渡す。セッションの要るルートは、`router.go` でそのグループに入れる。セッションがない、知らない、期限切れ、無効のときは `401 unauthenticated`
+- `LoginUseCase` は、初めてのログインでアカウントを作り、セッションを始める。今は開発用ログインが使い、LINE ログインも ID トークンを確かめた後に同じユースケースを使う（ADR-0007、ADR-0009）
+- まだ作っていないもの：データを変えるリクエストの `Origin` の検査（ADR-0014）。次にデータを変えるエンドポイントを作るときに入れる
+
+### 開発中のログイン
+
+Dev Container（`DEV_LOGIN_ENABLED=true`）で backend（`make run`）と frontend（`pnpm dev`）を起動し、http://localhost:5173 を開いて、ブラウザのコンソールで上の `fetch` を実行する。そのあと再読み込みする。`dev-organizer` は幹事（`ORGANIZER_LINE_USER_IDS`）、ほかの `line_user_id` は紐付けのない新しいアカウント（A4）になる。ログアウトは cookie を消すか、`DELETE /api/v1/session` を呼ぶ
 
 </details>

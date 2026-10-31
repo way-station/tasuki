@@ -41,7 +41,7 @@ func TestHealth(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			check := health.NewCheckUseCase(fakeMongoQueryService{err: testCase.mongoErr}, fakePostgresQueryService{err: testCase.postgresErr}, health.StatusDTOFactory{}, logger)
-			handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, nil)
+			handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, testOptions())
 			rec := httptest.NewRecorder()
 			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
 
@@ -61,7 +61,9 @@ func TestRouterWithFrontend(t *testing.T) {
 	frontend := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = io.WriteString(w, "frontend")
 	})
-	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, frontend)
+	options := testOptions()
+	options.Frontend = frontend
+	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, options)
 
 	tests := []struct {
 		name     string
@@ -94,12 +96,20 @@ func TestRouterWithFrontend(t *testing.T) {
 func TestRouterWithoutFrontend(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	check := health.NewCheckUseCase(fakeMongoQueryService{}, fakePostgresQueryService{}, health.StatusDTOFactory{}, logger)
-	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, nil)
+	handler := NewRouter(Controllers{Health: controller.NewHealthController(check)}, testOptions())
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/races/123", nil))
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+// testOptions are router options for tests that do not reach the API routes.
+func testOptions() Options {
+	return Options{
+		Authenticate: func(next http.Handler) http.Handler { return next },
+		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 }

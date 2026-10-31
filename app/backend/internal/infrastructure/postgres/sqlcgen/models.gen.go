@@ -9,6 +9,55 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID          uuid.UUID
+	LineUserID  string
+	DisplayName string
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type InviteLink struct {
+	ID             uuid.UUID
+	RosterMemberID uuid.UUID
+	TokenHash      []byte
+	ExpiresAt      pgtype.Timestamptz
+	UsedAt         pgtype.Timestamptz
+	RevokedAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+}
+
+type MemberLink struct {
+	ID             uuid.UUID
+	AccountID      uuid.UUID
+	RosterMemberID uuid.UUID
+	InviteLinkID   uuid.UUID
+	ApprovedAt     pgtype.Timestamptz
+	RejectedAt     pgtype.Timestamptz
+	UnlinkedAt     pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+}
+
+type RosterMember struct {
+	ID             uuid.UUID
+	TeamID         uuid.UUID
+	Name           string
+	LeftAt         pgtype.Timestamptz
+	AverageSeconds int32
+	LapCount       int32
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type Session struct {
+	ID        uuid.UUID
+	AccountID uuid.UUID
+	TokenHash []byte
+	ExpiresAt pgtype.Timestamptz
+	RevokedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
 type Team struct {
 	ID        uuid.UUID
 	Name      string
