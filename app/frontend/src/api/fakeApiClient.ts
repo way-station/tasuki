@@ -10,6 +10,11 @@ import type { ApiClient } from "./client.ts";
 export function createFakeApiClient(stubs: Partial<ApiClient> = {}): ApiClient {
   return {
     getHealth: notStubbed("getHealth"),
+    getInviteLink: notStubbed("getInviteLink"),
+    authorizeLine: notStubbed("authorizeLine"),
+    createSession: notStubbed("createSession"),
+    logout: notStubbed("logout"),
+    getMe: notStubbed("getMe"),
     ...stubs,
   };
 }
