@@ -48,6 +48,8 @@ services:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DATABASE: tasuki
       DATABASE_URL: postgres://app:tasuki@postgres:5432/tasuki?sslmode=disable
+      # The backend serves the frontend itself, so the browser opens this port (ADR-0018).
+      FRONTEND_ORIGIN: http://localhost:${BACKEND_PORT:-8080}
     depends_on:
       mongo:
         condition: service_healthy

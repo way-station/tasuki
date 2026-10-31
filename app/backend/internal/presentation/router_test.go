@@ -109,7 +109,8 @@ func TestRouterWithoutFrontend(t *testing.T) {
 // testOptions are router options for tests that do not reach the API routes.
 func testOptions() Options {
 	return Options{
-		Authenticate: func(next http.Handler) http.Handler { return next },
-		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Authenticate:   func(next http.Handler) http.Handler { return next },
+		FrontendOrigin: testOrigin,
+		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 }

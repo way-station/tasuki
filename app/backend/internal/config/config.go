@@ -3,6 +3,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -13,6 +15,9 @@ type Config struct {
 	MongoURI      string
 	MongoDatabase string
 	DatabaseURL   string
+	// FrontendOrigin is the origin the frontend is served from, such as
+	// "https://tasuki.example". Requests that change data must come from it (ADR-0014).
+	FrontendOrigin string
 	// FrontendDir holds the built frontend to serve. Empty in development,
 	// where the Vite dev server serves the frontend.
 	FrontendDir string
@@ -23,7 +28,7 @@ type Config struct {
 }
 
 // Load reads the configuration from the environment.
-// MONGODB_URI and DATABASE_URL are required. FRONTEND_DIR, ORGANIZER_LINE_USER_IDS
+// MONGODB_URI, DATABASE_URL, and FRONTEND_ORIGIN are required. FRONTEND_DIR, ORGANIZER_LINE_USER_IDS
 // (comma-separated), and DEV_LOGIN_ENABLED (only "true" turns it on) are optional. The
 // others fall back to defaults.
 func Load() (Config, error) {
@@ -43,7 +48,30 @@ func Load() (Config, error) {
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")
 	}
+	frontendOrigin, err := parseOrigin(os.Getenv("FRONTEND_ORIGIN"))
+	if err != nil {
+		return Config{}, fmt.Errorf("FRONTEND_ORIGIN: %w", err)
+	}
+	cfg.FrontendOrigin = frontendOrigin
 	return cfg, nil
+}
+
+// parseOrigin accepts an http or https origin with nothing after the host, and returns it
+// as browsers send it in the Origin header: lower case, without a trailing slash.
+func parseOrigin(value string) (string, error) {
+	if value == "" {
+		return "", errors.New("is required")
+	}
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return "", err
+	}
+	scheme := strings.ToLower(parsed.Scheme)
+	if (scheme != "http" && scheme != "https") || parsed.Host == "" || parsed.User != nil ||
+		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", fmt.Errorf("%q is not an origin such as https://tasuki.example", value)
+	}
+	return scheme + "://" + strings.ToLower(parsed.Host), nil
 }
 
 func getenv(key, fallback string) string {
