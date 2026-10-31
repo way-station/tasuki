@@ -95,6 +95,8 @@ pnpm generate:api  # after app/backend/api/openapi.yaml changes
 - `src/app/router.tsx` defines the routes in code (no generated route tree): one route per screen in `docs/design/screens.md`, all inside the common layout (`src/app/Layout.tsx`). Unknown URLs show the not-found page.
 - The router is registered for types, so a link to a path that does not exist, or without a required param, is a compile error.
 - Until a feature's container exists, its routes show a placeholder page with the screen ID.
+- The team's screens sit under pathless layout routes that render `TeamGuard` (`features/auth/container`) with an access level: `team` (any user who may use the team), `organizer`, or `linked` (a roster member, organizers included). The guard reads `GET /me` and sends everyone else on, as `docs/design/screens.md` lists; a user without a session goes to `/login?redirect=<where they were>`.
+- LINE Login leaves the app. Just before, the screen to return to is kept in `localStorage` (`tasuki.returnPath`); `/auth/complete` takes it after the session is created (ADR-0013).
 - Routes only pick the screen: no loaders (ADR-0013). Containers read the URL with `useParams` / `useSearch` and fetch through hooks.
 - Reloading on any URL works because the server returns `index.html` for every path. Vite does this in `pnpm dev` and `pnpm preview`; in production the backend does it for every path outside `/api` (ADR-0018, #197).
 
@@ -244,6 +246,8 @@ pnpm generate:api  # app/backend/api/openapi.yaml を変えたら
 - `src/app/router.tsx` に、ルートをコードで定義する（ルートの木は生成しない）。`docs/design/screens.md` の画面ごとに 1 つのルートを、すべて共通のレイアウト（`src/app/Layout.tsx`）の中に置く。知らない URL は not found ページを出す
 - ルーターを型に登録しているので、存在しないパスへのリンクや、必要な引数のないリンクはコンパイルエラーになる
 - 機能の Container ができるまでは、画面 ID を出す仮のページを出す
+- チームの画面は、パスを持たないレイアウトのルートの下に置く。そのルートは `TeamGuard`（`features/auth/container`）をアクセスの段階付きで描画する：`team`（チームを使える人すべて）、`organizer`、`linked`（名簿のメンバーに紐付いた人。幹事も含む）。ガードは `GET /me` を読み、開けない人を `docs/design/screens.md` のとおりに送る。セッションのない人は `/login?redirect=<いた画面>` へ送る
+- LINE ログインではアプリから出る。出る直前に、戻る画面を `localStorage`（`tasuki.returnPath`）に残し、`/auth/complete` がセッションを作った後に取り出す（ADR-0013）
 - ルートは画面を選ぶだけで、loader は使わない（ADR-0013）。Container が `useParams` / `useSearch` で URL を読み、Hooks を通してデータを取る
 - どの URL で再読み込みしても画面が出るのは、サーバーがどのパスにも `index.html` を返すから。`pnpm dev` と `pnpm preview` では Vite がそうする。本番では backend が `/api` 以外のパスでそうする（ADR-0018、#197）
 

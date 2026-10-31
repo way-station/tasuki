@@ -25,6 +25,7 @@ An organizer who also runs links their account the same way as everyone else (in
 | A2 | Waiting for approval | — | — | Waiting |
 | A3 | Rejected | — | — | Rejected |
 | A4 | Cannot use tasuki | — | — | Left members, invalid links |
+| A5 | Log in | — | — | Logged out |
 | R1 | Race list (home) | Yes | Yes | — |
 | R2 | Race detail | Yes | Yes (parts hidden) | — |
 | R3 | Register / edit race | Yes | — | — |
@@ -59,6 +60,17 @@ An organizer who also runs links their account the same way as everyone else (in
 
 - Shown to left members who log in, and for unusable invite links (expired, used, or replaced).
 - Shows: that tasuki cannot be used, and to contact an organizer.
+
+### A5 Log in
+
+- For people who already joined and are logged out, for example after the session expired. Opening any team screen without a session sends the user here (#113).
+- Shows: a "Log in with LINE" button.
+- Action: log in with LINE. After login, the user returns to the screen they tried to open (ADR-0013).
+- If LINE Login fails or is cancelled, this screen shows an error and the button again.
+
+### Who may open which screen
+
+- A screen opened by someone who may not open it, from the table above, sends them on instead of showing an error: logged out → A5; waiting → A2; rejected → A3; no link (non-organizer) → A4; a member on an organizer screen, or an organizer without a link on a member screen (L1, P1) → R1.
 
 ## Race screens
 
@@ -237,6 +249,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 | A2 | 承認待ち | — | — | 承認待ち |
 | A3 | 却下 | — | — | 却下 |
 | A4 | 利用できない | — | — | 退会したメンバー、使えないリンク |
+| A5 | ログイン | — | — | 未ログイン |
 | R1 | 大会一覧（ホーム） | 開ける | 開ける | — |
 | R2 | 大会の詳細 | 開ける | 開ける（一部を隠す） | — |
 | R3 | 大会の登録・編集 | 開ける | — | — |
@@ -271,6 +284,17 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 - 退会したメンバーがログインしたとき、使えない招待リンク（期限切れ、使用済み、置き換え済み）のときに出す
 - 表示：tasuki を使えないこと、幹事に連絡すること
+
+### A5 ログイン
+
+- すでに参加していて、ログインしていない人のため（セッションが切れたときなど）。セッションなしでチームの画面を開くと、ここに送る（#113）
+- 表示：「LINE でログイン」のボタン
+- 操作：LINE でログインする。ログイン後は、開こうとしていた画面に戻る（ADR-0013）
+- LINE ログインが失敗したか取り消されたら、この画面にエラーとボタンをもう一度出す
+
+### どの画面を誰が開けるか
+
+- 上の表で開けない人が画面を開いたら、エラーではなく次の画面へ送る：未ログイン → A5、承認待ち → A2、却下 → A3、紐付けなし（幹事以外）→ A4、幹事の画面を開いたメンバーと、メンバーの画面（L1、P1）を開いた紐付けのない幹事 → R1
 
 ## 大会の画面
 

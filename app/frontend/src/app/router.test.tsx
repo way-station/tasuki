@@ -7,8 +7,18 @@ import { createAppRouter } from "./router.tsx";
 
 function renderAt(path: string) {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
+  // An organizer linked to a roster member may open every screen. What other
+  // callers see is tested with the route guard (features/auth/container).
   const client = createFakeApiClient({
     getHealth: () => Promise.resolve({ status: "ok", mongo: "ok", postgres: "ok" }),
+    getMe: () =>
+      Promise.resolve({
+        display_name: "Taro",
+        is_organizer: true,
+        status: "approved",
+        roster_member: { id: "member-1", name: "Taro Yamada" },
+      }),
+    getInviteLink: () => Promise.resolve({ team_name: "Team" }),
   });
   render(
     <TestProviders client={client}>
@@ -19,11 +29,12 @@ function renderAt(path: string) {
 
 describe("createAppRouter", () => {
   it.each([
-    ["/invite/abc", "A1 Invite link landing"],
-    ["/auth/complete?code=abc", "Completing login"],
-    ["/waiting", "A2 Waiting for approval"],
-    ["/rejected", "A3 Rejected"],
-    ["/unavailable", "A4 Cannot use tasuki"],
+    ["/invite/abc", "Team"],
+    ["/login", "Log in"],
+    ["/auth/complete", "Log in"],
+    ["/waiting", "Waiting for approval"],
+    ["/rejected", "You were rejected"],
+    ["/unavailable", "tasuki cannot be used"],
     ["/", "R1 Race list"],
     ["/races/new", "R3 Register race"],
     ["/races/123", "R2 Race detail"],
