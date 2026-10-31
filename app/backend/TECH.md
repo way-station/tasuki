@@ -182,14 +182,19 @@ make up                 # build the production image and start backend + MongoDB
 make down
 ```
 
+The production image is one container with the backend and the built frontend (ADR-0018, #197). It serves the API under `/api`, `/health`, and the frontend for every other `GET` / `HEAD`, with `index.html` for client-side routes. Open http://localhost:8080/ after `make up`.
+
+- `FRONTEND_DIR` (set to `/frontend` in the image) turns on serving the frontend. In development it is unset, and the Vite dev server serves the frontend.
+- A missing file with an extension (an old asset) is `404`; a path without one gets `index.html`, which is sent with `Cache-Control: no-cache`. An unknown `/api` path is `404`.
+
 ## Docker
 
 Container files live in `infra/`, separated from the application code.
 
 | File | Role |
 | --- | --- |
-| `infra/docker/backend/Dockerfile` | Builds the backend images. Stages: `dev` (Dev Container), `build`, and the production image (default target). The build context is `app/backend`. |
-| `infra/docker/backend/Dockerfile.dockerignore` | Keeps `.env`, `bin/`, and tests out of the image |
+| `infra/docker/backend/Dockerfile` | Builds the backend images. Stages: `dev` (Dev Container), `build`, `frontend-build`, and the production image with the backend and the built frontend (default target). The production image is built from the repository root; the dev stage from `app/backend`. |
+| `infra/docker/backend/Dockerfile.dockerignore` | Sends only `app/backend` and `app/frontend` from the repository, without `node_modules`, `dist`, `.env`, `bin/`, and tests |
 | `infra/compose.yaml` | Local only: runs the databases and the production backend image |
 | `infra/compose.dev.yaml` | Local only: adds the `backend-dev` service used by the Dev Container (repository mounted, Go caches in volumes) |
 | `infra/.env.example` | Host port settings for compose |
@@ -423,14 +428,19 @@ make up                 # 本番用イメージをビルドし、backend と Mon
 make down
 ```
 
+本番用イメージは、backend とビルドした frontend を 1 つにしたコンテナ（ADR-0018、#197）。API は `/api` の下、`/health`、それ以外の `GET` / `HEAD` には frontend を返し、クライアント側のルートには `index.html` を返す。`make up` の後に http://localhost:8080/ を開く
+
+- `FRONTEND_DIR`（イメージでは `/frontend`）で frontend の配信が有効になる。開発では設定せず、Vite の開発サーバーが frontend を配信する
+- 拡張子のあるファイルがなければ（古い asset など）`404`。拡張子のないパスには `index.html` を `Cache-Control: no-cache` 付きで返す。知らない `/api` のパスは `404`
+
 ## Docker
 
 コンテナ関連のファイルは、アプリのコードと分けて `infra/` に置きます。
 
 | ファイル | 役割 |
 | --- | --- |
-| `infra/docker/backend/Dockerfile` | backend のイメージを作る。ステージは `dev`（Dev Container）、`build`、本番用イメージ（デフォルトのターゲット）。ビルドコンテキストは `app/backend` |
-| `infra/docker/backend/Dockerfile.dockerignore` | `.env`、`bin/`、テストをイメージに入れない |
+| `infra/docker/backend/Dockerfile` | backend のイメージを作る。ステージは `dev`（Dev Container）、`build`、`frontend-build`、backend とビルドした frontend を持つ本番用イメージ（デフォルトのターゲット）。本番用イメージはリポジトリのルートから、dev ステージは `app/backend` からビルドする |
+| `infra/docker/backend/Dockerfile.dockerignore` | リポジトリから `app/backend` と `app/frontend` だけを送る。`node_modules`、`dist`、`.env`、`bin/`、テストは送らない |
 | `infra/compose.yaml` | ローカル専用。DB と本番用の backend イメージを起動する |
 | `infra/compose.dev.yaml` | ローカル専用。Dev Container が使う `backend-dev` サービスを追加する（リポジトリをマウント、Go のキャッシュはボリューム） |
 | `infra/.env.example` | compose のホスト側ポートの設定 |

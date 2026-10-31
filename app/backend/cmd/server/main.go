@@ -50,9 +50,13 @@ func run(logger *slog.Logger) error {
 	defer postgresClient.Close()
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
+	var frontend http.Handler
+	if cfg.FrontendDir != "" {
+		frontend = presentation.NewFrontendHandler(cfg.FrontendDir)
+	}
 	router := presentation.NewRouter(presentation.Controllers{
 		Health: controller.NewHealthController(check),
-	})
+	}, frontend)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
