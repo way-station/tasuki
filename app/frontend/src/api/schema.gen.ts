@@ -510,7 +510,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Unlink the approved account (M1) */
+        /** Unlink the approved user (M1) */
         delete: operations["unlinkRosterMember"];
         options?: never;
         head?: never;

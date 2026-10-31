@@ -43,10 +43,10 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 		if options.DevLogin {
 			apiRouter.Post("/dev/login", apiHandler.DevLogin)
 		}
-		apiRouter.Group(func(accountRouter chi.Router) {
-			accountRouter.Use(options.Authenticate)
-			accountRouter.Get("/me", apiHandler.GetMe)
-			accountRouter.Delete("/session", apiHandler.Logout)
+		apiRouter.Group(func(userRouter chi.Router) {
+			userRouter.Use(options.Authenticate)
+			userRouter.Get("/me", apiHandler.GetMe)
+			userRouter.Delete("/session", apiHandler.Logout)
 		})
 	})
 

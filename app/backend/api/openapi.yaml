@@ -13,7 +13,7 @@ info:
     | Value | Meaning |
     | --- | --- |
     | `public` | No session |
-    | `account` | Any valid session, including accounts waiting for approval or rejected |
+    | `user` | Any valid session, including users waiting for approval or rejected |
     | `member` | Approved link to a roster member, not left. Linked organizers are members too |
     | `organizer` | Listed as an organizer in configuration. No link needed |
 
@@ -40,7 +40,7 @@ tags:
   - name: roster
     description: Roster and invite links (M1, M2)
   - name: approvals
-    description: Approving links between accounts and roster members (M3)
+    description: Approving links between users and roster members (M3)
 security:
   - sessionCookie: []
 
@@ -210,7 +210,7 @@ paths:
       tags: [auth]
       operationId: logout
       summary: Log out
-      x-callers: [account]
+      x-callers: [user]
       responses:
         "204":
           description: The session is revoked, and the session cookie is cleared
@@ -227,7 +227,7 @@ paths:
       tags: [auth]
       operationId: getMe
       summary: Who am I, and which screens to show
-      x-callers: [account]
+      x-callers: [user]
       responses:
         "200":
           description: The caller
@@ -881,7 +881,7 @@ paths:
     delete:
       tags: [roster]
       operationId: unlinkRosterMember
-      summary: Unlink the approved account (M1)
+      summary: Unlink the approved user (M1)
       x-callers: [organizer]
       responses:
         "204":

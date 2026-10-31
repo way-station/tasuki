@@ -16,19 +16,19 @@ import (
 // SessionCookieName is the cookie that carries the session token (ADR-0014).
 const SessionCookieName = "tasuki_session"
 
-// Authenticator identifies the account of a session token.
+// Authenticator identifies the user of a session token.
 type Authenticator interface {
-	Execute(ctx context.Context, token string) (shared.AccountID, error)
+	Execute(ctx context.Context, token string) (shared.UserID, error)
 }
 
 type contextKey int
 
 const (
-	accountIDKey contextKey = iota
+	userIDKey contextKey = iota
 	sessionTokenKey
 )
 
-// Authenticate reads the session cookie, identifies the account through authenticator,
+// Authenticate reads the session cookie, identifies the user through authenticator,
 // and passes it to the handlers in the request context. A missing, unknown, expired, or
 // revoked session is 401 unauthenticated (ADR-0014). It does not read the database itself.
 func Authenticate(authenticator Authenticator, logger *slog.Logger) func(http.Handler) http.Handler {
@@ -38,7 +38,7 @@ func Authenticate(authenticator Authenticator, logger *slog.Logger) func(http.Ha
 			if cookie, err := req.Cookie(SessionCookieName); err == nil {
 				token = cookie.Value
 			}
-			accountID, err := authenticator.Execute(req.Context(), token)
+			userID, err := authenticator.Execute(req.Context(), token)
 			if errors.Is(err, auth.ErrUnauthenticated) {
 				WriteUnauthenticated(w)
 				return
@@ -48,17 +48,17 @@ func Authenticate(authenticator Authenticator, logger *slog.Logger) func(http.Ha
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			ctx := context.WithValue(req.Context(), accountIDKey, accountID)
+			ctx := context.WithValue(req.Context(), userIDKey, userID)
 			ctx = context.WithValue(ctx, sessionTokenKey, token)
 			next.ServeHTTP(w, req.WithContext(ctx))
 		})
 	}
 }
 
-// AccountID returns the account Authenticate identified.
-func AccountID(ctx context.Context) (shared.AccountID, bool) {
-	accountID, ok := ctx.Value(accountIDKey).(shared.AccountID)
-	return accountID, ok
+// UserID returns the user Authenticate identified.
+func UserID(ctx context.Context) (shared.UserID, bool) {
+	userID, ok := ctx.Value(userIDKey).(shared.UserID)
+	return userID, ok
 }
 
 // SessionToken returns the session token of the request Authenticate accepted.

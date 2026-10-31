@@ -9,7 +9,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
 
-// AuthenticateUseCase identifies the account of a session token (ADR-0014).
+// AuthenticateUseCase identifies the user of a session token (ADR-0014).
 type AuthenticateUseCase struct {
 	sessions SessionQueryService
 	now      func() time.Time
@@ -20,15 +20,15 @@ func NewAuthenticateUseCase(sessions SessionQueryService, now func() time.Time) 
 	return &AuthenticateUseCase{sessions: sessions, now: now}
 }
 
-// Execute returns the account of token, or ErrUnauthenticated when the token is empty,
+// Execute returns the user of token, or ErrUnauthenticated when the token is empty,
 // unknown, expired, or revoked.
-func (useCase *AuthenticateUseCase) Execute(ctx context.Context, token string) (shared.AccountID, error) {
+func (useCase *AuthenticateUseCase) Execute(ctx context.Context, token string) (shared.UserID, error) {
 	if token == "" {
 		return "", ErrUnauthenticated
 	}
-	accountID, err := useCase.sessions.FindActiveAccountID(ctx, identity.HashToken(token), useCase.now())
+	userID, err := useCase.sessions.FindActiveUserID(ctx, identity.HashToken(token), useCase.now())
 	if errors.Is(err, shared.ErrNotFound) {
 		return "", ErrUnauthenticated
 	}
-	return accountID, err
+	return userID, err
 }

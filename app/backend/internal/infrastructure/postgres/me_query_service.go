@@ -20,15 +20,15 @@ func NewMeQueryService(client *Client) *MeQueryService {
 	return &MeQueryService{queries: sqlcgen.New(client.Pool())}
 }
 
-// FindMe returns the account and its member links, oldest first.
-func (queryService *MeQueryService) FindMe(ctx context.Context, accountID shared.AccountID) (auth.MeRecord, error) {
-	id, err := parseID(accountID)
+// FindMe returns the user and its member links, oldest first.
+func (queryService *MeQueryService) FindMe(ctx context.Context, userID shared.UserID) (auth.MeRecord, error) {
+	id, err := parseID(userID)
 	if err != nil {
 		return auth.MeRecord{}, err
 	}
-	account, err := queryService.queries.GetMeAccount(ctx, id)
+	user, err := queryService.queries.GetMeUser(ctx, id)
 	if err != nil {
-		return auth.MeRecord{}, notFound(err, "account")
+		return auth.MeRecord{}, notFound(err, "user")
 	}
 	rows, err := queryService.queries.ListMeLinks(ctx, id)
 	if err != nil {
@@ -48,5 +48,5 @@ func (queryService *MeQueryService) FindMe(ctx context.Context, accountID shared
 			UnlinkedAt:       timeOrNil(row.UnlinkedAt),
 		})
 	}
-	return auth.MeRecord{LineUserID: account.LineUserID, DisplayName: account.DisplayName, Links: links}, nil
+	return auth.MeRecord{LineUserID: user.LineUserID, DisplayName: user.DisplayName, Links: links}, nil
 }

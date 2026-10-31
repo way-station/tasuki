@@ -862,7 +862,7 @@ type ServerInterface interface {
 	// CreateInviteLink Create an invite link (M1)
 	// (POST /api/v1/roster-members/{roster_member_id}/invite-links)
 	CreateInviteLink(w http.ResponseWriter, r *http.Request, rosterMemberId RosterMemberId)
-	// UnlinkRosterMember Unlink the approved account (M1)
+	// UnlinkRosterMember Unlink the approved user (M1)
 	// (DELETE /api/v1/roster-members/{roster_member_id}/link)
 	UnlinkRosterMember(w http.ResponseWriter, r *http.Request, rosterMemberId RosterMemberId)
 	// Logout Log out
@@ -1084,7 +1084,7 @@ func (_ Unimplemented) CreateInviteLink(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// UnlinkRosterMember Unlink the approved account (M1)
+// UnlinkRosterMember Unlink the approved user (M1)
 // (DELETE /api/v1/roster-members/{roster_member_id}/link)
 func (_ Unimplemented) UnlinkRosterMember(w http.ResponseWriter, r *http.Request, rosterMemberId RosterMemberId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -5092,7 +5092,7 @@ type StrictServerInterface interface {
 	// CreateInviteLink Create an invite link (M1)
 	// (POST /api/v1/roster-members/{roster_member_id}/invite-links)
 	CreateInviteLink(ctx context.Context, request CreateInviteLinkRequestObject) (CreateInviteLinkResponseObject, error)
-	// UnlinkRosterMember Unlink the approved account (M1)
+	// UnlinkRosterMember Unlink the approved user (M1)
 	// (DELETE /api/v1/roster-members/{roster_member_id}/link)
 	UnlinkRosterMember(ctx context.Context, request UnlinkRosterMemberRequestObject) (UnlinkRosterMemberResponseObject, error)
 	// Logout Log out

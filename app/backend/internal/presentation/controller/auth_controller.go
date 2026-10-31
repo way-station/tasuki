@@ -69,11 +69,11 @@ func (controller *AuthController) Logout(ctx context.Context, _ api.LogoutReques
 // GetMe returns who the caller is and which screens they may use.
 func (controller *AuthController) GetMe(ctx context.Context, _ api.GetMeRequestObject) (api.GetMeResponseObject, error) {
 	unauthenticated := api.GetMe401ApplicationProblemPlusJSONResponse{UnauthenticatedApplicationProblemPlusJSONResponse: api.UnauthenticatedApplicationProblemPlusJSONResponse(middleware.UnauthenticatedProblem())}
-	accountID, ok := middleware.AccountID(ctx)
+	userID, ok := middleware.UserID(ctx)
 	if !ok {
 		return unauthenticated, nil
 	}
-	caller, err := controller.getMe.Execute(ctx, accountID)
+	caller, err := controller.getMe.Execute(ctx, userID)
 	if errors.Is(err, auth.ErrUnauthenticated) {
 		return unauthenticated, nil
 	}

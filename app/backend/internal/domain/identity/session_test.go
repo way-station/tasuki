@@ -15,8 +15,8 @@ func TestSession(t *testing.T) {
 	if token != "session-secret" || !bytes.Equal(session.TokenHash(), HashToken("session-secret")) {
 		t.Errorf("token = %q, hash does not match", token)
 	}
-	if session.AccountID() != "a1" {
-		t.Errorf("AccountID() = %q, want a1", session.AccountID())
+	if session.UserID() != "a1" {
+		t.Errorf("UserID() = %q, want a1", session.UserID())
 	}
 	if want := now.Add(30 * 24 * time.Hour); !session.ExpiresAt().Equal(want) {
 		t.Errorf("ExpiresAt() = %v, want %v", session.ExpiresAt(), want)

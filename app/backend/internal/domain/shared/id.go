@@ -14,8 +14,8 @@ type IDGenerator interface {
 // TeamID identifies a team (tenant).
 type TeamID string
 
-// AccountID identifies an account (a LINE login).
-type AccountID string
+// UserID identifies a user (a LINE login).
+type UserID string
 
 // MemberID identifies a roster member.
 type MemberID string
@@ -23,7 +23,7 @@ type MemberID string
 // InviteLinkID identifies an invite link.
 type InviteLinkID string
 
-// MemberLinkID identifies a link between an account and a roster member.
+// MemberLinkID identifies a link between a user and a roster member.
 type MemberLinkID string
 
 // SessionID identifies a login session (ADR-0014).

@@ -8,50 +8,50 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres/sqlcgen"
 )
 
-// AccountRepository implements identity.AccountRepository with PostgreSQL.
-type AccountRepository struct {
+// UserRepository implements identity.UserRepository with PostgreSQL.
+type UserRepository struct {
 	queries *sqlcgen.Queries
-	factory identity.AccountFactory
+	factory identity.UserFactory
 }
 
-var _ identity.AccountRepository = (*AccountRepository)(nil)
+var _ identity.UserRepository = (*UserRepository)(nil)
 
-// NewAccountRepository returns an AccountRepository that uses client.
-func NewAccountRepository(client *Client, factory identity.AccountFactory) *AccountRepository {
-	return &AccountRepository{queries: sqlcgen.New(client.Pool()), factory: factory}
+// NewUserRepository returns an UserRepository that uses client.
+func NewUserRepository(client *Client, factory identity.UserFactory) *UserRepository {
+	return &UserRepository{queries: sqlcgen.New(client.Pool()), factory: factory}
 }
 
-// FindByID returns the account with id.
-func (repository *AccountRepository) FindByID(ctx context.Context, id shared.AccountID) (*identity.Account, error) {
-	accountID, err := parseID(id)
+// FindByID returns the user with id.
+func (repository *UserRepository) FindByID(ctx context.Context, id shared.UserID) (*identity.User, error) {
+	userID, err := parseID(id)
 	if err != nil {
 		return nil, err
 	}
-	row, err := repository.queries.GetAccountByID(ctx, accountID)
+	row, err := repository.queries.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, notFound(err, "account")
+		return nil, notFound(err, "user")
 	}
-	return repository.factory.Reconstruct(shared.AccountID(row.ID.String()), row.LineUserID, row.DisplayName), nil
+	return repository.factory.Reconstruct(shared.UserID(row.ID.String()), row.LineUserID, row.DisplayName), nil
 }
 
-// FindByLineUserID returns the account of a LINE user.
-func (repository *AccountRepository) FindByLineUserID(ctx context.Context, lineUserID string) (*identity.Account, error) {
-	row, err := repository.queries.GetAccountByLineUserID(ctx, lineUserID)
+// FindByLineUserID returns the user of a LINE user.
+func (repository *UserRepository) FindByLineUserID(ctx context.Context, lineUserID string) (*identity.User, error) {
+	row, err := repository.queries.GetUserByLineUserID(ctx, lineUserID)
 	if err != nil {
-		return nil, notFound(err, "account")
+		return nil, notFound(err, "user")
 	}
-	return repository.factory.Reconstruct(shared.AccountID(row.ID.String()), row.LineUserID, row.DisplayName), nil
+	return repository.factory.Reconstruct(shared.UserID(row.ID.String()), row.LineUserID, row.DisplayName), nil
 }
 
-// Save creates the account, or updates its display name.
-func (repository *AccountRepository) Save(ctx context.Context, account *identity.Account) error {
-	accountID, err := parseID(account.ID())
+// Save creates the user, or updates its display name.
+func (repository *UserRepository) Save(ctx context.Context, user *identity.User) error {
+	userID, err := parseID(user.ID())
 	if err != nil {
 		return err
 	}
-	return repository.queries.SaveAccount(ctx, sqlcgen.SaveAccountParams{
-		ID:          accountID,
-		LineUserID:  account.LineUserID(),
-		DisplayName: account.DisplayName(),
+	return repository.queries.SaveUser(ctx, sqlcgen.SaveUserParams{
+		ID:          userID,
+		LineUserID:  user.LineUserID(),
+		DisplayName: user.DisplayName(),
 	})
 }

@@ -12,20 +12,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getMeAccount = `-- name: GetMeAccount :one
+const getMeUser = `-- name: GetMeUser :one
 SELECT line_user_id, display_name
-FROM accounts
+FROM users
 WHERE id = $1
 `
 
-type GetMeAccountRow struct {
+type GetMeUserRow struct {
 	LineUserID  string
 	DisplayName string
 }
 
-func (q *Queries) GetMeAccount(ctx context.Context, id uuid.UUID) (GetMeAccountRow, error) {
-	row := q.db.QueryRow(ctx, getMeAccount, id)
-	var i GetMeAccountRow
+func (q *Queries) GetMeUser(ctx context.Context, id uuid.UUID) (GetMeUserRow, error) {
+	row := q.db.QueryRow(ctx, getMeUser, id)
+	var i GetMeUserRow
 	err := row.Scan(&i.LineUserID, &i.DisplayName)
 	return i, err
 }
@@ -41,7 +41,7 @@ SELECT member_links.id,
        member_links.unlinked_at
 FROM member_links
 JOIN roster_members ON roster_members.id = member_links.roster_member_id
-WHERE member_links.account_id = $1
+WHERE member_links.user_id = $1
 ORDER BY member_links.created_at
 `
 
@@ -56,8 +56,8 @@ type ListMeLinksRow struct {
 	UnlinkedAt       pgtype.Timestamptz
 }
 
-func (q *Queries) ListMeLinks(ctx context.Context, accountID uuid.UUID) ([]ListMeLinksRow, error) {
-	rows, err := q.db.Query(ctx, listMeLinks, accountID)
+func (q *Queries) ListMeLinks(ctx context.Context, userID uuid.UUID) ([]ListMeLinksRow, error) {
+	rows, err := q.db.Query(ctx, listMeLinks, userID)
 	if err != nil {
 		return nil, err
 	}

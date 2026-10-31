@@ -21,14 +21,14 @@ func NewSessionQueryService(client *Client) *SessionQueryService {
 	return &SessionQueryService{queries: sqlcgen.New(client.Pool())}
 }
 
-// FindActiveAccountID returns the account of the active session whose token has hash.
-func (queryService *SessionQueryService) FindActiveAccountID(ctx context.Context, hash []byte, now time.Time) (shared.AccountID, error) {
-	accountID, err := queryService.queries.GetActiveSessionAccountID(ctx, sqlcgen.GetActiveSessionAccountIDParams{
+// FindActiveUserID returns the user of the active session whose token has hash.
+func (queryService *SessionQueryService) FindActiveUserID(ctx context.Context, hash []byte, now time.Time) (shared.UserID, error) {
+	userID, err := queryService.queries.GetActiveSessionUserID(ctx, sqlcgen.GetActiveSessionUserIDParams{
 		TokenHash: hash,
 		Now:       timestamptz(now),
 	})
 	if err != nil {
 		return "", notFound(err, "session")
 	}
-	return shared.AccountID(accountID.String()), nil
+	return shared.UserID(userID.String()), nil
 }

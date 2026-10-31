@@ -12,7 +12,7 @@ export type EntryScreen = "home" | "waiting" | "rejected" | "unavailable";
 export type CurrentUser = {
   displayName: string;
   isOrganizer: boolean;
-  // Set only when the account's link to a roster member is approved. Member
+  // Set only when the user's link to a roster member is approved. Member
   // screens (L1, P1, own attendance) need it, organizers included.
   rosterMember: { id: string; name: string } | null;
   entryScreen: EntryScreen;

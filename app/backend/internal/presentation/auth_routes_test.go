@@ -30,36 +30,36 @@ type fixedToken string
 
 func (token fixedToken) NewToken() (string, error) { return string(token), nil }
 
-// memoryStore keeps accounts and sessions in memory, standing in for PostgreSQL.
+// memoryStore keeps users and sessions in memory, standing in for PostgreSQL.
 type memoryStore struct {
-	accounts map[string]*identity.Account
+	users    map[string]*identity.User
 	sessions map[string]*identity.Session
 }
 
 func newMemoryStore() *memoryStore {
-	return &memoryStore{accounts: map[string]*identity.Account{}, sessions: map[string]*identity.Session{}}
+	return &memoryStore{users: map[string]*identity.User{}, sessions: map[string]*identity.Session{}}
 }
 
-type memoryAccounts struct{ store *memoryStore }
+type memoryUsers struct{ store *memoryStore }
 
-func (repository memoryAccounts) FindByID(_ context.Context, id shared.AccountID) (*identity.Account, error) {
-	for _, account := range repository.store.accounts {
-		if account.ID() == id {
-			return account, nil
+func (repository memoryUsers) FindByID(_ context.Context, id shared.UserID) (*identity.User, error) {
+	for _, user := range repository.store.users {
+		if user.ID() == id {
+			return user, nil
 		}
 	}
 	return nil, shared.ErrNotFound
 }
 
-func (repository memoryAccounts) FindByLineUserID(_ context.Context, lineUserID string) (*identity.Account, error) {
-	if account, ok := repository.store.accounts[lineUserID]; ok {
-		return account, nil
+func (repository memoryUsers) FindByLineUserID(_ context.Context, lineUserID string) (*identity.User, error) {
+	if user, ok := repository.store.users[lineUserID]; ok {
+		return user, nil
 	}
 	return nil, shared.ErrNotFound
 }
 
-func (repository memoryAccounts) Save(_ context.Context, account *identity.Account) error {
-	repository.store.accounts[account.LineUserID()] = account
+func (repository memoryUsers) Save(_ context.Context, user *identity.User) error {
+	repository.store.users[user.LineUserID()] = user
 	return nil
 }
 
@@ -77,21 +77,21 @@ func (repository memorySessions) Save(_ context.Context, session *identity.Sessi
 	return nil
 }
 
-func (repository memorySessions) FindActiveAccountID(_ context.Context, hash []byte, now time.Time) (shared.AccountID, error) {
+func (repository memorySessions) FindActiveUserID(_ context.Context, hash []byte, now time.Time) (shared.UserID, error) {
 	if session, ok := repository.store.sessions[string(hash)]; ok && session.Active(now) {
-		return session.AccountID(), nil
+		return session.UserID(), nil
 	}
 	return "", shared.ErrNotFound
 }
 
 type memoryMe struct{ store *memoryStore }
 
-func (query memoryMe) FindMe(ctx context.Context, accountID shared.AccountID) (auth.MeRecord, error) {
-	account, err := memoryAccounts(query).FindByID(ctx, accountID)
+func (query memoryMe) FindMe(ctx context.Context, userID shared.UserID) (auth.MeRecord, error) {
+	user, err := memoryUsers(query).FindByID(ctx, userID)
 	if err != nil {
 		return auth.MeRecord{}, err
 	}
-	return auth.MeRecord{LineUserID: account.LineUserID(), DisplayName: account.DisplayName()}, nil
+	return auth.MeRecord{LineUserID: user.LineUserID(), DisplayName: user.DisplayName()}, nil
 }
 
 type fakeHealth struct{}
@@ -103,15 +103,15 @@ func newAuthRouter(devLogin bool) http.Handler {
 	store := newMemoryStore()
 	clock := func() time.Time { return testNow }
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	accountFactory := identity.NewAccountFactory(&sequentialIDs{})
+	userFactory := identity.NewUserFactory(&sequentialIDs{})
 	sessionFactory := identity.NewSessionFactory(&sequentialIDs{}, fixedToken("session-token"))
 	sessions := memorySessions{store: store}
 
 	authenticate := auth.NewAuthenticateUseCase(sessions, clock)
 	authController := controller.NewAuthController(
-		auth.NewLoginUseCase(memoryAccounts{store: store}, sessions, accountFactory, sessionFactory, auth.SessionDTOFactory{}, clock),
+		auth.NewLoginUseCase(memoryUsers{store: store}, sessions, userFactory, sessionFactory, auth.SessionDTOFactory{}, clock),
 		auth.NewLogoutUseCase(sessions, clock),
-		auth.NewGetMeUseCase(memoryMe{store: store}, accountFactory, identity.NewMemberLinkFactory(&sequentialIDs{}),
+		auth.NewGetMeUseCase(memoryMe{store: store}, userFactory, identity.NewMemberLinkFactory(&sequentialIDs{}),
 			identity.LinkStatusService{}, identity.NewOrganizerPolicy([]string{"U-organizer"}), auth.MeDTOFactory{}),
 		auth.LoginCommandFactory{},
 	)
