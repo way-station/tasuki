@@ -10,6 +10,8 @@ export type EntryScreen = "home" | "waiting" | "rejected" | "unavailable";
 
 // The signed-in user.
 export type CurrentUser = {
+  // Drafts are kept per user (ADR-0013).
+  userId: string;
   displayName: string;
   isOrganizer: boolean;
   // Set only when the user's link to a roster member is approved. Member

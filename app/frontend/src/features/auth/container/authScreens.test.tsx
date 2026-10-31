@@ -32,6 +32,7 @@ function me(overrides: Partial<Me>): Partial<ApiClient> {
   return {
     getMe: () =>
       Promise.resolve({
+        user_id: "user-1",
         display_name: "Taro",
         is_organizer: false,
         status: "approved",

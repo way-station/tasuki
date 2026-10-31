@@ -668,6 +668,8 @@ export interface components {
             display_name: string;
         };
         Me: {
+            /** @description Identifies the user, so the frontend can keep drafts per user (ADR-0013) */
+            user_id: components["schemas"]["Id"];
             display_name: string;
             is_organizer: boolean;
             /** @enum {string} */

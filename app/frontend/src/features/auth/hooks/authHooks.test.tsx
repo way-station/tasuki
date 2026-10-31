@@ -28,6 +28,7 @@ function renderWith<T>(hook: () => T, client: ApiClient, queryClient = createTes
 }
 
 const approvedMe: Me = {
+  user_id: "user-1",
   display_name: "Taro",
   is_organizer: false,
   status: "approved",
@@ -43,6 +44,7 @@ describe("useMe", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual({
+      userId: "user-1",
       displayName: "Taro",
       isOrganizer: false,
       rosterMember: { id: "member-1", name: "Taro Yamada" },

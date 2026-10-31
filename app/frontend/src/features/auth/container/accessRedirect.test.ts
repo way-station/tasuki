@@ -4,6 +4,7 @@ import { type Access, accessRedirect } from "./accessRedirect.ts";
 
 function user(overrides: Partial<CurrentUser>): CurrentUser {
   return {
+    userId: "user-1",
     displayName: "Taro",
     isOrganizer: false,
     rosterMember: null,
