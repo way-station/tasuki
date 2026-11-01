@@ -35,3 +35,21 @@ type SessionRepository interface {
 	FindByTokenHash(ctx context.Context, hash []byte) (*Session, error)
 	Save(ctx context.Context, session *Session) error
 }
+
+// LoginAttemptRepository stores LINE Logins in progress. Errors for missing attempts wrap
+// shared.ErrNotFound.
+type LoginAttemptRepository interface {
+	Save(ctx context.Context, attempt *LoginAttempt) error
+	// Take deletes the attempt whose state has hash and returns it, expired or not, so the
+	// same state can be taken only once.
+	Take(ctx context.Context, stateHash []byte) (*LoginAttempt, error)
+}
+
+// LoginCodeRepository stores one-time codes. Errors for missing codes wrap
+// shared.ErrNotFound.
+type LoginCodeRepository interface {
+	Save(ctx context.Context, code *LoginCode) error
+	// Take deletes the code whose hash is hash and returns it, expired or not, so the same
+	// code can be taken only once.
+	Take(ctx context.Context, codeHash []byte) (*LoginCode, error)
+}
