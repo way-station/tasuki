@@ -146,6 +146,7 @@ Status: draft written by Claude from the ADRs and the rules above, for the maint
 | Link states | Timestamps, not a status column: `approved_at`, `rejected_at`, `unlinked_at` in `member_links`. A state holds when its column is not `NULL`; pending = all three `NULL` |
 | Unlinked users | Kept, with `unlinked_at` set; `approved_at` stays |
 | Invite links | Renamed from `invitations` to `invite_links`, so they are not confused with `race_invitations` |
+| LINE Login in progress, one-time codes | `login_attempts` (10 minutes) and `login_codes` (1 minute) in PostgreSQL, next to `sessions`, so any instance can finish a login. A row is deleted when it is used, so it works once; rows of abandoned logins stay |
 
 ### Relations
 
@@ -245,6 +246,28 @@ CREATE TABLE sessions (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX sessions_user_id ON sessions (user_id);
+
+-- A LINE Login in progress, from POST /auth/line/authorize to the callback (ADR-0007).
+-- It lasts 10 minutes. The callback deletes the row, so a state works once.
+CREATE TABLE login_attempts (
+  id             uuid PRIMARY KEY,
+  state_hash     bytea NOT NULL UNIQUE,                -- SHA-256 of the state; the state itself is not stored
+  nonce          text NOT NULL,                        -- compared with the nonce in the ID token
+  code_verifier  text NOT NULL,                        -- PKCE verifier; sent to LINE in the code exchange, so kept as is
+  invite_link_id uuid REFERENCES invite_links (id),    -- when the login started from an invite link
+  expires_at     timestamptz NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+-- A one-time code the callback hands to the frontend, exchanged for a session by
+-- POST /session. It lasts 1 minute. The exchange deletes the row, so a code works once.
+CREATE TABLE login_codes (
+  id         uuid PRIMARY KEY,
+  user_id    uuid NOT NULL REFERENCES users (id),
+  code_hash  bytea NOT NULL UNIQUE,                    -- SHA-256 of the code; the code itself is not stored
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
 CREATE TABLE races (
   id          uuid PRIMARY KEY,
@@ -349,7 +372,6 @@ index { running_order_id: 1, changed_at: -1 }
 
 ### Not in this draft
 
-- Storage for one-time codes and the LINE Login state (#84). Sessions are in `sessions` above
 - Composite keys that also check that two rows belong to the same team (for example a race invitation whose race and roster member are in different teams). In the single-team MVP the application checks this
 
 ---
@@ -505,6 +527,7 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 | 紐付けの状態 | 状態の列ではなく日時で持つ：`member_links` の `approved_at`、`rejected_at`、`unlinked_at`。列が `NULL` でなければその状態。承認待ちは3つとも `NULL` |
 | 解除した紐付け | 残す。`unlinked_at` を入れる。`approved_at` は残す |
 | 招待リンク | `race_invitations` と紛らわしくないよう、`invitations` を `invite_links` に名前を変える |
+| LINE ログインの途中、一度きりのコード | `sessions` と同じ PostgreSQL の `login_attempts`（10 分）と `login_codes`（1 分）。どのインスタンスでもログインを終えられる。使ったら行を消すので1回だけ使える。途中でやめたログインの行は残る |
 
 ### リレーション
 
@@ -516,7 +539,6 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 
 ### この草案に入れていないもの
 
-- 一度きりのコードと LINE ログインの state の保存（#84）。セッションは上の英語の SQL の `sessions`（有効期間は 30 日、ADR-0014）
 - 2つの行が同じチームに属することまで確かめる複合キー（例：大会と名簿のメンバーが違うチームの招待）。1チームの MVP では、アプリケーションが確かめる
 
 </details>
