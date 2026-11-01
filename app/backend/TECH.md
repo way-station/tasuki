@@ -34,6 +34,7 @@ React (Vite)  ── app/frontend
 | PostgreSQL driver | `github.com/jackc/pgx/v5` with `pgxpool`; Neon direct endpoint (ADR-0015) | v5.x |
 | SQL | sqlc (Go generated from SQL, committed) (ADR-0015) | — |
 | Migrations | golang-migrate, zero-padded versions (ADR-0015) | — |
+| LINE ID token verification | `github.com/golang-jwt/jwt/v5` (ADR-0007) | v5.3.x |
 | Logging | `log/slog` (JSON) | stdlib |
 | Lint / format | golangci-lint v2 (`.golangci.yml`) | v2.x |
 | API code generation | oapi-codegen; generated code is committed (ADR-0017) | v2.8.0 |
@@ -47,6 +48,8 @@ React (Vite)  ── app/frontend
 - **Go for the whole backend**: one language and one service for the API and both databases.
 - **chi**: needed for routing — route groups, sub-routers, and URL parameters such as `/races/{raceID}/laps`. It is built on `net/http` (`http.Handler`), so handlers and middleware stay compatible with the standard library.
   - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
+- **golang-jwt for the ID token**: an ID token must pass every check of OpenID Connect Core 1.0 section 3.1.3.7, and a mistake in signature or alg handling lets forged tokens log in. A widely used library does these checks; tasuki only configures them.
+  - Always pass `jwt.WithValidMethods` with HS256 only. Without it, a token can choose its own alg (RFC 8725 section 3.1).
 - **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
 
 ## Directory structure
@@ -59,7 +62,7 @@ app/backend/
 │  ├─ presentation/       # routing (chi), controllers (`controller/`), and the code generated from `api/openapi.yaml` (`api/`)
 │  ├─ application/        # use cases, commands (input validation), DTOs / view models, their factories, query service interfaces
 │  ├─ domain/             # entities, value objects, domain services, entity factories, repository interfaces
-│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`)
+│  └─ infrastructure/     # DB connections, repositories, and query services, per store (`mongodb/`, `postgres/`), and clients of external services (`line/`)
 ├─ migrations/           # PostgreSQL schema: golang-migrate up / down SQL files (ADR-0015)
 ├─ .devcontainer/         # Dev Container definition (development happens inside the container)
 └─ Makefile
@@ -309,6 +312,7 @@ React (Vite)  ── app/frontend
 | PostgreSQL ドライバ | `github.com/jackc/pgx/v5` を `pgxpool` で。Neon には直接の接続（ADR-0015） | v5.x |
 | SQL | sqlc（SQL から Go を生成し、コミットする）（ADR-0015） | — |
 | マイグレーション | golang-migrate。バージョンはゼロで埋める（ADR-0015） | — |
+| LINE の ID トークンの検証 | `github.com/golang-jwt/jwt/v5`（ADR-0007） | v5.3.x |
 | ログ | `log/slog`（JSON） | 標準ライブラリ |
 | Lint / Format | golangci-lint v2（`.golangci.yml`） | v2.x |
 | API のコード生成 | oapi-codegen。生成したコードはコミットする（ADR-0017） | v2.8.0 |
@@ -322,6 +326,8 @@ React (Vite)  ── app/frontend
 - **バックエンドはすべて Go**：API と2つの DB を、1つの言語・1つのサービスで扱います。
 - **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
   - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
+- **ID トークンは golang-jwt**：ID トークンは OpenID Connect Core 1.0 の 3.1.3.7 節の確認をすべて通す必要があり、署名や alg の扱いを間違えると、偽のトークンでログインできてしまいます。広く使われているライブラリがこの確認をするので、tasuki は設定だけを書きます
+  - `jwt.WithValidMethods` には必ず HS256 だけを渡すこと。渡さないと、トークンの側が alg を選べてしまいます（RFC 8725 の 3.1 節）
 - **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います
 
 ## ディレクトリ構成
@@ -334,7 +340,7 @@ app/backend/
 │  ├─ presentation/    # ルーティング（chi）、コントローラー（`controller/`）、`api/openapi.yaml` から生成したコード（`api/`）
 │  ├─ application/     # ユースケース、コマンド（入力の検証）、DTO／ビューモデル、それらのファクトリー、クエリサービスのインターフェース
 │  ├─ domain/          # エンティティ、値オブジェクト、ドメインサービス、エンティティのファクトリー、リポジトリのインターフェース
-│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）
+│  └─ infrastructure/  # DB の接続、リポジトリ、クエリサービス。保存先ごとに分ける（`mongodb/`、`postgres/`）。外部サービスのクライアント（`line/`）
 ├─ migrations/        # PostgreSQL のスキーマ：golang-migrate の上げる／戻す SQL ファイル（ADR-0015）
 ├─ .devcontainer/      # Dev Container の定義（開発はコンテナの中で行う）
 └─ Makefile
