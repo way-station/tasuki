@@ -23,7 +23,7 @@ func newTestClient(t *testing.T) *Client {
 		t.Fatalf("Connect: %v", err)
 	}
 	t.Cleanup(client.Close)
-	if _, err := client.Pool().Exec(ctx, "TRUNCATE sessions, member_links, invite_links, roster_members, users, teams CASCADE"); err != nil {
+	if _, err := client.Pool().Exec(ctx, "TRUNCATE login_codes, login_attempts, sessions, member_links, invite_links, roster_members, users, teams CASCADE"); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	return client

@@ -19,6 +19,24 @@ type InviteLink struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type LoginAttempt struct {
+	ID           uuid.UUID
+	StateHash    []byte
+	Nonce        string
+	CodeVerifier string
+	InviteLinkID *uuid.UUID
+	ExpiresAt    pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+}
+
+type LoginCode struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	CodeHash  []byte
+	ExpiresAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
 type MemberLink struct {
 	ID             uuid.UUID
 	UserID         uuid.UUID
