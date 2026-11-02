@@ -26,6 +26,7 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0017](0017-commit-generated-api-code.md) | Commit generated API code | technical | Accepted |
 | [0018](0018-hosting.md) | Hosting — one container on Cloud Run in Singapore | technical | Accepted |
 | [0019](0019-frontend-lint-and-format.md) | Frontend lint and format — oxlint and oxfmt | technical | Accepted |
+| [0020](0020-verify-line-id-tokens-with-golang-jwt.md) | Verify LINE ID tokens with golang-jwt, HS256 only | technical | Accepted |
 
 ## How to add an ADR
 

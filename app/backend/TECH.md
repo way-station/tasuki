@@ -34,7 +34,7 @@ React (Vite)  ── app/frontend
 | PostgreSQL driver | `github.com/jackc/pgx/v5` with `pgxpool`; Neon direct endpoint (ADR-0015) | v5.x |
 | SQL | sqlc (Go generated from SQL, committed) (ADR-0015) | — |
 | Migrations | golang-migrate, zero-padded versions (ADR-0015) | — |
-| LINE ID token verification | `github.com/golang-jwt/jwt/v5` (ADR-0007) | v5.3.x |
+| LINE ID token verification | `github.com/golang-jwt/jwt/v5` (ADR-0020) | v5.3.x |
 | Logging | `log/slog` (JSON) | stdlib |
 | Lint / format | golangci-lint v2 (`.golangci.yml`) | v2.x |
 | API code generation | oapi-codegen; generated code is committed (ADR-0017) | v2.8.0 |
@@ -49,7 +49,7 @@ React (Vite)  ── app/frontend
 - **chi**: needed for routing — route groups, sub-routers, and URL parameters such as `/races/{raceID}/laps`. It is built on `net/http` (`http.Handler`), so handlers and middleware stay compatible with the standard library.
   - Do not use `middleware.RealIP`: it is deprecated because it trusts `X-Forwarded-For` and similar headers and allows IP spoofing.
 - **golang-jwt for the ID token**: an ID token must pass every check of OpenID Connect Core 1.0 section 3.1.3.7, and a mistake in signature or alg handling lets forged tokens log in. A widely used library does these checks; tasuki only configures them.
-  - Always pass `jwt.WithValidMethods` with HS256 only. Without it, a token can choose its own alg (RFC 8725 section 3.1).
+  - Always pass `jwt.WithValidMethods` with HS256 only. Without it, a token can choose its own alg (RFC 8725 section 3.1). How the checks work: `docs/guides/id-token-verification.md`.
 - **Standard library otherwise**: logging (`log/slog`) and JSON use the standard library.
 
 ## Directory structure
@@ -312,7 +312,7 @@ React (Vite)  ── app/frontend
 | PostgreSQL ドライバ | `github.com/jackc/pgx/v5` を `pgxpool` で。Neon には直接の接続（ADR-0015） | v5.x |
 | SQL | sqlc（SQL から Go を生成し、コミットする）（ADR-0015） | — |
 | マイグレーション | golang-migrate。バージョンはゼロで埋める（ADR-0015） | — |
-| LINE の ID トークンの検証 | `github.com/golang-jwt/jwt/v5`（ADR-0007） | v5.3.x |
+| LINE の ID トークンの検証 | `github.com/golang-jwt/jwt/v5`（ADR-0020） | v5.3.x |
 | ログ | `log/slog`（JSON） | 標準ライブラリ |
 | Lint / Format | golangci-lint v2（`.golangci.yml`） | v2.x |
 | API のコード生成 | oapi-codegen。生成したコードはコミットする（ADR-0017） | v2.8.0 |
@@ -327,7 +327,7 @@ React (Vite)  ── app/frontend
 - **chi**：ルーティングに必要なため採用します。ルートのグループ化、サブルーター、`/races/{raceID}/laps` のような URL パラメータを使います。`net/http`（`http.Handler`）の上に作られているので、ハンドラやミドルウェアは標準ライブラリと互換のままです
   - `middleware.RealIP` は使わないこと。`X-Forwarded-For` などのヘッダーを信用して IP の偽装を許すため、非推奨になっています
 - **ID トークンは golang-jwt**：ID トークンは OpenID Connect Core 1.0 の 3.1.3.7 節の確認をすべて通す必要があり、署名や alg の扱いを間違えると、偽のトークンでログインできてしまいます。広く使われているライブラリがこの確認をするので、tasuki は設定だけを書きます
-  - `jwt.WithValidMethods` には必ず HS256 だけを渡すこと。渡さないと、トークンの側が alg を選べてしまいます（RFC 8725 の 3.1 節）
+  - `jwt.WithValidMethods` には必ず HS256 だけを渡すこと。渡さないと、トークンの側が alg を選べてしまいます（RFC 8725 の 3.1 節）。確認の仕組みは `docs/guides/id-token-verification.md` を参照
 - **それ以外は標準ライブラリ**：ログ（`log/slog`）や JSON は標準ライブラリを使います
 
 ## ディレクトリ構成
