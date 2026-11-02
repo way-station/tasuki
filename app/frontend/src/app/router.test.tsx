@@ -10,7 +10,20 @@ function renderAt(path: string) {
   // An organizer linked to a roster member may open every screen. What other
   // callers see is tested with the route guard (features/auth/container).
   const client = createFakeApiClient({
-    getHealth: () => Promise.resolve({ status: "ok", mongo: "ok", postgres: "ok" }),
+    listRaces: () => Promise.resolve({ races: [] }),
+    getRace: (raceId) =>
+      Promise.resolve({
+        id: raceId,
+        name: "Hakone",
+        version: 1,
+        description: {
+          type: "distance",
+          race_date: "2026-11-23",
+          deadline: "2026-11-01T18:00:00+09:00",
+          leg_distances_km: [5],
+        },
+        can_submit_laps: false,
+      }),
     getMe: () =>
       Promise.resolve({
         user_id: "user-1",
@@ -36,10 +49,10 @@ describe("createAppRouter", () => {
     ["/waiting", "Waiting for approval"],
     ["/rejected", "You were rejected"],
     ["/unavailable", "tasuki cannot be used"],
-    ["/", "R1 Race list"],
-    ["/races/new", "R3 Register race"],
-    ["/races/123", "R2 Race detail"],
-    ["/races/123/edit", "R3 Edit race"],
+    ["/", "Races"],
+    ["/races/new", "Register race"],
+    ["/races/123", "Hakone"],
+    ["/races/123/edit", "Edit race"],
     ["/races/123/invitations", "R4 Race invitations"],
     ["/races/123/attendance", "R5 Attendance list"],
     ["/races/123/entry", "R6 Entry"],
@@ -67,15 +80,9 @@ describe("createAppRouter", () => {
   it("shows every screen inside the common layout", async () => {
     renderAt("/races/123");
 
-    const heading = await screen.findByRole("heading", { name: "R2 Race detail" });
+    const heading = await screen.findByRole("heading", { name: "Hakone" });
     expect(screen.getByRole("banner")).toHaveTextContent("tasuki");
     expect(screen.getByRole("main")).toContainElement(heading);
-  });
-
-  it("shows the backend health on the home page", async () => {
-    renderAt("/");
-
-    expect(await screen.findByRole("region", { name: "Backend health" })).toBeInTheDocument();
   });
 
   it("shows the not-found page inside the common layout", async () => {

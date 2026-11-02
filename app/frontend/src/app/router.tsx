@@ -9,7 +9,9 @@ import { InviteLandingContainer } from "../features/auth/container/InviteLanding
 import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
 import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
 import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
-import { HealthContainer } from "../features/health/container/HealthContainer.tsx";
+import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
+import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
+import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
 import { Placeholder } from "./Placeholder.tsx";
@@ -83,22 +85,15 @@ const linkedRoute = createRoute({
   component: () => <TeamGuard access="linked" />,
 });
 
-// Until the race list (#119) replaces it, the home page also shows the
-// backend health, to check frontend → backend → databases (#36).
 const homeRoute = createRoute({
   getParentRoute: () => teamRoute,
   path: "/",
-  component: () => (
-    <>
-      <Placeholder screen="R1" title="Race list" />
-      <HealthContainer />
-    </>
-  ),
+  component: RaceListContainer,
 });
 const raceNewRoute = createRoute({
   getParentRoute: () => organizerRoute,
   path: "races/new",
-  component: () => <Placeholder screen="R3" title="Register race" />,
+  component: RaceFormContainer,
 });
 const raceRoute = createRoute({
   getParentRoute: () => teamRoute,
@@ -107,7 +102,7 @@ const raceRoute = createRoute({
 const raceDetailRoute = createRoute({
   getParentRoute: () => raceRoute,
   path: "/",
-  component: () => <Placeholder screen="R2" title="Race detail" />,
+  component: RaceDetailContainer,
 });
 const raceOrganizerRoute = createRoute({
   getParentRoute: () => raceRoute,
@@ -117,7 +112,7 @@ const raceOrganizerRoute = createRoute({
 const raceEditRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,
   path: "edit",
-  component: () => <Placeholder screen="R3" title="Edit race" />,
+  component: RaceFormContainer,
 });
 const raceInvitationsRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,

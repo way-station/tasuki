@@ -17,7 +17,20 @@ afterEach(() => {
 function renderAt(path: string, stubs: Partial<ApiClient>) {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
   const client = createFakeApiClient({
-    getHealth: () => Promise.resolve({ status: "ok", mongo: "ok", postgres: "ok" }),
+    listRaces: () => Promise.resolve({ races: [] }),
+    getRace: (raceId) =>
+      Promise.resolve({
+        id: raceId,
+        name: "Hakone",
+        version: 1,
+        description: {
+          type: "distance",
+          race_date: "2026-11-23",
+          deadline: "2026-11-01T18:00:00+09:00",
+          leg_distances_km: [5],
+        },
+        can_submit_laps: false,
+      }),
     ...stubs,
   });
   render(
@@ -80,7 +93,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({}));
 
-        expect(await screen.findByRole("heading", { name: "R1 Race list" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
@@ -101,7 +114,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({ is_organizer: true, ...unlinked }));
 
-        expect(await screen.findByRole("heading", { name: "R1 Race list" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
@@ -177,7 +190,7 @@ describe("login completion (/auth/complete)", () => {
     const createSession = vi.fn(() => Promise.resolve());
     const router = renderAt("/auth/complete?code=one-time", { createSession, ...me({}) });
 
-    expect(await screen.findByRole("heading", { name: "R2 Race detail" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/1");
     expect(createSession).toHaveBeenCalledTimes(1);
     expect(createSession).toHaveBeenCalledWith("one-time");
