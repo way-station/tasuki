@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "./ApiError.ts";
-import { createApiClient, type Health, type Me } from "./client.ts";
+import { createApiClient, type Health, type Me, type Race, type RaceCreate } from "./client.ts";
 
 function clientAnswering(status: number, body: string, contentType: string) {
   return createApiClient({
@@ -161,6 +161,77 @@ describe("createApiClient", () => {
 
       await expect(client.getMe()).rejects.toBeInstanceOf(ApiError);
       await expect(client.getMe()).rejects.toMatchObject({ code: "unauthenticated" });
+    });
+  });
+
+  describe("races", () => {
+    const race: Race = {
+      id: "race-1",
+      name: "Hakone",
+      version: 3,
+      description: { type: "distance", race_date: "2026-11-23", leg_distances_km: [5, 3.2] },
+      can_submit_laps: false,
+    };
+    const body: RaceCreate = {
+      name: "Hakone",
+      description: {
+        type: "distance",
+        race_date: "2026-11-23",
+        deadline: "2026-11-01T18:00:00+09:00",
+        leg_distances_km: [5, 3.2],
+      },
+    };
+
+    it("lists races", async () => {
+      const list = { races: [{ id: "race-1", name: "Hakone", race_date: "2026-11-23" }] };
+      const { client, requests } = recordingClient(200, list);
+
+      await expect(client.listRaces()).resolves.toEqual(list);
+      expect(requests[0].method).toBe("GET");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races");
+    });
+
+    it("gets a race", async () => {
+      const { client, requests } = recordingClient(200, race);
+
+      await expect(client.getRace("race-1")).resolves.toEqual(race);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1");
+    });
+
+    it("throws not_found for a race the caller may not see", async () => {
+      const { client } = recordingClient(404, problemBody(404, "not_found"));
+
+      await expect(client.getRace("hidden")).rejects.toMatchObject({
+        status: 404,
+        code: "not_found",
+      });
+    });
+
+    it("creates a race", async () => {
+      const { client, requests } = recordingClient(201, race);
+
+      await expect(client.createRace(body)).resolves.toEqual(race);
+      expect(requests[0].method).toBe("POST");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races");
+      await expect(requests[0].json()).resolves.toEqual(body);
+    });
+
+    it("updates a race with the version it read", async () => {
+      const { client, requests } = recordingClient(200, race);
+
+      await expect(client.updateRace("race-1", { ...body, version: 3 })).resolves.toEqual(race);
+      expect(requests[0].method).toBe("PUT");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1");
+      await expect(requests[0].json()).resolves.toEqual({ ...body, version: 3 });
+    });
+
+    it("throws version_conflict when someone else saved first", async () => {
+      const { client } = recordingClient(409, problemBody(409, "version_conflict"));
+
+      await expect(client.updateRace("race-1", { ...body, version: 2 })).rejects.toMatchObject({
+        status: 409,
+        code: "version_conflict",
+      });
     });
   });
 });
