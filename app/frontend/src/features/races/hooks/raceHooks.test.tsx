@@ -1,13 +1,16 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { ApiClient, Race, RaceCreate } from "../../../api/client.ts";
+import type { ApiClient, Race } from "../../../api/client.ts";
 import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
 import { queryKeys } from "../../../api/queryKeys.ts";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 import { createTestQueryClient } from "../../../test/testQueryClient.ts";
+import type { RaceForm } from "../types/race.ts";
+import { raceFormErrors } from "./raceFormInvalid.ts";
 import { useCreateRace } from "./useCreateRace.ts";
 import { useRace } from "./useRace.ts";
+import { useRaceFormSource } from "./useRaceFormSource.ts";
 import { useRaces } from "./useRaces.ts";
 import { useUpdateRace } from "./useUpdateRace.ts";
 
@@ -48,14 +51,17 @@ const race: Race = {
   can_submit_laps: false,
 };
 
-const body: RaceCreate = {
+const validForm: RaceForm = {
   name: "Hakone",
-  description: {
-    type: "distance",
-    race_date: "2026-11-23",
-    deadline: "2026-11-01T18:00:00+09:00",
-    leg_distances_km: [5, 3.2],
-  },
+  type: "distance",
+  raceDate: "2026-11-23",
+  deadline: "2026-11-01T18:00",
+  text: "",
+  legDistancesKm: ["5", "3.2"],
+  targetTotalTime: "",
+  timeLimitMinutes: "",
+  lapDistanceKm: "",
+  targetLaps: "",
 };
 
 describe("useRaces", () => {
@@ -120,7 +126,7 @@ describe("useRace", () => {
 });
 
 describe("useCreateRace", () => {
-  it("registers the race, resolves to it, and fetches the list again", async () => {
+  it("registers the race from the form, resolves to it, and fetches the list again", async () => {
     const createRace = vi.fn(() => Promise.resolve(race));
     const { result, queryClient } = renderWith(
       useCreateRace,
@@ -128,9 +134,26 @@ describe("useCreateRace", () => {
       cachedRaces(),
     );
 
-    await expect(result.current.mutateAsync(body)).resolves.toMatchObject({ id: "race-1" });
-    expect(createRace).toHaveBeenCalledWith(body);
+    await expect(result.current.mutateAsync(validForm)).resolves.toMatchObject({ id: "race-1" });
+    expect(createRace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Hakone",
+        description: expect.objectContaining({ leg_distances_km: [5, 3.2] }),
+      }),
+    );
     expect(isInvalidated(queryClient, queryKeys.races)).toBe(true);
+  });
+
+  it("refuses an invalid form without sending it", async () => {
+    const createRace = vi.fn(() => Promise.resolve(race));
+    const { result } = renderWith(useCreateRace, createFakeApiClient({ createRace }));
+
+    const error = await result.current
+      .mutateAsync({ ...validForm, name: "" })
+      .catch((caught: unknown) => caught);
+
+    expect(raceFormErrors(error)).toEqual({ name: "Enter a name." });
+    expect(createRace).not.toHaveBeenCalled();
   });
 
   it("fails with validation_failed and keeps the list", async () => {
@@ -140,7 +163,7 @@ describe("useCreateRace", () => {
       cachedRaces(),
     );
 
-    await expect(result.current.mutateAsync(body)).rejects.toMatchObject({
+    await expect(result.current.mutateAsync(validForm)).rejects.toMatchObject({
       code: "validation_failed",
     });
     expect(isInvalidated(queryClient, queryKeys.races)).toBe(false);
@@ -156,12 +179,27 @@ describe("useUpdateRace", () => {
       cachedRaces(),
     );
 
-    await expect(result.current.mutateAsync({ body, version: 3 })).resolves.toMatchObject({
-      version: 4,
-    });
-    expect(updateRace).toHaveBeenCalledWith("race-1", { ...body, version: 3 });
+    await expect(
+      result.current.mutateAsync({ form: validForm, version: 3 }),
+    ).resolves.toMatchObject({ version: 4 });
+    expect(updateRace).toHaveBeenCalledWith("race-1", expect.objectContaining({ version: 3 }));
     expect(isInvalidated(queryClient, queryKeys.races)).toBe(true);
     expect(isInvalidated(queryClient, queryKeys.race("race-1"))).toBe(true);
+  });
+
+  it("refuses an invalid form without sending it", async () => {
+    const updateRace = vi.fn(() => Promise.resolve(race));
+    const { result } = renderWith(
+      () => useUpdateRace("race-1"),
+      createFakeApiClient({ updateRace }),
+    );
+
+    const error = await result.current
+      .mutateAsync({ form: { ...validForm, deadline: "" }, version: 3 })
+      .catch((caught: unknown) => caught);
+
+    expect(raceFormErrors(error)).toEqual({ deadline: "Enter the deadline." });
+    expect(updateRace).not.toHaveBeenCalled();
   });
 
   it("fetches the race again when someone else saved first", async () => {
@@ -171,9 +209,11 @@ describe("useUpdateRace", () => {
       cachedRaces(),
     );
 
-    await expect(result.current.mutateAsync({ body, version: 2 })).rejects.toMatchObject({
-      code: "version_conflict",
-    });
+    await expect(result.current.mutateAsync({ form: validForm, version: 2 })).rejects.toMatchObject(
+      {
+        code: "version_conflict",
+      },
+    );
     await waitFor(() => expect(isInvalidated(queryClient, queryKeys.race("race-1"))).toBe(true));
   });
 
@@ -184,9 +224,50 @@ describe("useUpdateRace", () => {
       cachedRaces(),
     );
 
-    await expect(result.current.mutateAsync({ body, version: 3 })).rejects.toMatchObject({
-      code: "validation_failed",
-    });
+    await expect(result.current.mutateAsync({ form: validForm, version: 3 })).rejects.toMatchObject(
+      {
+        code: "validation_failed",
+      },
+    );
     expect(isInvalidated(queryClient, queryKeys.race("race-1"))).toBe(false);
+  });
+});
+
+describe("useRaceFormSource", () => {
+  it("starts registering from an empty form without fetching", () => {
+    const getRace = vi.fn(() => Promise.resolve(race));
+    const { result } = renderWith(
+      () => useRaceFormSource(undefined),
+      createFakeApiClient({ getRace }),
+    );
+
+    expect(result.current.source).toMatchObject({
+      version: 0,
+      value: { name: "", legDistancesKm: [""] },
+    });
+    expect(getRace).not.toHaveBeenCalled();
+  });
+
+  it("starts editing from the saved race and its version", async () => {
+    const { result } = renderWith(
+      () => useRaceFormSource("race-1"),
+      createFakeApiClient({ getRace: () => Promise.resolve(race) }),
+    );
+
+    await waitFor(() => expect(result.current.source).toBeDefined());
+    expect(result.current.source).toMatchObject({
+      version: 3,
+      value: { name: "Hakone", type: "distance", legDistancesKm: ["5", "3.2"] },
+    });
+  });
+
+  it("fails with not_found for a race that does not exist", async () => {
+    const { result } = renderWith(
+      () => useRaceFormSource("missing"),
+      createFakeApiClient({ getRace: () => Promise.reject(problem(404, "not_found")) }),
+    );
+
+    await waitFor(() => expect(result.current.error).toMatchObject({ code: "not_found" }));
+    expect(result.current.source).toBeUndefined();
   });
 });
