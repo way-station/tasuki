@@ -1,5 +1,5 @@
 import { Navigate, useParams } from "@tanstack/react-router";
-import { errorCode } from "../hooks/apiErrors.ts";
+import { errorCode } from "../../../shared/errors/apiErrors.ts";
 import { useInviteLink } from "../hooks/useInviteLink.ts";
 import { AuthMessage } from "../ui/AuthMessage.tsx";
 import { InviteLanding } from "../ui/InviteLanding.tsx";
