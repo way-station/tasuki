@@ -19,6 +19,14 @@ export function createFakeApiClient(stubs: Partial<ApiClient> = {}): ApiClient {
     getRace: notStubbed("getRace"),
     createRace: notStubbed("createRace"),
     updateRace: notStubbed("updateRace"),
+    listInvitations: notStubbed("listInvitations"),
+    invite: notStubbed("invite"),
+    cancelInvitation: notStubbed("cancelInvitation"),
+    answerAttendance: notStubbed("answerAttendance"),
+    listEntries: notStubbed("listEntries"),
+    createEntry: notStubbed("createEntry"),
+    addEntryMember: notStubbed("addEntryMember"),
+    removeEntryMember: notStubbed("removeEntryMember"),
     ...stubs,
   };
 }

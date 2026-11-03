@@ -107,7 +107,7 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 - Attendance: the member picks attending, not attending, or undecided.
   - Between "attending" and "undecided" they can switch at any time.
   - "Not attending" is final for the member: the race disappears from their screens and they cannot change the answer. The screen asks for confirmation first.
-  - A member in the entry who changes from "attending" is removed from the entry and the running order. If the running order is confirmed, their lap times for this race are deleted, their average time is recalculated, and their leg becomes empty. The screen warns about this first.
+  - A member in the entry who changes from "attending" is removed from the entry and the running order. If the running order is confirmed, their lap times for this race are deleted, their average time is recalculated, and their leg becomes empty. The screen warns about this before any change from "attending": members cannot see whether they are in the entry, so the warning says what happens if they are.
 - A confirmed running order shows a leg with nobody in it as "not decided". The prediction then leaves those legs out and says that some legs are empty.
 - Organizer actions: edit the race (R3), invitations (R4), attendance list (R5), entry (R6), running order (R7).
 - Races cannot be deleted or cancelled in the app.
@@ -331,7 +331,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 - 出欠：メンバーは参加、不参加、保留のどれかを選ぶ
   - 「参加」と「保留」の間は、いつでも変えられる
   - 「不参加」はメンバーにとって最後の回答。その大会はメンバーの画面から消え、回答を変えられない。先に画面で確認する
-  - エントリーに入っているメンバーが「参加」から変えると、エントリーと走順から外れる。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直され、その区は空きになる。先に画面で注意を出す
+  - エントリーに入っているメンバーが「参加」から変えると、エントリーと走順から外れる。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直され、その区は空きになる。「参加」から変えるときは、いつも先に画面で注意を出す。メンバーには自分がエントリーに入っているか見えないので、入っていればどうなるかを伝える
 - 確定した走順で誰も入っていない区は「未定」と出す。予想はその区を除いて計算し、空きの区があることを示す
 - 幹事の操作：大会の編集（R3）、招待（R4）、出欠の一覧（R5）、エントリー（R6）、走順（R7）
 - 大会の削除や中止はアプリではできない
