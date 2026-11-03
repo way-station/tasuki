@@ -11,6 +11,8 @@ function renderAt(path: string) {
   // callers see is tested with the route guard (features/auth/container).
   const client = createFakeApiClient({
     listRaces: () => Promise.resolve({ races: [] }),
+    listInvitations: () => Promise.resolve({ members: [] }),
+    listEntries: () => Promise.resolve({ entries: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -53,9 +55,9 @@ describe("createAppRouter", () => {
     ["/races/new", "Register race"],
     ["/races/123", "Hakone"],
     ["/races/123/edit", "Edit race"],
-    ["/races/123/invitations", "R4 Race invitations"],
-    ["/races/123/attendance", "R5 Attendance list"],
-    ["/races/123/entry", "R6 Entry"],
+    ["/races/123/invitations", "Invitations"],
+    ["/races/123/attendance", "Attendance"],
+    ["/races/123/entry", "Entry"],
     ["/races/123/running-order", "R7 Running order editor"],
     ["/races/123/laps", "L1 My lap times"],
     ["/me", "P1 My profile"],

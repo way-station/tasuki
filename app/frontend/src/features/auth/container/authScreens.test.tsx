@@ -18,6 +18,8 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
   const client = createFakeApiClient({
     listRaces: () => Promise.resolve({ races: [] }),
+    listInvitations: () => Promise.resolve({ members: [] }),
+    listEntries: () => Promise.resolve({ entries: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
