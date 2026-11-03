@@ -66,10 +66,11 @@ func run(logger *slog.Logger) error {
 		Health: controller.NewHealthController(check),
 		Auth:   authController,
 	}, presentation.Options{
-		Authenticate: middleware.Authenticate(authenticate, logger),
-		DevLogin:     cfg.DevLoginEnabled,
-		Frontend:     frontend,
-		Logger:       logger,
+		Authenticate:   middleware.Authenticate(authenticate, logger),
+		FrontendOrigin: cfg.FrontendOrigin,
+		DevLogin:       cfg.DevLoginEnabled,
+		Frontend:       frontend,
+		Logger:         logger,
 	})
 
 	srv := &http.Server{

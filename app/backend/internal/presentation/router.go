@@ -9,6 +9,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
+	"github.com/way-station/tasuki/app/backend/internal/presentation/middleware"
 )
 
 // Controllers holds every controller the router serves.
@@ -21,6 +22,8 @@ type Controllers struct {
 type Options struct {
 	// Authenticate identifies the caller of the API routes that need a session (ADR-0014).
 	Authenticate func(http.Handler) http.Handler
+	// FrontendOrigin is the only Origin allowed on API requests that change data (ADR-0014).
+	FrontendOrigin string
 	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
 	DevLogin bool
 	// Frontend serves every GET and HEAD outside /api and /health, so the API and the
@@ -40,6 +43,7 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth}, options.Logger)
 	router.Route("/api/v1", func(apiRouter chi.Router) {
+		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
 		if options.DevLogin {
 			apiRouter.Post("/dev/login", apiHandler.DevLogin)
 		}

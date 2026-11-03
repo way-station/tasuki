@@ -117,14 +117,27 @@ func newAuthRouter(devLogin bool) http.Handler {
 	)
 	check := health.NewCheckUseCase(fakeHealth{}, fakeHealth{}, health.StatusDTOFactory{}, logger)
 	return NewRouter(Controllers{Health: controller.NewHealthController(check), Auth: authController}, Options{
-		Authenticate: middleware.Authenticate(authenticate, logger),
-		DevLogin:     devLogin,
-		Logger:       logger,
+		Authenticate:   middleware.Authenticate(authenticate, logger),
+		FrontendOrigin: testOrigin,
+		DevLogin:       devLogin,
+		Logger:         logger,
 	})
 }
 
+// testOrigin is the frontend's origin in these tests. serve sends it, as a browser on the
+// frontend does.
+const testOrigin = "https://tasuki.example"
+
 func serve(handler http.Handler, method, path, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
+	return serveFrom(handler, testOrigin, method, path, body, cookie)
+}
+
+// serveFrom sends the request with the given Origin header; "" sends none.
+func serveFrom(handler http.Handler, origin, method, path, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -221,6 +234,53 @@ func TestMeAndLogout(t *testing.T) {
 		}
 		if rec := serve(router, http.MethodGet, "/api/v1/me", "", cookie); rec.Code != http.StatusUnauthorized {
 			t.Errorf("me after logout: status = %d, want 401", rec.Code)
+		}
+	})
+}
+
+// ADR-0014: requests that change data must come from the frontend's origin.
+func TestOriginCheck(t *testing.T) {
+	router := newAuthRouter(true)
+	login := `{"line_user_id":"U-1","display_name":"Taro"}`
+
+	refused := []struct {
+		name   string
+		origin string
+	}{
+		{name: "without Origin", origin: ""},
+		{name: "from another site", origin: "https://evil.example"},
+		{name: "from another scheme", origin: "http://tasuki.example"},
+		{name: "from another port", origin: "https://tasuki.example:8443"},
+		{name: "from the literal null origin", origin: "null"},
+	}
+	for _, testCase := range refused {
+		t.Run("refuses a login "+testCase.name, func(t *testing.T) {
+			rec := serveFrom(router, testCase.origin, http.MethodPost, "/api/v1/dev/login", login, nil)
+			if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), `"code":"forbidden"`) {
+				t.Errorf("status = %d, body %s, want 403 forbidden", rec.Code, rec.Body)
+			}
+			if len(rec.Result().Cookies()) != 0 {
+				t.Error("a refused login must not set a cookie")
+			}
+		})
+	}
+
+	t.Run("refuses a logout from another site, and keeps the session", func(t *testing.T) {
+		cookie := sessionCookieOf(t, serve(router, http.MethodPost, "/api/v1/dev/login", login, nil))
+
+		rec := serveFrom(router, "https://evil.example", http.MethodDelete, "/api/v1/session", "", cookie)
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("status = %d, want 403", rec.Code)
+		}
+		if me := serve(router, http.MethodGet, "/api/v1/me", "", cookie); me.Code != http.StatusOK {
+			t.Errorf("me after the refused logout: status = %d, want 200", me.Code)
+		}
+	})
+
+	t.Run("lets reads through without Origin", func(t *testing.T) {
+		rec := serveFrom(router, "", http.MethodGet, "/api/v1/me", "", nil)
+		if rec.Code != http.StatusUnauthorized {
+			t.Errorf("status = %d, want 401 from the handler, not 403", rec.Code)
 		}
 	})
 }
