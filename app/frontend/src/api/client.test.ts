@@ -234,4 +234,93 @@ describe("createApiClient", () => {
       });
     });
   });
+
+  describe("invitations, attendance, and entries", () => {
+    it("lists invitations", async () => {
+      const list = {
+        members: [{ roster_member_id: "m1", name: "Taro", invited: true, attendance: null }],
+      };
+      const { client, requests } = recordingClient(200, list);
+
+      await expect(client.listInvitations("race-1")).resolves.toEqual(list);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/invitations");
+    });
+
+    it("invites a member", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await expect(client.invite("race-1", "m1")).resolves.toBeUndefined();
+      expect(requests[0].method).toBe("PUT");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/invitations/m1");
+    });
+
+    it("throws validation_failed when inviting a member who left", async () => {
+      const { client } = recordingClient(422, problemBody(422, "validation_failed"));
+
+      await expect(client.invite("race-1", "m1")).rejects.toMatchObject({
+        code: "validation_failed",
+      });
+    });
+
+    it("cancels an invitation", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await expect(client.cancelInvitation("race-1", "m1")).resolves.toBeUndefined();
+      expect(requests[0].method).toBe("DELETE");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/invitations/m1");
+    });
+
+    it("answers attendance", async () => {
+      const { client, requests } = recordingClient(200, { status: "attending" });
+
+      await expect(client.answerAttendance("race-1", "attending")).resolves.toBeUndefined();
+      expect(requests[0].method).toBe("PUT");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/attendance");
+      await expect(requests[0].json()).resolves.toEqual({ status: "attending" });
+    });
+
+    it("throws not_found after answering not attending", async () => {
+      const { client } = recordingClient(404, problemBody(404, "not_found"));
+
+      await expect(client.answerAttendance("race-1", "undecided")).rejects.toMatchObject({
+        code: "not_found",
+      });
+    });
+
+    it("lists entries", async () => {
+      const list = { entries: [{ id: "e1", name: "Team A", members: [] }] };
+      const { client, requests } = recordingClient(200, list);
+
+      await expect(client.listEntries("race-1")).resolves.toEqual(list);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/entries");
+    });
+
+    it("creates an entry", async () => {
+      const entry = { id: "e1", name: "Team A", members: [] };
+      const { client, requests } = recordingClient(201, entry);
+
+      await expect(client.createEntry("race-1", "Team A")).resolves.toEqual(entry);
+      expect(requests[0].method).toBe("POST");
+      await expect(requests[0].json()).resolves.toEqual({ name: "Team A" });
+    });
+
+    it("throws state_conflict when the race already has an entry", async () => {
+      const { client } = recordingClient(409, problemBody(409, "state_conflict"));
+
+      await expect(client.createEntry("race-1", "Team B")).rejects.toMatchObject({
+        code: "state_conflict",
+      });
+    });
+
+    it("adds and removes an entry member", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await client.addEntryMember("race-1", "e1", "m1");
+      await client.removeEntryMember("race-1", "e1", "m1");
+
+      expect(requests.map((request) => request.method)).toEqual(["PUT", "DELETE"]);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/entries/e1/members/m1");
+      expect(new URL(requests[1].url).pathname).toBe("/api/v1/races/race-1/entries/e1/members/m1");
+    });
+  });
 });

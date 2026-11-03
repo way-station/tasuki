@@ -9,6 +9,10 @@ export type RaceList = components["schemas"]["RaceList"];
 export type Race = components["schemas"]["Race"];
 export type RaceCreate = components["schemas"]["RaceCreate"];
 export type RaceUpdate = components["schemas"]["RaceUpdate"];
+export type InvitationList = components["schemas"]["InvitationList"];
+export type AttendanceStatus = components["schemas"]["AttendanceStatus"];
+export type EntryList = components["schemas"]["EntryList"];
+export type Entry = components["schemas"]["Entry"];
 
 // Every call the frontend makes to the backend. Hooks depend on this
 // interface, never on fetch, so tests can pass a fake (ADR-0012). Each feature
@@ -32,6 +36,17 @@ export interface ApiClient {
   createRace(body: RaceCreate): Promise<Race>;
   // Throws version_conflict when the race changed since `body.version` was read.
   updateRace(raceId: string, body: RaceUpdate): Promise<Race>;
+
+  // Invitations, attendance, and entries (docs/design/api.md).
+  listInvitations(raceId: string): Promise<InvitationList>;
+  invite(raceId: string, rosterMemberId: string): Promise<void>;
+  cancelInvitation(raceId: string, rosterMemberId: string): Promise<void>;
+  answerAttendance(raceId: string, status: AttendanceStatus): Promise<void>;
+  listEntries(raceId: string): Promise<EntryList>;
+  // Throws state_conflict when the race already has an entry.
+  createEntry(raceId: string, name: string): Promise<Entry>;
+  addEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
+  removeEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
 }
 
 type ApiClientOptions = {
@@ -99,6 +114,79 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
           params: { path: { race_id: raceId } },
           body,
         }),
+      );
+    },
+
+    async listInvitations(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}/invitations", {
+          params: { path: { race_id: raceId } },
+        }),
+      );
+    },
+
+    async invite(raceId, rosterMemberId) {
+      dataOrThrow(
+        await client.PUT("/api/v1/races/{race_id}/invitations/{roster_member_id}", {
+          params: { path: { race_id: raceId, roster_member_id: rosterMemberId } },
+        }),
+      );
+    },
+
+    async cancelInvitation(raceId, rosterMemberId) {
+      dataOrThrow(
+        await client.DELETE("/api/v1/races/{race_id}/invitations/{roster_member_id}", {
+          params: { path: { race_id: raceId, roster_member_id: rosterMemberId } },
+        }),
+      );
+    },
+
+    async answerAttendance(raceId, status) {
+      dataOrThrow(
+        await client.PUT("/api/v1/races/{race_id}/attendance", {
+          params: { path: { race_id: raceId } },
+          body: { status },
+        }),
+      );
+    },
+
+    async listEntries(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}/entries", {
+          params: { path: { race_id: raceId } },
+        }),
+      );
+    },
+
+    async createEntry(raceId, name) {
+      return dataOrThrow(
+        await client.POST("/api/v1/races/{race_id}/entries", {
+          params: { path: { race_id: raceId } },
+          body: { name },
+        }),
+      );
+    },
+
+    async addEntryMember(raceId, entryId, rosterMemberId) {
+      dataOrThrow(
+        await client.PUT("/api/v1/races/{race_id}/entries/{entry_id}/members/{roster_member_id}", {
+          params: {
+            path: { race_id: raceId, entry_id: entryId, roster_member_id: rosterMemberId },
+          },
+        }),
+      );
+    },
+
+    async removeEntryMember(raceId, entryId, rosterMemberId) {
+      dataOrThrow(
+        await client.DELETE(
+          "/api/v1/races/{race_id}/entries/{entry_id}/members/{roster_member_id}",
+          {
+            params: {
+              path: { race_id: raceId, entry_id: entryId, roster_member_id: rosterMemberId },
+            },
+          },
+        ),
       );
     },
   };
