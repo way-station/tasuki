@@ -30,3 +30,6 @@ export type EntryEditor = {
   // can be added.
   candidates: MemberRef[];
 };
+
+// The caller's answer as R2 shows it: "not attending" never reaches R2.
+export type CurrentAnswer = "attending" | "undecided" | "not_answered";
