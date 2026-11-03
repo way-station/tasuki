@@ -15,6 +15,10 @@ export function createFakeApiClient(stubs: Partial<ApiClient> = {}): ApiClient {
     createSession: notStubbed("createSession"),
     logout: notStubbed("logout"),
     getMe: notStubbed("getMe"),
+    listRaces: notStubbed("listRaces"),
+    getRace: notStubbed("getRace"),
+    createRace: notStubbed("createRace"),
+    updateRace: notStubbed("updateRace"),
     ...stubs,
   };
 }

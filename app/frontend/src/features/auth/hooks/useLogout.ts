@@ -3,7 +3,7 @@ import { queryKeys } from "../../../api/queryKeys.ts";
 import { useApiClient } from "../../../api/useApiClient.ts";
 import { removeUserDrafts } from "../../../shared/draft/draftStorage.ts";
 import type { MeResponse } from "../types/auth.ts";
-import { isUnauthenticated } from "./apiErrors.ts";
+import { isUnauthenticated } from "../../../shared/errors/apiErrors.ts";
 
 // Logs out. The backend clears the session cookie, and the whole cache and
 // this user's drafts are cleared so nothing of this user stays (ADR-0013).

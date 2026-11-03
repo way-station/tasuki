@@ -5,6 +5,10 @@ import type { components, paths } from "./schema.gen.ts";
 export type Health = components["schemas"]["Health"];
 export type InviteLinkInfo = components["schemas"]["InviteLinkInfo"];
 export type Me = components["schemas"]["Me"];
+export type RaceList = components["schemas"]["RaceList"];
+export type Race = components["schemas"]["Race"];
+export type RaceCreate = components["schemas"]["RaceCreate"];
+export type RaceUpdate = components["schemas"]["RaceUpdate"];
 
 // Every call the frontend makes to the backend. Hooks depend on this
 // interface, never on fetch, so tests can pass a fake (ADR-0012). Each feature
@@ -21,6 +25,13 @@ export interface ApiClient {
   createSession(code: string): Promise<void>;
   logout(): Promise<void>;
   getMe(): Promise<Me>;
+
+  // Races (docs/design/api.md). What each caller gets back differs by role.
+  listRaces(): Promise<RaceList>;
+  getRace(raceId: string): Promise<Race>;
+  createRace(body: RaceCreate): Promise<Race>;
+  // Throws version_conflict when the race changed since `body.version` was read.
+  updateRace(raceId: string, body: RaceUpdate): Promise<Race>;
 }
 
 type ApiClientOptions = {
@@ -66,6 +77,29 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
 
     async getMe() {
       return dataOrThrow(await client.GET("/api/v1/me"));
+    },
+
+    async listRaces() {
+      return dataOrThrow(await client.GET("/api/v1/races"));
+    },
+
+    async getRace(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}", { params: { path: { race_id: raceId } } }),
+      );
+    },
+
+    async createRace(body) {
+      return dataOrThrow(await client.POST("/api/v1/races", { body }));
+    },
+
+    async updateRace(raceId, body) {
+      return dataOrThrow(
+        await client.PUT("/api/v1/races/{race_id}", {
+          params: { path: { race_id: raceId } },
+          body,
+        }),
+      );
     },
   };
 }

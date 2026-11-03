@@ -4,4 +4,7 @@ export const queryKeys = {
   health: ["health"],
   me: ["me"],
   inviteLink: (token: string) => ["invite-links", token] as const,
+  // A race is under the list's key, so invalidating races refreshes both.
+  races: ["races"],
+  race: (raceId: string) => ["races", raceId] as const,
 } as const;

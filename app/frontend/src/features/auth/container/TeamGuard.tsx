@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from "@tanstack/react-router";
-import { isUnauthenticated } from "../hooks/apiErrors.ts";
+import { isUnauthenticated } from "../../../shared/errors/apiErrors.ts";
 import { useMe } from "../hooks/useMe.ts";
 import { AuthMessage } from "../ui/AuthMessage.tsx";
 import { type Access, accessRedirect } from "./accessRedirect.ts";
