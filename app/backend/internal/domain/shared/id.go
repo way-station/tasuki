@@ -29,6 +29,12 @@ type MemberLinkID string
 // SessionID identifies a login session (ADR-0014).
 type SessionID string
 
+// LoginAttemptID identifies a LINE Login in progress.
+type LoginAttemptID string
+
+// LoginCodeID identifies a one-time code that is exchanged for a session.
+type LoginCodeID string
+
 // RaceID identifies a race.
 type RaceID string
 

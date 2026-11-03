@@ -67,7 +67,8 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 ### `POST /auth/line/authorize`
 
 - Body: `{ invite_token? }`. Included when the user came from an invite link.
-- `200`: `{ authorization_url }`. The frontend navigates to it. The backend keeps the state, the PKCE verifier, and the invite token for the callback.
+- `200`: `{ authorization_url }`. The frontend navigates to it. The backend keeps the state, the nonce, the PKCE verifier, and the invite link for the callback, for 10 minutes.
+- `404 invite_unusable`: the invite token is unknown, expired, used, or replaced → A4.
 
 ### `GET /auth/line/callback`
 
@@ -76,8 +77,8 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 - Redirects to the frontend `/auth/complete?code=<one-time code>`, or `/auth/complete?error=<code>`:
   - `invite_unusable`: the invite link cannot be used → A4
   - `left`: the user's roster member has left → A4 (no session is created)
-  - `login_failed`: LINE Login failed or was cancelled
-- The one-time code is short-lived and can be exchanged once.
+  - `login_failed`: LINE Login failed or was cancelled, or the callback came more than 10 minutes after `POST /auth/line/authorize`
+- The one-time code lasts 1 minute and can be exchanged once.
 
 ### `POST /session`
 
@@ -464,7 +465,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 ### `POST /auth/line/authorize`
 
 - 本文：`{ invite_token? }`。招待リンクから来たときに付ける
-- `200`：`{ authorization_url }`。frontend はそこへ移動する。backend は state、PKCE の verifier、招待トークンをコールバックのために持っておく
+- `200`：`{ authorization_url }`。frontend はそこへ移動する。backend は state、nonce、PKCE の verifier、招待リンクを、コールバックのために 10 分間持っておく
+- `404 invite_unusable`：招待トークンが知らない、期限切れ、使用済み、置き換え済み → A4
 
 ### `GET /auth/line/callback`
 
@@ -473,8 +475,8 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - frontend の `/auth/complete?code=<一度きりのコード>` か、`/auth/complete?error=<コード>` に戻す
   - `invite_unusable`：招待リンクが使えない → A4
   - `left`：ユーザーの名簿のメンバーが退会している → A4（セッションは作らない）
-  - `login_failed`：LINE ログインが失敗した、または取り消された
-- 一度きりのコードは短い期限で、1回だけ交換できる
+  - `login_failed`：LINE ログインが失敗した、または取り消された。または `POST /auth/line/authorize` から 10 分より後にコールバックが来た
+- 一度きりのコードの期限は 1 分で、1回だけ交換できる
 
 ### `POST /session`
 
