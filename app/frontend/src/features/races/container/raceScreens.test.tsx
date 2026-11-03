@@ -111,7 +111,11 @@ describe("R2 race detail", () => {
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(screen.getByText("Meet at 7:00")).toBeInTheDocument();
     expect(screen.getByText("3.2 km")).toBeInTheDocument();
-    expect(screen.getByText("Attending")).toBeInTheDocument();
+    const attendance = screen.getByRole("group", { name: "My attendance" });
+    expect(within(attendance).getByRole("button", { name: "Attending" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.queryByText("Deadline")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit race" })).not.toBeInTheDocument();
   });

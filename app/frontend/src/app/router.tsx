@@ -9,6 +9,9 @@ import { InviteLandingContainer } from "../features/auth/container/InviteLanding
 import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
 import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
 import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
+import { AttendanceListContainer } from "../features/participation/container/AttendanceListContainer.tsx";
+import { EntryContainer } from "../features/participation/container/EntryContainer.tsx";
+import { InvitationsContainer } from "../features/participation/container/InvitationsContainer.tsx";
 import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
 import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
 import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
@@ -117,17 +120,17 @@ const raceEditRoute = createRoute({
 const raceInvitationsRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,
   path: "invitations",
-  component: () => <Placeholder screen="R4" title="Race invitations" />,
+  component: InvitationsContainer,
 });
 const raceAttendanceRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,
   path: "attendance",
-  component: () => <Placeholder screen="R5" title="Attendance list" />,
+  component: AttendanceListContainer,
 });
 const raceEntryRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,
   path: "entry",
-  component: () => <Placeholder screen="R6" title="Entry" />,
+  component: EntryContainer,
 });
 const raceRunningOrderRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,

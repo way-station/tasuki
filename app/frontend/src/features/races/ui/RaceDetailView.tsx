@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { RaceDetail } from "../types/race.ts";
 import { attendanceLabels, raceTypeLabels } from "./labels.ts";
 
@@ -22,11 +23,14 @@ type RaceDetailViewProps = {
   race: RaceDetail;
   isOrganizer: boolean;
   onOpen: (section: RaceSection) => void;
+  // Answering attendance, from the participation feature. Shown instead of the
+  // answer alone when given.
+  attendance?: ReactNode;
 };
 
-// R2 (docs/design/screens.md): the race and its description. Answering
-// attendance, the running order, and lap times come with their features.
-export function RaceDetailView({ race, isOrganizer, onOpen }: RaceDetailViewProps) {
+// R2 (docs/design/screens.md): the race and its description. The running
+// order and lap times come with their features.
+export function RaceDetailView({ race, isOrganizer, onOpen, attendance }: RaceDetailViewProps) {
   const detail = race.detail;
   return (
     <section>
@@ -83,7 +87,7 @@ export function RaceDetailView({ race, isOrganizer, onOpen }: RaceDetailViewProp
             <dd>{race.text}</dd>
           </>
         )}
-        {race.myAttendance !== undefined && (
+        {race.myAttendance !== undefined && attendance === undefined && (
           <>
             <dt>My attendance</dt>
             <dd>{attendanceLabels[race.myAttendance]}</dd>
@@ -96,6 +100,7 @@ export function RaceDetailView({ race, isOrganizer, onOpen }: RaceDetailViewProp
           </>
         )}
       </dl>
+      {attendance}
       {(isOrganizer || race.canSubmitLaps) && (
         <nav aria-label="Race">
           <ul>
