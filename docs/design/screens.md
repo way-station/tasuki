@@ -142,6 +142,7 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 ### R7 Running order editor (organizers)
 
 - Shows the legs in order with the runner of each leg, the status (draft / confirmed), and the prediction.
+  - The prediction is calculated from the saved running order. With unsaved changes it is still shown, with a note that saving updates it.
 - Legs:
   - Distance-based: one leg per leg distance in the description.
   - Time-based: the organizer adds and removes legs freely.
@@ -367,6 +368,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 ### R7 走順の編集（幹事）
 
 - 区を順に並べ、区ごとの走者、状態（下書き／確定）、予想を出す
+  - 予想は保存した走順から計算する。保存していない変更があっても予想は出し、保存すると更新されることを添える
 - 区：
   - 距離制：説明欄の区ごとの距離と同じ数の区
   - 時間制：幹事が区を自由に足したり消したりする
