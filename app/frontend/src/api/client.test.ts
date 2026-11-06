@@ -323,4 +323,57 @@ describe("createApiClient", () => {
       expect(new URL(requests[1].url).pathname).toBe("/api/v1/races/race-1/entries/e1/members/m1");
     });
   });
+
+  describe("lap times and the profile", () => {
+    const myLaps = { laps: [{ id: "l1", time: "3:25" }], average_time: "3:25", lap_count: 1 };
+
+    it("gets my laps", async () => {
+      const { client, requests } = recordingClient(200, myLaps);
+
+      await expect(client.getMyLaps("race-1")).resolves.toEqual(myLaps);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/my-laps");
+    });
+
+    it("throws not_found when the caller is not a runner", async () => {
+      const { client } = recordingClient(404, problemBody(404, "not_found"));
+
+      await expect(client.getMyLaps("race-1")).rejects.toMatchObject({ code: "not_found" });
+    });
+
+    it("submits laps together", async () => {
+      const { client, requests } = recordingClient(201, myLaps);
+
+      await expect(client.submitLaps("race-1", ["3:25", "3:30"])).resolves.toEqual(myLaps);
+      expect(requests[0].method).toBe("POST");
+      await expect(requests[0].json()).resolves.toEqual({ times: ["3:25", "3:30"] });
+    });
+
+    it("edits and deletes a lap", async () => {
+      const { client, requests } = recordingClient(200, myLaps);
+
+      await client.editLap("race-1", "l1", "3:20");
+      await client.deleteLap("race-1", "l1");
+
+      expect(requests.map((request) => request.method)).toEqual(["PATCH", "DELETE"]);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/my-laps/l1");
+      expect(new URL(requests[1].url).pathname).toBe("/api/v1/races/race-1/my-laps/l1");
+      await expect(requests[0].json()).resolves.toEqual({ time: "3:20" });
+    });
+
+    it("lists a race's laps", async () => {
+      const raceLaps = { runners: [] };
+      const { client, requests } = recordingClient(200, raceLaps);
+
+      await expect(client.listRaceLaps("race-1")).resolves.toEqual(raceLaps);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/laps");
+    });
+
+    it("gets my profile", async () => {
+      const profile = { name: "Taro", average_time: "3:40", lap_count: 0 };
+      const { client, requests } = recordingClient(200, profile);
+
+      await expect(client.getMyProfile()).resolves.toEqual(profile);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/me/profile");
+    });
+  });
 });
