@@ -243,6 +243,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 ### `GET /races/{race_id}/running-orders`
 
 - One running order per entry. Organizers see drafts and confirmed orders; attending members see confirmed orders only (an empty list otherwise).
+- An entry whose running order has never been saved is not in the list. R7 starts its first draft from the race and the entry (see `docs/design/screens.md`).
 
 ```
 { "running_orders": [
@@ -575,6 +576,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `POST /races/{race_id}/entries/{entry_id}/running-order/confirm` | 幹事 | R7 |
 
 - `GET`：エントリーごとに1つ。幹事は下書きと確定を、参加のメンバーは確定だけを見る（なければ空の一覧）。区ごとの走者と、予想（距離制は `total_time`、時間制は `laps`、空きの区があるか）を返す。誰も入っていなければ予想は `null`
+  - 一度も保存していない走順のエントリーは、一覧に入らない。R7 は大会とエントリーから最初の下書きを作る（`docs/design/screens.md`）
 - 予想は backend で計算する。空きの区は除く。メンバーには、ほかのメンバーの平均タイムを返さない
 - `PUT`：本文 `{ version?, legs: [ { leg_number, roster_member_id | null } ] }`。最初の下書きを作るときは `version` を付けない。`200`
   - ルール（`422 validation_failed`）：距離制は区の距離と同じ数の区。時間制は1区以上で、1から欠けずに番号を振る。走者はエントリーのメンバー
