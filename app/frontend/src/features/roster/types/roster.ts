@@ -32,3 +32,21 @@ export type InviteLinkView = {
   // RFC 3339
   expiresAt: string;
 };
+
+// The laps of a member in one race, on M2.
+export type RaceLapsOfMemberView = {
+  raceId: string;
+  raceName: string;
+  laps: { id: string; time: string }[];
+};
+
+// M2. View only.
+export type MemberProfileView = {
+  id: string;
+  name: string;
+  left: boolean;
+  // MM:SS
+  averageTime: string;
+  lapCount: number;
+  lapsByRace: RaceLapsOfMemberView[];
+};
