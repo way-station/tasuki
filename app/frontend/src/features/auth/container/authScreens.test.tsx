@@ -21,6 +21,7 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
     listRaceLaps: () => Promise.resolve({ runners: [] }),
+    getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,

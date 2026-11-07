@@ -14,6 +14,7 @@ function renderAt(path: string) {
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
     listRaceLaps: () => Promise.resolve({ runners: [] }),
+    getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -60,7 +61,7 @@ describe("createAppRouter", () => {
     ["/races/123/attendance", "Attendance"],
     ["/races/123/entry", "Entry"],
     ["/races/123/running-order", "R7 Running order editor"],
-    ["/races/123/laps", "L1 My lap times"],
+    ["/races/123/laps", "My lap times"],
     ["/me", "P1 My profile"],
     ["/roster", "M1 Roster"],
     ["/roster/123", "M2 Member profile"],
