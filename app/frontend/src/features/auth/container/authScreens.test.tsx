@@ -20,6 +20,7 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRosterMembers: () => Promise.resolve({ roster_members: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -107,7 +108,7 @@ describe("route guard", () => {
       async (status) => {
         renderAt("/roster", me({ is_organizer: true, status, roster_member: null }));
 
-        expect(await screen.findByRole("heading", { name: "M1 Roster" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Roster" })).toBeInTheDocument();
       },
     );
 
