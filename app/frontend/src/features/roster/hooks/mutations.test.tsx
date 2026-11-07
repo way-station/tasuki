@@ -6,7 +6,14 @@ import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
 import { queryKeys } from "../../../api/queryKeys.ts";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 import { createTestQueryClient } from "../../../test/testQueryClient.ts";
-import { useAddRosterMember, useCreateInviteLink, useSetLeft, useUnlink } from "./mutations.ts";
+import {
+  useAddRosterMember,
+  useApproveLink,
+  useCreateInviteLink,
+  useRejectLink,
+  useSetLeft,
+  useUnlink,
+} from "./mutations.ts";
 import { rosterMemberFormErrors } from "./rosterMemberFormInvalid.ts";
 
 // A cache holding what a roster change may affect.
@@ -146,6 +153,39 @@ describe("useCreateInviteLink", () => {
     );
 
     result.current.mutate("m1");
+
+    await waitFor(() => expect(result.current.error).toMatchObject({ code: "state_conflict" }));
+  });
+});
+
+describe("useApproveLink and useRejectLink", () => {
+  it("approve and fetch the waiting links and the roster again", async () => {
+    const approveMemberLink = vi.fn(() => Promise.resolve());
+    const { result, queryClient } = renderWith(
+      () => useApproveLink(),
+      createFakeApiClient({ approveMemberLink }),
+    );
+
+    await result.current.mutateAsync("link-1");
+
+    expect(approveMemberLink).toHaveBeenCalledWith("link-1");
+    expect(invalidated(queryClient)).toEqual({
+      rosterMembers: true,
+      rosterMember: true,
+      memberLinks: true,
+      race: false,
+    });
+  });
+
+  it("report state_conflict when the link is no longer waiting", async () => {
+    const { result } = renderWith(
+      () => useRejectLink(),
+      createFakeApiClient({
+        rejectMemberLink: () => Promise.reject(problem(409, "state_conflict")),
+      }),
+    );
+
+    result.current.mutate("link-1");
 
     await waitFor(() => expect(result.current.error).toMatchObject({ code: "state_conflict" }));
   });
