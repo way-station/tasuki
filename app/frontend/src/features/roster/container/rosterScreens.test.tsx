@@ -2,7 +2,7 @@ import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient, Me, RosterMember } from "../../../api/client.ts";
-import { createFakeApiClient } from "../../../api/fakeApiClient.ts";
+import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
 import { createAppRouter } from "../../../app/router.tsx";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 
@@ -172,5 +172,35 @@ describe("M1 roster", () => {
 
     expect(await screen.findByText("Taro is back.")).toBeInTheDocument();
     expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", false);
+  });
+
+  it("asks before unlinking a user", async () => {
+    const unlinkRosterMember = vi.fn(() => Promise.resolve());
+    renderAt("/roster", {
+      ...rosterOf(member({ link_status: "approved" })),
+      unlinkRosterMember,
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Unlink Taro" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Unlink Taro's user?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }));
+
+    expect(await screen.findByText("Taro is unlinked.")).toBeInTheDocument();
+    expect(unlinkRosterMember).toHaveBeenCalledWith("m1");
+  });
+
+  it("tells the organizer when the roster changed in the meantime", async () => {
+    renderAt("/roster", {
+      ...rosterOf(member({ link_status: "approved" })),
+      unlinkRosterMember: () => Promise.reject(problem(409, "state_conflict")),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Unlink Taro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Unlink" }));
+
+    expect(
+      await screen.findByText("The roster changed in the meantime. The latest is shown."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 });
