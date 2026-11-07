@@ -107,4 +107,47 @@ describe("M1 roster", () => {
     expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
     expect(createRosterMember).not.toHaveBeenCalled();
   });
+
+  it("creates an invite link and copies it", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+    renderAt("/roster", {
+      ...rosterOf(member({})),
+      createInviteLink: () =>
+        Promise.resolve({
+          url: "https://tasuki.example/invite/abc",
+          expires_at: "2026-11-14T09:00:00Z",
+        }),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Create an invite link for Taro" }));
+    const panel = await screen.findByRole("region", { name: "Invite link for Taro" });
+    expect(within(panel).getByLabelText("Link")).toHaveValue("https://tasuki.example/invite/abc");
+    fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }));
+
+    expect(await screen.findByText("Invite link copied.")).toBeInTheDocument();
+    expect(writeText).toHaveBeenCalledWith("https://tasuki.example/invite/abc");
+  });
+
+  it("tells the organizer to copy by hand when the browser cannot", async () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText: () => Promise.reject(new Error("denied")) },
+    });
+    renderAt("/roster", {
+      ...rosterOf(member({})),
+      createInviteLink: () =>
+        Promise.resolve({
+          url: "https://tasuki.example/invite/abc",
+          expires_at: "2026-11-14T09:00:00Z",
+        }),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Create an invite link for Taro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }));
+
+    expect(
+      await screen.findByText("The link could not be copied. Select it and copy it by hand."),
+    ).toBeInTheDocument();
+  });
 });
