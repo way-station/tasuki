@@ -150,4 +150,27 @@ describe("M1 roster", () => {
       await screen.findByText("The link could not be copied. Select it and copy it by hand."),
     ).toBeInTheDocument();
   });
+
+  it("asks before marking a member as left", async () => {
+    const setRosterMemberLeft = vi.fn(() => Promise.resolve(member({ left: true })));
+    renderAt("/roster", { ...rosterOf(member({})), setRosterMemberLeft });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Mark Taro as left" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Mark Taro as left?" });
+    expect(setRosterMemberLeft).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark as left" }));
+
+    expect(await screen.findByText("Taro is marked as left.")).toBeInTheDocument();
+    expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", true);
+  });
+
+  it("undoes left at once", async () => {
+    const setRosterMemberLeft = vi.fn(() => Promise.resolve(member({})));
+    renderAt("/roster", { ...rosterOf(member({ left: true })), setRosterMemberLeft });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Undo left for Taro" }));
+
+    expect(await screen.findByText("Taro is back.")).toBeInTheDocument();
+    expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", false);
+  });
 });
