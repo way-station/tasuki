@@ -1,5 +1,5 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient, Me, MyLaps, Race } from "../../../api/client.ts";
 import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
@@ -43,6 +43,10 @@ function myLaps(times: string[], averageTime = "3:28"): MyLaps {
     average_time: averageTime,
     lap_count: times.length,
   };
+}
+
+function newLap(number: number) {
+  return screen.getByLabelText(`New lap ${number}`);
 }
 
 describe("R2 lap times", () => {
@@ -105,5 +109,47 @@ describe("L1 my lap times", () => {
     expect(
       await screen.findByRole("heading", { name: "Lap times are not open" }),
     ).toBeInTheDocument();
+  });
+
+  it("submits several lap times together and starts an empty form again", async () => {
+    let saved = myLaps([]);
+    const submitLaps = vi.fn((_raceId: string, times: string[]) => {
+      saved = myLaps(times);
+      return Promise.resolve(saved);
+    });
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(saved),
+      submitLaps,
+    });
+
+    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "3:20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add another lap" }));
+    fireEvent.change(newLap(2), { target: { value: " 3:25 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(await screen.findByText("Lap times added.")).toBeInTheDocument();
+    expect(submitLaps).toHaveBeenCalledWith("race-1", ["3:20", "3:25"]);
+    await waitFor(() => expect(newLap(1)).toHaveValue(""));
+    expect(screen.queryByLabelText("New lap 2")).not.toBeInTheDocument();
+    expect(await screen.findByText("Lap 2: 3:25")).toBeInTheDocument();
+  });
+
+  it("shows the error of each invalid time and sends nothing", async () => {
+    const submitLaps = vi.fn();
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(myLaps([])),
+      submitLaps,
+    });
+
+    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "325" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(
+      await screen.findByText("Enter the time per km as M:SS, for example 3:25.", {
+        selector: "p[id]",
+      }),
+    ).toBeInTheDocument();
+    expect(newLap(1)).toHaveAttribute("aria-invalid", "true");
+    expect(submitLaps).not.toHaveBeenCalled();
   });
 });
