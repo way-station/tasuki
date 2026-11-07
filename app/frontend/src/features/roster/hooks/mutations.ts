@@ -73,3 +73,21 @@ export function useCreateInviteLink() {
     [queryKeys.rosterMembers],
   );
 }
+
+// M3. Both fail with state_conflict when the link is no longer waiting. The
+// roster shows the new link status.
+export function useApproveLink() {
+  const api = useApiClient();
+  return useRosterMutation(
+    (linkId: string) => api.approveMemberLink(linkId),
+    [queryKeys.memberLinks, queryKeys.rosterMembers],
+  );
+}
+
+export function useRejectLink() {
+  const api = useApiClient();
+  return useRosterMutation(
+    (linkId: string) => api.rejectMemberLink(linkId),
+    [queryKeys.memberLinks, queryKeys.rosterMembers],
+  );
+}
