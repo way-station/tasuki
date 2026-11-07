@@ -2,9 +2,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import type { ApiClient } from "../../../api/client.ts";
-import { createFakeApiClient } from "../../../api/fakeApiClient.ts";
+import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 import { createTestQueryClient } from "../../../test/testQueryClient.ts";
+import { useMemberProfile } from "./useMemberProfile.ts";
 import { useRosterMembers } from "./useRosterMembers.ts";
 
 function renderWith<T>(hook: () => T, client: ApiClient) {
@@ -40,5 +41,36 @@ describe("useRosterMembers", () => {
     expect(result.current.data?.map((member) => [member.name, member.canUnlink])).toEqual([
       ["Taro", true],
     ]);
+  });
+});
+
+describe("useMemberProfile", () => {
+  it("gets a member's profile for M2", async () => {
+    const { result } = renderWith(
+      () => useMemberProfile("m1"),
+      createFakeApiClient({
+        getRosterMember: () =>
+          Promise.resolve({
+            id: "m1",
+            name: "Taro",
+            left: false,
+            average_time: "3:40",
+            lap_count: 0,
+            laps_by_race: [],
+          }),
+      }),
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.averageTime).toBe("3:40");
+  });
+
+  it("reports not_found for an unknown member", async () => {
+    const { result } = renderWith(
+      () => useMemberProfile("unknown"),
+      createFakeApiClient({ getRosterMember: () => Promise.reject(problem(404, "not_found")) }),
+    );
+
+    await waitFor(() => expect(result.current.error).toMatchObject({ code: "not_found" }));
   });
 });
