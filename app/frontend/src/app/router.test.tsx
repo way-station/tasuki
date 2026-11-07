@@ -13,6 +13,17 @@ function renderAt(path: string) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRosterMembers: () => Promise.resolve({ roster_members: [] }),
+    getRosterMember: (rosterMemberId) =>
+      Promise.resolve({
+        id: rosterMemberId,
+        name: "Jiro",
+        left: false,
+        average_time: "3:40",
+        lap_count: 0,
+        laps_by_race: [],
+      }),
+    listPendingMemberLinks: () => Promise.resolve({ links: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -61,9 +72,9 @@ describe("createAppRouter", () => {
     ["/races/123/running-order", "R7 Running order editor"],
     ["/races/123/laps", "L1 My lap times"],
     ["/me", "P1 My profile"],
-    ["/roster", "M1 Roster"],
-    ["/roster/123", "M2 Member profile"],
-    ["/approvals", "M3 Approvals"],
+    ["/roster", "Roster"],
+    ["/roster/123", "Jiro"],
+    ["/approvals", "Approvals"],
   ])("shows %s as %s", async (path, heading) => {
     renderAt(path);
 
