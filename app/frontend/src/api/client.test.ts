@@ -395,5 +395,32 @@ describe("createApiClient", () => {
       expect(requests[0].method).toBe("POST");
       expect(new URL(requests[0].url).pathname).toBe("/api/v1/roster-members/m1/invite-links");
     });
+
+    it("lists waiting links", async () => {
+      const { client, requests } = recordingClient(200, { links: [] });
+
+      await expect(client.listPendingMemberLinks()).resolves.toEqual({ links: [] });
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/member-links");
+    });
+
+    it("approves and rejects waiting links", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await client.approveMemberLink("link-1");
+      await client.rejectMemberLink("link-2");
+
+      expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+        "/api/v1/member-links/link-1/approve",
+        "/api/v1/member-links/link-2/reject",
+      ]);
+    });
+
+    it("throws state_conflict when the link is no longer waiting", async () => {
+      const { client } = recordingClient(409, problemBody(409, "state_conflict"));
+
+      await expect(client.approveMemberLink("link-1")).rejects.toMatchObject({
+        code: "state_conflict",
+      });
+    });
   });
 });
