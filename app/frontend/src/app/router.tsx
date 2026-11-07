@@ -15,6 +15,7 @@ import { InvitationsContainer } from "../features/participation/container/Invita
 import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
 import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
 import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
+import { MemberProfileContainer } from "../features/roster/container/MemberProfileContainer.tsx";
 import { RosterContainer } from "../features/roster/container/RosterContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
@@ -163,7 +164,7 @@ const rosterRoute = createRoute({
 const rosterMemberRoute = createRoute({
   getParentRoute: () => organizerRoute,
   path: "roster/$rosterMemberId",
-  component: () => <Placeholder screen="M2" title="Member profile" />,
+  component: MemberProfileContainer,
 });
 const approvalsRoute = createRoute({
   getParentRoute: () => organizerRoute,
