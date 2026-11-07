@@ -212,3 +212,47 @@ describe("M1 roster", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/roster/m1"));
   });
 });
+
+describe("M2 member profile", () => {
+  it("shows the laps per race", async () => {
+    renderAt("/roster/m1", {
+      getRosterMember: () =>
+        Promise.resolve({
+          id: "m1",
+          name: "Taro",
+          left: false,
+          average_time: "3:28",
+          lap_count: 3,
+          laps_by_race: [
+            {
+              race_id: "race-1",
+              race_name: "Hakone",
+              laps: [
+                { id: "l1", time: "3:20" },
+                { id: "l2", time: "3:30" },
+              ],
+            },
+          ],
+        }),
+    });
+
+    expect(await screen.findByRole("heading", { name: "Taro" })).toBeInTheDocument();
+    expect(screen.getByText("3:28 /km")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.textContent),
+    ).toEqual(["Hakone3:20, 3:30"]);
+  });
+
+  it("tells the organizer about an unknown member", async () => {
+    renderAt("/roster/unknown", {
+      getRosterMember: () => Promise.reject(problem(404, "not_found")),
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "Roster member not found" }),
+    ).toBeInTheDocument();
+  });
+});
