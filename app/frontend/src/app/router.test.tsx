@@ -13,6 +13,7 @@ function renderAt(path: string) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRaceLaps: () => Promise.resolve({ runners: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,

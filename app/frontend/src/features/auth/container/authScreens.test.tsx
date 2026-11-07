@@ -20,6 +20,7 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRaceLaps: () => Promise.resolve({ runners: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -51,7 +52,7 @@ function me(overrides: Partial<Me>): Partial<ApiClient> {
         display_name: "Taro",
         is_organizer: false,
         status: "approved",
-        roster_member: { id: "member-1", name: "Taro Yamada" },
+        roster_member: { id: "member-1", name: "P1 My profile" },
         ...overrides,
       }),
   };
