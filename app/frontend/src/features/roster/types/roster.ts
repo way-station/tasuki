@@ -50,3 +50,13 @@ export type MemberProfileView = {
   lapCount: number;
   lapsByRace: RaceLapsOfMemberView[];
 };
+
+// A waiting link on M3: someone logged in with LINE through an invite link
+// and waits for an organizer.
+export type PendingLinkView = {
+  id: string;
+  lineDisplayName: string;
+  rosterMember: { id: string; name: string };
+  // RFC 3339: when they logged in.
+  createdAt: string;
+};
