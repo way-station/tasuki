@@ -13,6 +13,9 @@ export type InvitationList = components["schemas"]["InvitationList"];
 export type AttendanceStatus = components["schemas"]["AttendanceStatus"];
 export type EntryList = components["schemas"]["EntryList"];
 export type Entry = components["schemas"]["Entry"];
+export type RunningOrderList = components["schemas"]["RunningOrderList"];
+export type RunningOrder = components["schemas"]["RunningOrder"];
+export type RunningOrderSave = components["schemas"]["RunningOrderSave"];
 
 // Every call the frontend makes to the backend. Hooks depend on this
 // interface, never on fetch, so tests can pass a fake (ADR-0012). Each feature
@@ -47,6 +50,15 @@ export interface ApiClient {
   createEntry(raceId: string, name: string): Promise<Entry>;
   addEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
   removeEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
+
+  // Running orders (docs/design/api.md). Members get confirmed orders only.
+  listRunningOrders(raceId: string): Promise<RunningOrderList>;
+  // Throws version_conflict when the running order changed since `body.version`
+  // was read.
+  saveRunningOrder(raceId: string, entryId: string, body: RunningOrderSave): Promise<RunningOrder>;
+  // Throws validation_failed when a leg has no runner, and state_conflict when
+  // it is already confirmed.
+  confirmRunningOrder(raceId: string, entryId: string, version: number): Promise<RunningOrder>;
 }
 
 type ApiClientOptions = {
@@ -187,6 +199,32 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
             },
           },
         ),
+      );
+    },
+
+    async listRunningOrders(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}/running-orders", {
+          params: { path: { race_id: raceId } },
+        }),
+      );
+    },
+
+    async saveRunningOrder(raceId, entryId, body) {
+      return dataOrThrow(
+        await client.PUT("/api/v1/races/{race_id}/entries/{entry_id}/running-order", {
+          params: { path: { race_id: raceId, entry_id: entryId } },
+          body,
+        }),
+      );
+    },
+
+    async confirmRunningOrder(raceId, entryId, version) {
+      return dataOrThrow(
+        await client.POST("/api/v1/races/{race_id}/entries/{entry_id}/running-order/confirm", {
+          params: { path: { race_id: raceId, entry_id: entryId } },
+          body: { version },
+        }),
       );
     },
   };
