@@ -205,3 +205,15 @@ describe("L1 my lap times", () => {
     await waitFor(() => expect(newLap(1)).toHaveValue("3:20"));
   });
 });
+
+describe("P1 my profile", () => {
+  it("shows the member's name, average time, and lap count", async () => {
+    renderAt("/me", member, {
+      getMyProfile: () => Promise.resolve({ name: "Taro", average_time: "3:28", lap_count: 8 }),
+    });
+
+    expect(await screen.findByRole("heading", { name: "Taro" })).toBeInTheDocument();
+    expect(screen.getByText("3:28 /km")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
+  });
+});
