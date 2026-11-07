@@ -5,7 +5,7 @@ import { useNotifications } from "../../../shared/notification/useNotifications.
 import { useAnswerAttendance } from "../hooks/mutations.ts";
 import type { AttendanceAnswer, CurrentAnswer } from "../types/participation.ts";
 import { AttendanceAnswerView } from "../ui/AttendanceAnswerView.tsx";
-import { Confirmation } from "../ui/Confirmation.tsx";
+import { Confirmation } from "../../../shared/ui/Confirmation.tsx";
 
 // What changing the answer can do (docs/design/screens.md, R2).
 const finalWarning =

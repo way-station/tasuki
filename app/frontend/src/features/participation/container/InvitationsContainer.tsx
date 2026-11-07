@@ -5,7 +5,7 @@ import { useNotifications } from "../../../shared/notification/useNotifications.
 import { useCancelInvitation, useInvite } from "../hooks/mutations.ts";
 import { useInvitationRows } from "../hooks/useInvitationRows.ts";
 import type { InvitationRow } from "../types/participation.ts";
-import { Confirmation } from "../ui/Confirmation.tsx";
+import { Confirmation } from "../../../shared/ui/Confirmation.tsx";
 import { InvitationListView } from "../ui/InvitationListView.tsx";
 import { ParticipationMessage } from "../ui/ParticipationMessage.tsx";
 
