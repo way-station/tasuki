@@ -1,208 +1,98 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  type RouterHistory,
-} from "@tanstack/react-router";
-import { AuthCompleteContainer } from "../features/auth/container/AuthCompleteContainer.tsx";
-import { InviteLandingContainer } from "../features/auth/container/InviteLandingContainer.tsx";
-import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
-import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
-import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
-import { AttendanceListContainer } from "../features/participation/container/AttendanceListContainer.tsx";
-import { EntryContainer } from "../features/participation/container/EntryContainer.tsx";
-import { InvitationsContainer } from "../features/participation/container/InvitationsContainer.tsx";
-import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
-import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
-import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
-import { Layout } from "./Layout.tsx";
-import { NotFound } from "./NotFound.tsx";
-import { Placeholder } from "./Placeholder.tsx";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { createFakeApiClient } from "../api/fakeApiClient.ts";
+import { TestProviders } from "../test/TestProviders.tsx";
+import { createAppRouter } from "./router.tsx";
 
-// One route per screen in docs/design/screens.md, all inside the common
-// layout. Each placeholder is replaced by its feature's container. Routes only
-// pick the screen: no loaders (ADR-0013).
-const rootRoute = createRootRoute({ component: Layout });
-
-// ---- Joining and access: open without a session --------------------------
-
-const inviteRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "invite/$token",
-  component: InviteLandingContainer,
-});
-const loginRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "login",
-  // The screen to return to after logging in.
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
-  }),
-  component: LoginContainer,
-});
-const authCompleteRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "auth/complete",
-  // What the LINE callback redirects with (docs/design/api.md).
-  validateSearch: (search: Record<string, unknown>): { code?: string; error?: string } => ({
-    code: typeof search.code === "string" ? search.code : undefined,
-    error: typeof search.error === "string" ? search.error : undefined,
-  }),
-  component: AuthCompleteContainer,
-});
-const waitingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "waiting",
-  component: () => (
-    <AuthMessage title="Waiting for approval" message="Waiting for an organizer to approve you." />
-  ),
-});
-const rejectedRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "rejected",
-  component: () => <AuthMessage title="You were rejected" />,
-});
-const unavailableRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "unavailable",
-  component: () => (
-    <AuthMessage title="tasuki cannot be used" message="Please contact an organizer." />
-  ),
-});
-
-// ---- The team's screens, behind the route guard (#113) --------------------
-
-const teamRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: "team",
-  component: () => <TeamGuard access="team" />,
-});
-const organizerRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  id: "organizer",
-  component: () => <TeamGuard access="organizer" />,
-});
-const linkedRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  id: "linked",
-  component: () => <TeamGuard access="linked" />,
-});
-
-const homeRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  path: "/",
-  component: RaceListContainer,
-});
-const raceNewRoute = createRoute({
-  getParentRoute: () => organizerRoute,
-  path: "races/new",
-  component: RaceFormContainer,
-});
-const raceRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  path: "races/$raceId",
-});
-const raceDetailRoute = createRoute({
-  getParentRoute: () => raceRoute,
-  path: "/",
-  component: RaceDetailContainer,
-});
-const raceOrganizerRoute = createRoute({
-  getParentRoute: () => raceRoute,
-  id: "race-organizer",
-  component: () => <TeamGuard access="organizer" />,
-});
-const raceEditRoute = createRoute({
-  getParentRoute: () => raceOrganizerRoute,
-  path: "edit",
-  component: RaceFormContainer,
-});
-const raceInvitationsRoute = createRoute({
-  getParentRoute: () => raceOrganizerRoute,
-  path: "invitations",
-  component: InvitationsContainer,
-});
-const raceAttendanceRoute = createRoute({
-  getParentRoute: () => raceOrganizerRoute,
-  path: "attendance",
-  component: AttendanceListContainer,
-});
-const raceEntryRoute = createRoute({
-  getParentRoute: () => raceOrganizerRoute,
-  path: "entry",
-  component: EntryContainer,
-});
-const raceRunningOrderRoute = createRoute({
-  getParentRoute: () => raceOrganizerRoute,
-  path: "running-order",
-  component: () => <Placeholder screen="R7" title="Running order editor" />,
-});
-const raceLinkedRoute = createRoute({
-  getParentRoute: () => raceRoute,
-  id: "race-linked",
-  component: () => <TeamGuard access="linked" />,
-});
-const raceLapsRoute = createRoute({
-  getParentRoute: () => raceLinkedRoute,
-  path: "laps",
-  component: () => <Placeholder screen="L1" title="My lap times" />,
-});
-
-const profileRoute = createRoute({
-  getParentRoute: () => linkedRoute,
-  path: "me",
-  component: () => <Placeholder screen="P1" title="My profile" />,
-});
-
-const rosterRoute = createRoute({
-  getParentRoute: () => organizerRoute,
-  path: "roster",
-  component: () => <Placeholder screen="M1" title="Roster" />,
-});
-const rosterMemberRoute = createRoute({
-  getParentRoute: () => organizerRoute,
-  path: "roster/$rosterMemberId",
-  component: () => <Placeholder screen="M2" title="Member profile" />,
-});
-const approvalsRoute = createRoute({
-  getParentRoute: () => organizerRoute,
-  path: "approvals",
-  component: () => <Placeholder screen="M3" title="Approvals" />,
-});
-
-const routeTree = rootRoute.addChildren([
-  inviteRoute,
-  loginRoute,
-  authCompleteRoute,
-  waitingRoute,
-  rejectedRoute,
-  unavailableRoute,
-  teamRoute.addChildren([
-    homeRoute,
-    raceRoute.addChildren([
-      raceDetailRoute,
-      raceOrganizerRoute.addChildren([
-        raceEditRoute,
-        raceInvitationsRoute,
-        raceAttendanceRoute,
-        raceEntryRoute,
-        raceRunningOrderRoute,
-      ]),
-      raceLinkedRoute.addChildren([raceLapsRoute]),
-    ]),
-    organizerRoute.addChildren([raceNewRoute, rosterRoute, rosterMemberRoute, approvalsRoute]),
-    linkedRoute.addChildren([profileRoute]),
-  ]),
-]);
-
-// Tests pass a memory history; the app uses the browser's.
-export function createAppRouter(history?: RouterHistory) {
-  return createRouter({ routeTree, history, defaultNotFoundComponent: NotFound });
+function renderAt(path: string) {
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
+  // An organizer linked to a roster member may open every screen. What other
+  // callers see is tested with the route guard (features/auth/container).
+  const client = createFakeApiClient({
+    listRaces: () => Promise.resolve({ races: [] }),
+    listInvitations: () => Promise.resolve({ members: [] }),
+    listEntries: () => Promise.resolve({ entries: [] }),
+    listRaceLaps: () => Promise.resolve({ runners: [] }),
+    getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
+    getRace: (raceId) =>
+      Promise.resolve({
+        id: raceId,
+        name: "Hakone",
+        version: 1,
+        description: {
+          type: "distance",
+          race_date: "2026-11-23",
+          deadline: "2026-11-01T18:00:00+09:00",
+          leg_distances_km: [5],
+        },
+        can_submit_laps: false,
+      }),
+    getMe: () =>
+      Promise.resolve({
+        user_id: "user-1",
+        display_name: "Taro",
+        is_organizer: true,
+        status: "approved",
+        roster_member: { id: "member-1", name: "Taro Yamada" },
+      }),
+    getInviteLink: () => Promise.resolve({ team_name: "Team" }),
+  });
+  render(
+    <TestProviders client={client}>
+      <RouterProvider router={router} />
+    </TestProviders>,
+  );
 }
 
-// Registers the routes so links and params are type-checked everywhere.
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: ReturnType<typeof createAppRouter>;
-  }
-}
+describe("createAppRouter", () => {
+  it.each([
+    ["/invite/abc", "Team"],
+    ["/login", "Log in"],
+    ["/auth/complete", "Log in"],
+    ["/waiting", "Waiting for approval"],
+    ["/rejected", "You were rejected"],
+    ["/unavailable", "tasuki cannot be used"],
+    ["/", "Races"],
+    ["/races/new", "Register race"],
+    ["/races/123", "Hakone"],
+    ["/races/123/edit", "Edit race"],
+    ["/races/123/invitations", "Invitations"],
+    ["/races/123/attendance", "Attendance"],
+    ["/races/123/entry", "Entry"],
+    ["/races/123/running-order", "R7 Running order editor"],
+    ["/races/123/laps", "My lap times"],
+    ["/me", "P1 My profile"],
+    ["/roster", "M1 Roster"],
+    ["/roster/123", "M2 Member profile"],
+    ["/approvals", "M3 Approvals"],
+  ])("shows %s as %s", async (path, heading) => {
+    renderAt(path);
+
+    expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument();
+  });
+
+  it.each(["/unknown", "/races/123/unknown", "/roster/123/unknown"])(
+    "shows the not-found page for %s",
+    async (path) => {
+      renderAt(path);
+
+      expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    },
+  );
+
+  it("shows every screen inside the common layout", async () => {
+    renderAt("/races/123");
+
+    const heading = await screen.findByRole("heading", { name: "Hakone" });
+    expect(screen.getByRole("banner")).toHaveTextContent("tasuki");
+    expect(screen.getByRole("main")).toContainElement(heading);
+  });
+
+  it("shows the not-found page inside the common layout", async () => {
+    renderAt("/unknown");
+
+    const heading = await screen.findByRole("heading", { name: "Page not found" });
+    expect(screen.getByRole("main")).toContainElement(heading);
+  });
+});
