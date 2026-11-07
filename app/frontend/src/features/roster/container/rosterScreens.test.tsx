@@ -1,5 +1,5 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient, Me, RosterMember } from "../../../api/client.ts";
 import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
@@ -202,5 +202,13 @@ describe("M1 roster", () => {
       await screen.findByText("The roster changed in the meantime. The latest is shown."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("opens a member's profile", async () => {
+    const router = renderAt("/roster", rosterOf(member({})));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Profile of Taro" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/roster/m1"));
   });
 });
