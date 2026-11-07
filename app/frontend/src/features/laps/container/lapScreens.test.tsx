@@ -193,4 +193,15 @@ describe("L1 my lap times", () => {
       await screen.findByText("Your lap times changed in the meantime. The latest are shown."),
     ).toBeInTheDocument();
   });
+
+  it("keeps the lap times being added as a draft after reloading", async () => {
+    const stubs = { getMyLaps: () => Promise.resolve(myLaps([])) };
+    renderAt("/races/race-1/laps", member, stubs);
+    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "3:20" } });
+
+    document.body.innerHTML = "";
+    renderAt("/races/race-1/laps", member, stubs);
+
+    await waitFor(() => expect(newLap(1)).toHaveValue("3:20"));
+  });
 });
