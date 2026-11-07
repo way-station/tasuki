@@ -22,6 +22,8 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listEntries: () => Promise.resolve({ entries: [] }),
     listRaceLaps: () => Promise.resolve({ runners: [] }),
     getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
+    getMyProfile: () =>
+      Promise.resolve({ name: "Taro Yamada", average_time: "3:40", lap_count: 0 }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -53,7 +55,7 @@ function me(overrides: Partial<Me>): Partial<ApiClient> {
         display_name: "Taro",
         is_organizer: false,
         status: "approved",
-        roster_member: { id: "member-1", name: "P1 My profile" },
+        roster_member: { id: "member-1", name: "Taro Yamada" },
         ...overrides,
       }),
   };
@@ -126,7 +128,7 @@ describe("route guard", () => {
     it("with a link opens member screens", async () => {
       renderAt("/me", me({ is_organizer: true }));
 
-      expect(await screen.findByRole("heading", { name: "P1 My profile" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Taro Yamada" })).toBeInTheDocument();
     });
   });
 
