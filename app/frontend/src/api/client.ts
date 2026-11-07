@@ -13,6 +13,10 @@ export type InvitationList = components["schemas"]["InvitationList"];
 export type AttendanceStatus = components["schemas"]["AttendanceStatus"];
 export type EntryList = components["schemas"]["EntryList"];
 export type Entry = components["schemas"]["Entry"];
+export type RosterMember = components["schemas"]["RosterMember"];
+export type RosterMemberList = components["schemas"]["RosterMemberList"];
+export type RosterMemberDetail = components["schemas"]["RosterMemberDetail"];
+export type InviteLinkCreated = components["schemas"]["InviteLinkCreated"];
 
 // Every call the frontend makes to the backend. Hooks depend on this
 // interface, never on fetch, so tests can pass a fake (ADR-0012). Each feature
@@ -47,6 +51,18 @@ export interface ApiClient {
   createEntry(raceId: string, name: string): Promise<Entry>;
   addEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
   removeEntryMember(raceId: string, entryId: string, rosterMemberId: string): Promise<void>;
+
+  // Roster and approvals (docs/design/api.md). Organizers only.
+  listRosterMembers(): Promise<RosterMemberList>;
+  createRosterMember(name: string): Promise<RosterMember>;
+  getRosterMember(rosterMemberId: string): Promise<RosterMemberDetail>;
+  // Leaving cancels the member's invitations to races dated today or later.
+  setRosterMemberLeft(rosterMemberId: string, left: boolean): Promise<RosterMember>;
+  // Throws state_conflict when the member has no approved user.
+  unlinkRosterMember(rosterMemberId: string): Promise<void>;
+  // Throws state_conflict when the member has left or has a user, approved or
+  // waiting. The previous link becomes unusable.
+  createInviteLink(rosterMemberId: string): Promise<InviteLinkCreated>;
 }
 
 type ApiClientOptions = {
@@ -187,6 +203,46 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
             },
           },
         ),
+      );
+    },
+    async listRosterMembers() {
+      return dataOrThrow(await client.GET("/api/v1/roster-members"));
+    },
+
+    async createRosterMember(name) {
+      return dataOrThrow(await client.POST("/api/v1/roster-members", { body: { name } }));
+    },
+
+    async getRosterMember(rosterMemberId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/roster-members/{roster_member_id}", {
+          params: { path: { roster_member_id: rosterMemberId } },
+        }),
+      );
+    },
+
+    async setRosterMemberLeft(rosterMemberId, left) {
+      return dataOrThrow(
+        await client.PATCH("/api/v1/roster-members/{roster_member_id}", {
+          params: { path: { roster_member_id: rosterMemberId } },
+          body: { left },
+        }),
+      );
+    },
+
+    async unlinkRosterMember(rosterMemberId) {
+      dataOrThrow(
+        await client.DELETE("/api/v1/roster-members/{roster_member_id}/link", {
+          params: { path: { roster_member_id: rosterMemberId } },
+        }),
+      );
+    },
+
+    async createInviteLink(rosterMemberId) {
+      return dataOrThrow(
+        await client.POST("/api/v1/roster-members/{roster_member_id}/invite-links", {
+          params: { path: { roster_member_id: rosterMemberId } },
+        }),
       );
     },
   };
