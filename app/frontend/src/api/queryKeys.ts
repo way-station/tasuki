@@ -13,4 +13,5 @@ export const queryKeys = {
   // refreshes both.
   rosterMembers: ["roster-members"],
   rosterMember: (rosterMemberId: string) => ["roster-members", rosterMemberId] as const,
+  memberLinks: ["member-links"],
 } as const;
