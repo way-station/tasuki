@@ -23,6 +23,7 @@ function renderAt(path: string) {
         lap_count: 0,
         laps_by_race: [],
       }),
+    listPendingMemberLinks: () => Promise.resolve({ links: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -73,7 +74,7 @@ describe("createAppRouter", () => {
     ["/me", "P1 My profile"],
     ["/roster", "Roster"],
     ["/roster/123", "Jiro"],
-    ["/approvals", "M3 Approvals"],
+    ["/approvals", "Approvals"],
   ])("shows %s as %s", async (path, heading) => {
     renderAt(path);
 

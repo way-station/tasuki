@@ -30,6 +30,7 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
         lap_count: 0,
         laps_by_race: [],
       }),
+    listPendingMemberLinks: () => Promise.resolve({ links: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
