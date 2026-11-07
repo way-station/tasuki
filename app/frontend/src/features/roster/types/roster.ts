@@ -60,3 +60,10 @@ export type PendingLinkView = {
   // RFC 3339: when they logged in.
   createdAt: string;
 };
+
+// The roster member being added on M1. Names cannot be changed later.
+export type RosterMemberForm = {
+  name: string;
+};
+
+export type RosterMemberFormErrors = Partial<Record<keyof RosterMemberForm, string>>;
