@@ -152,4 +152,45 @@ describe("L1 my lap times", () => {
     expect(newLap(1)).toHaveAttribute("aria-invalid", "true");
     expect(submitLaps).not.toHaveBeenCalled();
   });
+
+  it("edits one lap in place", async () => {
+    const editLap = vi.fn(() => Promise.resolve(myLaps(["3:18"])));
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(myLaps(["3:20"])),
+      editLap,
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit lap 1" }));
+    fireEvent.change(screen.getByLabelText("Lap 1"), { target: { value: "3:18" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save lap 1" }));
+
+    expect(await screen.findByText("Lap time saved.")).toBeInTheDocument();
+    expect(editLap).toHaveBeenCalledWith("race-1", "lap-1", "3:18");
+  });
+
+  it("deletes one lap", async () => {
+    const deleteLap = vi.fn(() => Promise.resolve(myLaps([])));
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(myLaps(["3:20"])),
+      deleteLap,
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Delete lap 1" }));
+
+    expect(await screen.findByText("Lap time deleted.")).toBeInTheDocument();
+    expect(deleteLap).toHaveBeenCalledWith("race-1", "lap-1");
+  });
+
+  it("tells the member when the lap is already gone", async () => {
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(myLaps(["3:20"])),
+      deleteLap: () => Promise.reject(problem(404, "not_found")),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Delete lap 1" }));
+
+    expect(
+      await screen.findByText("Your lap times changed in the meantime. The latest are shown."),
+    ).toBeInTheDocument();
+  });
 });
