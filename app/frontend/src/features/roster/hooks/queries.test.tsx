@@ -6,6 +6,7 @@ import { createFakeApiClient, problem } from "../../../api/fakeApiClient.ts";
 import { TestProviders } from "../../../test/TestProviders.tsx";
 import { createTestQueryClient } from "../../../test/testQueryClient.ts";
 import { useMemberProfile } from "./useMemberProfile.ts";
+import { usePendingLinks } from "./usePendingLinks.ts";
 import { useRosterMembers } from "./useRosterMembers.ts";
 
 function renderWith<T>(hook: () => T, client: ApiClient) {
@@ -72,5 +73,29 @@ describe("useMemberProfile", () => {
     );
 
     await waitFor(() => expect(result.current.error).toMatchObject({ code: "not_found" }));
+  });
+});
+
+describe("usePendingLinks", () => {
+  it("gets the waiting links for M3", async () => {
+    const { result } = renderWith(
+      () => usePendingLinks(),
+      createFakeApiClient({
+        listPendingMemberLinks: () =>
+          Promise.resolve({
+            links: [
+              {
+                id: "link-1",
+                line_display_name: "taro_line",
+                roster_member: { id: "m1", name: "Taro" },
+                created_at: "2026-11-07T09:00:00Z",
+              },
+            ],
+          }),
+      }),
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.map((link) => link.lineDisplayName)).toEqual(["taro_line"]);
   });
 });
