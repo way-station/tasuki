@@ -1,5 +1,5 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient, Me, RosterMember } from "../../../api/client.ts";
 import { createFakeApiClient } from "../../../api/fakeApiClient.ts";
@@ -84,5 +84,27 @@ describe("M1 roster", () => {
     expect(
       screen.queryByRole("button", { name: /invite link for Saburo/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it("adds a member by name", async () => {
+    const createRosterMember = vi.fn(() => Promise.resolve(member({})));
+    renderAt("/roster", { ...rosterOf(), createRosterMember });
+
+    fireEvent.change(await screen.findByLabelText("Name"), { target: { value: " Taro " } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(await screen.findByText("Roster member added.")).toBeInTheDocument();
+    expect(createRosterMember).toHaveBeenCalledWith("Taro");
+    expect(screen.getByLabelText("Name")).toHaveValue("");
+  });
+
+  it("shows an error for an empty name and sends nothing", async () => {
+    const createRosterMember = vi.fn();
+    renderAt("/roster", { ...rosterOf(), createRosterMember });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Add" }));
+
+    expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
+    expect(createRosterMember).not.toHaveBeenCalled();
   });
 });
