@@ -256,3 +256,66 @@ describe("M2 member profile", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("M3 approvals", () => {
+  const waiting = {
+    links: [
+      {
+        id: "link-1",
+        line_display_name: "taro_line",
+        roster_member: { id: "m1", name: "Taro" },
+        created_at: "2026-11-07T09:00:00Z",
+      },
+    ],
+  };
+
+  it("approves a waiting link at once", async () => {
+    const approveMemberLink = vi.fn(() => Promise.resolve());
+    renderAt("/approvals", {
+      listPendingMemberLinks: () => Promise.resolve(waiting),
+      approveMemberLink,
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Approve taro_line" }));
+
+    expect(await screen.findByText("taro_line is approved as Taro.")).toBeInTheDocument();
+    expect(approveMemberLink).toHaveBeenCalledWith("link-1");
+  });
+
+  it("asks before rejecting a waiting link", async () => {
+    const rejectMemberLink = vi.fn(() => Promise.resolve());
+    renderAt("/approvals", {
+      listPendingMemberLinks: () => Promise.resolve(waiting),
+      rejectMemberLink,
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reject taro_line" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Reject taro_line?" });
+    expect(rejectMemberLink).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
+
+    expect(
+      await screen.findByText("taro_line is rejected. Tell them outside the app."),
+    ).toBeInTheDocument();
+    expect(rejectMemberLink).toHaveBeenCalledWith("link-1");
+  });
+
+  it("tells the organizer when another organizer decided first", async () => {
+    renderAt("/approvals", {
+      listPendingMemberLinks: () => Promise.resolve(waiting),
+      approveMemberLink: () => Promise.reject(problem(409, "state_conflict")),
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Approve taro_line" }));
+
+    expect(
+      await screen.findByText("This link was already decided. The latest is shown."),
+    ).toBeInTheDocument();
+  });
+
+  it("says when nobody is waiting", async () => {
+    renderAt("/approvals", { listPendingMemberLinks: () => Promise.resolve({ links: [] }) });
+
+    expect(await screen.findByText("Nobody is waiting for approval.")).toBeInTheDocument();
+  });
+});
