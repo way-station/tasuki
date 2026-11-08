@@ -27,7 +27,6 @@ See [ADR-0001](0001-record-architecture-decisions.md) for what belongs here.
 | [0018](0018-hosting.md) | Hosting — one container on Cloud Run in Singapore | technical | Accepted |
 | [0019](0019-frontend-lint-and-format.md) | Frontend lint and format — oxlint and oxfmt | technical | Accepted |
 | [0020](0020-verify-line-id-tokens-with-golang-jwt.md) | Verify LINE ID tokens with golang-jwt, HS256 only | technical | Accepted |
-| [0021](0021-ui-design-references.md) | UI design references — screens of shipped apps | technical | Accepted |
 
 ## How to add an ADR
 
