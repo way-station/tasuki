@@ -134,3 +134,14 @@ Short labels for the state of a thing, always as text.
 | Something went wrong | A screen-level message with what to do | "Something went wrong. Reload the page." |
 | Field errors | Below each input (see Form inputs) | R3, L1, M1 |
 | Someone else saved first | A message above the form that keeps the user's input, with "Load the latest (discard my changes)" | R3, R7 (`409 version_conflict`, ADR-0013) |
+
+### Notifications
+
+Short messages after an action, for example "Race saved." or "The roster changed in the meantime. The latest is shown."
+
+| Variant | Read by screen readers |
+| --- | --- |
+| Success | When they are free (`aria-live="polite"`) |
+| Error | At once (`role="alert"`) |
+
+In the code: `shared/ui/NotificationList.tsx`, fed by `shared/notification/`.
