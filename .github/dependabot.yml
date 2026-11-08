@@ -56,3 +56,21 @@ updates:
       npm:
         update-types: [minor, patch]
     labels: [chore]
+
+  - package-ecosystem: docker
+    directories:
+      - /infra/docker/backend
+      - /infra/docker/frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 14
+    ignore:
+      - dependency-name: golang
+    groups:
+      docker:
+        update-types: [minor, patch]
+    labels: [chore]
