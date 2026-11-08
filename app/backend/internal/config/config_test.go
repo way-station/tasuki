@@ -28,6 +28,28 @@ func TestLoad(t *testing.T) {
 		}
 	})
 
+	t.Run("requires TEAM_ID to be a UUID", func(t *testing.T) {
+		for _, value := range []string{"", "team-1"} {
+			setRequired(t)
+			t.Setenv("TEAM_ID", value)
+			if _, err := Load(); err == nil {
+				t.Errorf("Load() with TEAM_ID %q: expected error, got nil", value)
+			}
+		}
+	})
+
+	t.Run("reads TEAM_ID", func(t *testing.T) {
+		setRequired(t)
+		t.Setenv("TEAM_ID", "01900000-0000-7000-8000-0000000000AB")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if cfg.TeamID != "01900000-0000-7000-8000-0000000000ab" {
+			t.Errorf("TeamID = %q, want the UUID in lower case", cfg.TeamID)
+		}
+	})
+
 	t.Run("applies defaults", func(t *testing.T) {
 		setRequired(t)
 		t.Setenv("PORT", "")
