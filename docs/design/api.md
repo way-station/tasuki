@@ -52,7 +52,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Topic | Rule |
 | --- | --- |
 | Caller | A middleware in Presentation resolves the caller once per request (organizer or not, link status, the approved roster member) and returns `403 forbidden` when the caller's role does not allow the endpoint ("Who can call"). Use cases receive the resolved caller |
-| Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005) |
+| Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005). The `teams` row is created by hand, before the first start; the backend checks at startup that `TEAM_ID` is in `teams` and refuses to start otherwise. In development, `make db-seed` creates it |
 | Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
 | Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
 | Running orders and laps | When runners lose their laps (see `PUT .../running-order`), the running order Application layer deletes them and recalculates the averages through an interface, in the same unit of work. It is implemented by the lap Application layer (#99) |
@@ -461,7 +461,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 項目 | 決まり |
 | --- | --- |
 | 呼ぶ人 | Presentation の middleware が、リクエストごとに一度、呼ぶ人を調べる（幹事かどうか、紐付けの状態、承認された名簿のメンバー）。役割がエンドポイントを許さないとき（「呼べる人」）は、そこで `403 forbidden` を返す。ユースケースは調べた結果を受け取る |
-| チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005） |
+| チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005）。`teams` の行は、初めて起動する前に手で作る。backend は起動のときに `TEAM_ID` が `teams` にあるかを確かめ、なければ起動しない。開発では `make db-seed` で作る |
 | 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
 | 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
 | 走順とラップ | 走者がラップを失うとき（`PUT .../running-order`）、走順の Application 層は interface を通して、同じ作業単位の中でラップを消し、平均を計算し直す。実装はラップの Application 層（#99）に置く |
