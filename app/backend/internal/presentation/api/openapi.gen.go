@@ -118,9 +118,10 @@ func (e MeStatus) Valid() bool {
 
 // Defines values for MyAttendance.
 const (
-	MyAttendanceAttending   MyAttendance = "attending"
-	MyAttendanceLessThannil MyAttendance = "<nil>"
-	MyAttendanceUndecided   MyAttendance = "undecided"
+	MyAttendanceAttending    MyAttendance = "attending"
+	MyAttendanceLessThannil  MyAttendance = "<nil>"
+	MyAttendanceNotAttending MyAttendance = "not_attending"
+	MyAttendanceUndecided    MyAttendance = "undecided"
 )
 
 // Valid indicates whether the value is a known member of the MyAttendance enum.
@@ -129,6 +130,8 @@ func (e MyAttendance) Valid() bool {
 	case MyAttendanceAttending:
 		return true
 	case MyAttendanceLessThannil:
+		return true
+	case MyAttendanceNotAttending:
 		return true
 	case MyAttendanceUndecided:
 		return true
@@ -407,7 +410,7 @@ type MemberLinkList struct {
 // Example: 3:28
 type MmSs = string
 
-// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
 type MyAttendance string
 
 // MyLaps defines model for MyLaps.
@@ -470,7 +473,7 @@ type Race struct {
 	// Id Opaque ID (the type is decided in
 	Id Id `json:"id"`
 
-	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
 	MyAttendance *MyAttendance `json:"my_attendance,omitempty"`
 	Name         string        `json:"name"`
 
@@ -532,7 +535,7 @@ type RaceSummary struct {
 	// Id Opaque ID (the type is decided in
 	Id Id `json:"id"`
 
-	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
 	MyAttendance *MyAttendance      `json:"my_attendance,omitempty"`
 	Name         string             `json:"name"`
 	RaceDate     openapi_types.Date `json:"race_date"`
