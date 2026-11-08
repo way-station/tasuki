@@ -17,6 +17,7 @@ import { InvitationsContainer } from "../features/participation/container/Invita
 import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
 import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
 import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
+import { RunningOrderEditorContainer } from "../features/running-orders/container/RunningOrderEditorContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
 import { Placeholder } from "./Placeholder.tsx";
@@ -137,7 +138,7 @@ const raceEntryRoute = createRoute({
 const raceRunningOrderRoute = createRoute({
   getParentRoute: () => raceOrganizerRoute,
   path: "running-order",
-  component: () => <Placeholder screen="R7" title="Running order editor" />,
+  component: RunningOrderEditorContainer,
 });
 const raceLinkedRoute = createRoute({
   getParentRoute: () => raceRoute,

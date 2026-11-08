@@ -9,6 +9,7 @@ export const queryKeys = {
   race: (raceId: string) => ["races", raceId] as const,
   invitations: (raceId: string) => ["races", raceId, "invitations"] as const,
   entries: (raceId: string) => ["races", raceId, "entries"] as const,
+  runningOrders: (raceId: string) => ["races", raceId, "running-orders"] as const,
   myLaps: (raceId: string) => ["races", raceId, "my-laps"] as const,
   raceLaps: (raceId: string) => ["races", raceId, "laps"] as const,
   profile: ["profile"],

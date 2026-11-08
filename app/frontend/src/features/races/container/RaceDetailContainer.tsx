@@ -3,6 +3,7 @@ import { errorCode } from "../../../shared/errors/apiErrors.ts";
 import { useMe } from "../../auth/hooks/useMe.ts";
 import { RaceLapsSectionContainer } from "../../laps/container/RaceLapsSectionContainer.tsx";
 import { AttendanceAnswerContainer } from "../../participation/container/AttendanceAnswerContainer.tsx";
+import { RunningOrderSectionContainer } from "../../running-orders/container/RunningOrderSectionContainer.tsx";
 import { useRace } from "../hooks/useRace.ts";
 import { RaceDetailView, type RaceSection } from "../ui/RaceDetailView.tsx";
 import { RaceMessage } from "../ui/RaceMessage.tsx";
@@ -46,6 +47,12 @@ export function RaceDetailContainer() {
         myAttendance === undefined ? undefined : (
           <AttendanceAnswerContainer raceId={raceId} current={myAttendance} />
         )
+      }
+      runningOrder={
+        <RunningOrderSectionContainer
+          raceId={raceId}
+          canSee={isOrganizer || myAttendance === "attending"}
+        />
       }
       laps={<RaceLapsSectionContainer raceId={raceId} canSee={isOrganizer} />}
     />

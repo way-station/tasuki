@@ -26,6 +26,8 @@ type RaceDetailViewProps = {
   // Answering attendance, from the participation feature. Shown instead of the
   // answer alone when given.
   attendance?: ReactNode;
+  // The running order and prediction, from the running-orders feature.
+  runningOrder?: ReactNode;
   // The runners' lap times for organizers, from the laps feature.
   laps?: ReactNode;
 };
@@ -37,6 +39,7 @@ export function RaceDetailView({
   isOrganizer,
   onOpen,
   attendance,
+  runningOrder,
   laps,
 }: RaceDetailViewProps) {
   const detail = race.detail;
@@ -109,6 +112,7 @@ export function RaceDetailView({
         )}
       </dl>
       {attendance}
+      {runningOrder}
       {laps}
       {(isOrganizer || race.canSubmitLaps) && (
         <nav aria-label="Race">

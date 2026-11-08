@@ -13,6 +13,7 @@ function renderAt(path: string) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRunningOrders: () => Promise.resolve({ running_orders: [] }),
     listRaceLaps: () => Promise.resolve({ runners: [] }),
     getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
     getMyProfile: () =>
@@ -62,7 +63,7 @@ describe("createAppRouter", () => {
     ["/races/123/invitations", "Invitations"],
     ["/races/123/attendance", "Attendance"],
     ["/races/123/entry", "Entry"],
-    ["/races/123/running-order", "R7 Running order editor"],
+    ["/races/123/running-order", "Running order"],
     ["/races/123/laps", "My lap times"],
     ["/me", "Taro Yamada"],
     ["/roster", "M1 Roster"],
