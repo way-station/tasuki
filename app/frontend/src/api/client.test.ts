@@ -323,6 +323,66 @@ describe("createApiClient", () => {
       expect(new URL(requests[1].url).pathname).toBe("/api/v1/races/race-1/entries/e1/members/m1");
     });
   });
+
+  describe("running orders", () => {
+    const order = {
+      entry_id: "e1",
+      entry_name: "Team A",
+      status: "draft" as const,
+      version: 2,
+      legs: [{ leg_number: 1, runner: null }],
+      prediction: null,
+    };
+
+    it("lists running orders", async () => {
+      const { client, requests } = recordingClient(200, { running_orders: [order] });
+
+      await expect(client.listRunningOrders("race-1")).resolves.toEqual({
+        running_orders: [order],
+      });
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/races/race-1/running-orders");
+    });
+
+    it("saves a running order", async () => {
+      const { client, requests } = recordingClient(200, order);
+      const body = { version: 1, legs: [{ leg_number: 1, roster_member_id: null }] };
+
+      await expect(client.saveRunningOrder("race-1", "e1", body)).resolves.toEqual(order);
+      expect(requests[0].method).toBe("PUT");
+      expect(new URL(requests[0].url).pathname).toBe(
+        "/api/v1/races/race-1/entries/e1/running-order",
+      );
+      await expect(requests[0].json()).resolves.toEqual(body);
+    });
+
+    it("throws version_conflict when someone else saved first", async () => {
+      const { client } = recordingClient(409, problemBody(409, "version_conflict"));
+
+      await expect(
+        client.saveRunningOrder("race-1", "e1", { version: 1, legs: [] }),
+      ).rejects.toMatchObject({ code: "version_conflict" });
+    });
+
+    it("confirms a running order with its version", async () => {
+      const { client, requests } = recordingClient(200, { ...order, status: "confirmed" });
+
+      await client.confirmRunningOrder("race-1", "e1", 2);
+      expect(requests[0].method).toBe("POST");
+      expect(new URL(requests[0].url).pathname).toBe(
+        "/api/v1/races/race-1/entries/e1/running-order/confirm",
+      );
+      await expect(requests[0].json()).resolves.toEqual({ version: 2 });
+    });
+
+    it("throws state_conflict when it is already confirmed", async () => {
+      const { client } = recordingClient(409, problemBody(409, "state_conflict"));
+
+      await expect(client.confirmRunningOrder("race-1", "e1", 2)).rejects.toMatchObject({
+        code: "state_conflict",
+      });
+    });
+  });
+
   describe("roster and approvals", () => {
     const rosterMember = {
       id: "m1",
