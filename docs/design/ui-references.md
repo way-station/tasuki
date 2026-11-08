@@ -69,3 +69,76 @@ Preferences about how tasuki looks are expected to change. This document keeps t
 - Mobbin: [Strava Pace Analysis](https://mobbin.com/explore/screens/5025d944-beec-433b-ac29-5a52b6743624), [Strava Workout Stats](https://mobbin.com/explore/screens/9827c10a-8c85-4fa3-af72-f65bbbfd50cc), [Strava Pending Invites](https://mobbin.com/explore/screens/32e66bac-fd30-4f18-a13e-832e2202cadd), [Invite Teammates](https://mobbin.com/explore/mobile/screens/invite-teammates)
 - Chouseisan (調整さん): [how to use (Appllio)](https://appllio.com/how-to-use-schedule-service-chouseisan), [making a survey (atsoho)](https://atsoho.com/blog/chouseisan-survey-how-to-make)
 
+---
+
+<details>
+<summary>日本語</summary>
+
+# UI のデザインの参考
+
+- Status: Draft
+- Issue: #145
+- Related: `docs/design/screens.md`、ADR-0007（LINE ログイン）、ADR-0012（frontend の構成）
+
+この文書は、MVP の画面をどの公開済みのアプリをもとにデザインするか、それぞれから何を取り入れるか、なぜそうするかを書き残す。各画面に何を出すかは `docs/design/screens.md` が決め、この文書は見た目の参考を示すだけ。色、文字、余白（#146）、共通の部品（#147）、ワイヤーフレーム（#148）は別に決める。
+
+tasuki の見た目の好みは変わると見込んでいる。この文書に理由を残しておけば、ほかの部分がどこから来たかを推測せずに、1 つの画面の参考だけを差し替えられる。
+
+## 公開済みのアプリの画面を使う理由
+
+- tasuki の画面の多くは、たくさんのアプリがすでにしていることをする：これからの予定の一覧、出欠の答え、メンバーの招待と承認、人を順番に並べること、タイムの表示。tasuki を開く人はこうしたアプリをすでに使っていて、多くはスマホの LINE の中から開く（ADR-0007）
+- 同じことをしているアプリから取った画面には、後から確かめられる理由がある：参考そのもの
+- AI のツールが作ったデザインからは始めない。ありきたりな見た目にしたくないし、人がすでに使っているアプリとも結びついていないから
+- 作品を見せるサイト（Dribbble、Behance）も使わない。使うためではなく、絵として良く見えるように作った作品が多く、スマホの画面でないものも多い
+- tasuki のすべてをするアプリはない（Spond と TeamSnap にはラップタイムがなく、Strava には走順がない）。なので、参考は画面ごとに選ぶ
+
+## 画面ごとの参考
+
+| tasuki の画面 | 使う人 | 参考 | 取り入れること |
+| --- | --- | --- | --- |
+| R7 走順の編集 | 幹事 | TeamSnap：Lineups | 全員か「行く」と答えた人の中から選手を選び、順番や位置を割り当て、公開するまでは管理者だけに見せる |
+| R6 エントリー | 幹事 | TeamSnap：Lineups の「行く人から選ぶ」 | 「参加」と答えたメンバーだけを候補に出す |
+| R3 大会の登録 | 幹事 | Spond：イベントの作成 | 時刻、場所、締め切り、誰に見せるかを 1 つのフォームで決める |
+| R4 招待 | 幹事 | Spond：イベントへの招待 | イベントごとに招待する人を選び、その人たちにだけイベントを見せる |
+| R5 出欠の一覧 | 幹事 | Spond：参加者の一覧 | 一覧からメンバーの答えを直し、答えていない人に催促する |
+| R2 走者のラップタイム | 幹事 | Strava：走った記録の Splits と Laps | 周回ごと、または 1 km ごとのタイムの表 |
+| M1 名簿 | 幹事 | Spond：「Invite to group with link」、Mobbin：「Invite Teammates」の型 | 招待リンクを有効にし、コピーして送る |
+| M3 承認 | 幹事 | Strava：招待制のクラブの「Pending Requests」 | 申し込みを 1 件ずつ承認するか断る |
+| M2 メンバーのプロフィール | 幹事 | Strava：「Pace Analysis」 | 平均を、区間ごとのタイムと並べて出す |
+| R1 大会の一覧 | メンバー | Spond：ホーム | 招待されたイベントをホームに並べる |
+| R2 出欠の答え | メンバー | Spond：イベントへの答え、調整さん：○△× | イベントから答える。Spond は「行く」と「行かない」の 2 つだけなので、3 つの答え（参加、未定、不参加）は調整さんの ○△× にならい、それぞれの意味を画面に書く |
+| R2 確定した走順 | メンバー | TeamSnap：公開された Lineup | 公開されたら、チーム全員に共有される順番 |
+| L1 自分のラップタイム | メンバー | Strava：Laps と Splits、Mobbin：Strava「Pace Analysis」 | 周回ごとのタイムの表。Strava はタイムを機器から取るので、入力そのものには別の参考が要る |
+| P1 自分のプロフィール | メンバー | Mobbin：Strava「Workout Stats」 | いくつかの数字を大きく出す |
+| A1 招待リンクから入る | 参加前の人 | Spond：グループのリンクやコードで申し込む | 受け取ったリンクから参加を申し込む |
+| A2 承認待ち | 参加前の人 | Strava：招待制のクラブの承認待ち、Mobbin：Strava「Pending Invites」 | 申し込みが待っている間に出すもの |
+| A5 ログイン | 参加前の人 | LINE ログインのボタンのガイドライン | LINE が決めているボタンの色、形、文言 |
+
+## 参考の使い方
+
+- 取り入れるのは構造：画面に何があり、どの順に並び、主な操作がどこにあるか。色、ロゴ、イラスト、文言は取り入れない
+- 見るのはスマホの画面（iOS と Android）だけ。tasuki はスマホの LINE の中で開かれるから
+- 見る場所：
+  - Strava：Mobbin にある画面と、Strava のヘルプ
+  - Spond：アプリそのもの（無料）を、管理者とメンバーの両方の側から使う。Spond のヘルプ
+  - TeamSnap：Lineups は iOS と Android のアプリの有料の機能なので、機能のページ、ヘルプ、App Store の画面写真
+  - 調整さん：サイトそのもの
+- tasuki の画面が参考と違うときは、`docs/design/screens.md` に従う。例えば、Spond の答えは 2 つだが、tasuki の出欠の答えは 3 つ
+- 色、文字、余白は #146 で、部品は #147 で決める。この文書では決めない
+
+## 参考を変えるとき
+
+- 上の表の行を変え、下の変更履歴に、日付、画面、理由を 1 行足す
+- L1 でラップタイムを入力する部分には、まだ参考がない。#148 で選ぶ
+
+## 変更履歴
+
+| 日付 | 変更 |
+| --- | --- |
+| 2026-11-08 | MVP のすべての画面に、最初の参考を決めた |
+
+## 参考資料
+
+英語の節を参照。
+
+</details>
