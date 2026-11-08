@@ -20,6 +20,17 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRosterMembers: () => Promise.resolve({ roster_members: [] }),
+    getRosterMember: (rosterMemberId) =>
+      Promise.resolve({
+        id: rosterMemberId,
+        name: "Jiro",
+        left: false,
+        average_time: "3:40",
+        lap_count: 0,
+        laps_by_race: [],
+      }),
+    listPendingMemberLinks: () => Promise.resolve({ links: [] }),
     getRace: (raceId) =>
       Promise.resolve({
         id: raceId,
@@ -107,7 +118,7 @@ describe("route guard", () => {
       async (status) => {
         renderAt("/roster", me({ is_organizer: true, status, roster_member: null }));
 
-        expect(await screen.findByRole("heading", { name: "M1 Roster" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "Roster" })).toBeInTheDocument();
       },
     );
 

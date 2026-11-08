@@ -175,8 +175,10 @@ Who can open it: organizers, and invited members whose answer is not "not attend
   - Add a roster member (name only).
   - Create an invite link and copy it to send directly. Not available for members who already have an approved user or who have left. Creating a new link makes the old one unusable.
   - Mark as left. Invitations to races whose date is today or later are cancelled automatically, with the same effects as cancelling on R4. Past races are not changed.
+    - Asks for confirmation first.
   - Undo left. Cancelled invitations do not come back.
   - Unlink the approved user (for example when someone changes their LINE account).
+    - Asks for confirmation first. To link again, the member needs a new invite link and approval.
   - Open a member's profile (M2).
 - Names cannot be changed.
 
@@ -189,6 +191,7 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 
 - Shows waiting links: LINE display name, the roster member's name, and when they logged in.
 - Actions: approve or reject. Rejections are told outside the app.
+  - Rejecting asks for confirmation first. Approving does not.
 
 ## Main flows
 
@@ -399,8 +402,10 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
   - 名簿のメンバーを追加する（名前だけ）
   - 招待リンクを作り、コピーして本人に直接送る。承認済みのユーザーがあるメンバーと、退会したメンバーには作れない。新しいリンクを作ると、古いリンクは使えなくなる
   - 退会にする。開催日が今日以降の大会への招待は自動で取り消され、R4 で取り消したときと同じことが起きる。過去の大会は変えない
+    - 先に確認する
   - 退会を取り消す。取り消された招待は戻らない
   - 承認済みのユーザーとの紐付けを解除する（LINE のアカウントを変えた人など）
+    - 先に確認する。つなぎ直すには、新しい招待リンクと承認が要る
   - メンバーのプロフィールを開く（M2）
 - 名前は変えられない
 
@@ -413,6 +418,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 
 - 承認待ちの紐付けを出す：LINE の表示名、名簿のメンバーの名前、ログインした日時
 - 操作：承認する、却下する。却下はアプリの外で伝える
+  - 却下は先に確認する。承認は確認しない
 
 ## 主な流れ
 
