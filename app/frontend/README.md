@@ -71,3 +71,82 @@ The tests need no browser and no backend: they use jsdom and a fake API client. 
 - [`docs/design/screens.md`](../../docs/design/screens.md): what each screen shows.
 - [`docs/adr/`](../../docs/adr): why things are the way they are.
 
+---
+
+<details>
+<summary>日本語</summary>
+
+# tasuki frontend
+
+tasuki の Web アプリ（React、TypeScript、Vite）。このページは、clone したばかりの状態から、frontend とそのテストを動かすまでを説明する。技術構成、構成、決まりは [`TECH.md`](TECH.md) にある。
+
+## 必要なもの
+
+- Docker
+- エディタ。Dev Containers の拡張を入れた VS Code が一番かんたん。シェルが使えれば、どのエディタでもよい
+
+手元のマシンには、ほかに何も入れない。Node と pnpm は、[`mise.toml`](mise.toml) の版で Dev Container の中で動く。
+
+**`pnpm` は Dev Container の中でだけ動かし、手元のマシンでは動かさない。** `node_modules` は Docker の volume にあり、pnpm はそこで、インストールのスクリプトと出たばかりの版を止めるように設定してある（[`pnpm-workspace.yaml`](pnpm-workspace.yaml)）。
+
+## 1. ポートを確かめる
+
+Vite の開発サーバーは、ホストのポート `5173`（`FRONTEND_PORT`）を使う。すでに使われていれば、[`infra/.env.example`](../../infra/.env.example) を `infra/.env` にコピーして変える。
+
+## 2. Dev Container を開く
+
+**VS Code を使う場合：** `app/frontend` を開き、**Dev Containers: Reopen in Container** を実行する。`pnpm install` は自動で動く。ウィンドウを閉じると、コンテナは止まる。
+
+**ほかのエディタを使う場合：** 手元のマシンの `app/frontend` で、次を実行する：
+
+```sh
+make dev-up      # コンテナを作って起動する
+make dev-shell   # 中のシェルを開く。最初に 1 回 pnpm install を動かす
+make dev-down    # 終わったら止める
+```
+
+## 3. frontend を動かす
+
+Dev Container の中で：
+
+```sh
+pnpm dev   # http://localhost:5173
+```
+
+手元のマシンで変えたファイルはコンテナに届くので、編集するとページが読み込み直される。
+
+ページのデータは backend から取る。開発サーバーは `/api` を backend の Dev Container に転送する。画面を使うには、backend も起動し（[`app/backend/README.md`](../backend/README.md) を参照）、そこで `make run` を動かす。開発中に LINE を使わずにログインする方法は、[開発中のログイン](../backend/TECH.md#開発中のログイン)を参照。
+
+## 4. テストと確認を動かす
+
+Dev Container の中で：
+
+```sh
+pnpm test           # Vitest。pnpm test:watch は変更のたびに動かし直す
+pnpm build          # 型の確認（tsc -b）と本番用のビルド
+pnpm lint           # oxlint。層どうしの import の決まりも確かめる
+pnpm format         # oxfmt。pnpm format:check は報告だけ
+```
+
+テストにはブラウザも backend も要らない。jsdom と偽の API クライアントを使う。CI は、PR ごとに `pnpm generate:api`（型が古いと失敗する）、`lint`、`format:check`、`test`、`build` を動かす。
+
+## よく使うコマンド
+
+| コマンド | 実行する場所 | すること |
+| --- | --- | --- |
+| `pnpm install` | Dev Container | パッケージを入れる |
+| `pnpm dev` | Dev Container | 開発サーバーをポート 5173 で起動する |
+| `pnpm test` / `pnpm test:watch` | Dev Container | テストを 1 回／変更のたびに動かす |
+| `pnpm build` / `pnpm preview` | Dev Container | 本番用にビルドする／ビルドしたものを出す |
+| `pnpm lint` | Dev Container | oxlint |
+| `pnpm format` / `pnpm format:check` | Dev Container | oxfmt：整形する／報告だけ |
+| `pnpm generate:api` | Dev Container | `app/backend/api/openapi.yaml` を変えた後、API の型を作り直す |
+| `make dev-up` / `dev-shell` / `dev-down` | 手元のマシン | VS Code を使わずに Dev Container を起動する／入る／止める |
+
+## 次に読むもの
+
+- [`TECH.md`](TECH.md)：技術構成、機能の層（ADR-0012）、スタイリング、ルート、サーバーのデータ、テスト、lint、生成する API の型
+- [`docs/design/screens.md`](../../docs/design/screens.md)：各画面に出すもの
+- [`docs/adr/`](../../docs/adr)：なぜそうなっているか
+
+</details>
