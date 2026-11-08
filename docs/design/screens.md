@@ -161,6 +161,7 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 - Opened from R2, for races where the user is a runner in the confirmed running order.
 - Shows the user's lap times for that race (per km, `MM:SS`).
 - Actions: add lap times, edit one, delete one. The average time is recalculated each time.
+  - Only the lap times being added are kept as a draft until they are submitted (ADR-0013). Editing one lap is done in place and is not kept. Laps have no `version`: only the user changes their own laps.
 - Only the user can change their own lap times. Organizers can see them but not change them.
 
 ### P1 My profile
@@ -390,6 +391,7 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 - R2 から開く。自分が確定した走順の走者になっている大会だけ
 - その大会の自分のラップタイム（1km あたり、`MM:SS`）を出す
 - 操作：ラップタイムを足す、1つを直す、1つを消す。そのたびに平均タイムを計算し直す
+  - 下書き（ADR-0013）にするのは、足すために入力中で、まだ送っていないラップタイムだけ。1つを直すのはその場で行い、下書きには残さない。ラップには `version` がない。自分のラップを変えるのは本人だけだから
 - 自分のラップタイムを変えられるのは本人だけ。幹事は見られるが変えられない
 
 ### P1 自分のプロフィール

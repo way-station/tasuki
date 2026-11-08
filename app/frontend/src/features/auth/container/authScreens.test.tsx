@@ -20,6 +20,10 @@ function renderAt(path: string, stubs: Partial<ApiClient>) {
     listRaces: () => Promise.resolve({ races: [] }),
     listInvitations: () => Promise.resolve({ members: [] }),
     listEntries: () => Promise.resolve({ entries: [] }),
+    listRaceLaps: () => Promise.resolve({ runners: [] }),
+    getMyLaps: () => Promise.resolve({ laps: [], average_time: "3:40", lap_count: 0 }),
+    getMyProfile: () =>
+      Promise.resolve({ name: "Taro Yamada", average_time: "3:40", lap_count: 0 }),
     listRosterMembers: () => Promise.resolve({ roster_members: [] }),
     getRosterMember: (rosterMemberId) =>
       Promise.resolve({
@@ -135,7 +139,7 @@ describe("route guard", () => {
     it("with a link opens member screens", async () => {
       renderAt("/me", me({ is_organizer: true }));
 
-      expect(await screen.findByRole("heading", { name: "P1 My profile" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Taro Yamada" })).toBeInTheDocument();
     });
   });
 
