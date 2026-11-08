@@ -9,6 +9,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Attendance struct {
+	RaceID         uuid.UUID
+	RosterMemberID uuid.UUID
+	Status         string
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type Entry struct {
+	ID        uuid.UUID
+	RaceID    uuid.UUID
+	Name      string
+	CreatedAt pgtype.Timestamptz
+}
+
+type EntryMember struct {
+	EntryID        uuid.UUID
+	RaceID         uuid.UUID
+	RosterMemberID uuid.UUID
+	CreatedAt      pgtype.Timestamptz
+}
+
 type InviteLink struct {
 	ID             uuid.UUID
 	RosterMemberID uuid.UUID
@@ -48,6 +69,22 @@ type MemberLink struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type Race struct {
+	ID          uuid.UUID
+	TeamID      uuid.UUID
+	Name        string
+	Description []byte
+	Version     int32
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type RaceInvitation struct {
+	RaceID         uuid.UUID
+	RosterMemberID uuid.UUID
+	CreatedAt      pgtype.Timestamptz
+}
+
 type RosterMember struct {
 	ID             uuid.UUID
 	TeamID         uuid.UUID
@@ -57,6 +94,23 @@ type RosterMember struct {
 	LapCount       int32
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
+}
+
+type RunningOrder struct {
+	ID          uuid.UUID
+	EntryID     uuid.UUID
+	Status      string
+	Version     int32
+	ConfirmedAt pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type RunningOrderLeg struct {
+	RunningOrderID uuid.UUID
+	EntryID        uuid.UUID
+	LegNumber      int32
+	RosterMemberID *uuid.UUID
 }
 
 type Session struct {
