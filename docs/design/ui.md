@@ -90,3 +90,23 @@ Asks before an action with effects the user cannot undo. It has a title (the que
 | Busy | The request is running; both buttons are disabled |
 
 In the code: `shared/ui/Confirmation.tsx` (`role="alertdialog"`).
+
+### Lists and tables
+
+| List | Shows | Used on |
+| --- | --- | --- |
+| Race list | Name, race date, running order confirmed. Members see two sections: My races and Invitations | R1 |
+| Running order | Leg number, distance, runner ("not decided" when empty), the status, and the prediction | R2, R7 |
+| Invitations | Each roster member who has not left, and whether they are invited | R4 |
+| Attendance | Each invited member and their answer | R5 |
+| Entry members | Members of the entry | R6 |
+| Lap times | Laps per runner (R2) or per race (M2); the user's own laps with edit and delete (L1) | R2, M2, L1 |
+| Roster | Name, left or not, link status, invite link expiry, actions | M1 |
+| Waiting links | LINE display name, roster member, when they logged in, approve and reject | M3 |
+
+Whether each one is a table or a list of cards on a phone is decided with the wireframes (#148).
+
+| State | When |
+| --- | --- |
+| Empty | Nothing to show yet, with a sentence saying so, for example "No lap times yet." |
+| With actions | Rows that have their own buttons (R4, R6, L1, M1, M3). Each button names its row for screen readers, for example "Unlink Taro" |
