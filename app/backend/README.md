@@ -48,6 +48,8 @@ make run          # http://localhost:8080/health
 
 `/health` answers `200` when MongoDB and PostgreSQL are reachable.
 
+If `make db-migrate` stops with `Dirty database version N`, a migration failed halfway on your local database. `make db-reset` drops everything in it and applies every migration again (local only; your local data is lost).
+
 To log in without LINE during development, see [Logging in during development](TECH.md#logging-in-during-development).
 
 ## 4. Run the tests
@@ -139,6 +141,8 @@ make run          # http://localhost:8080/health
 ```
 
 `/health` は、MongoDB と PostgreSQL につながると `200` を返す。
+
+`make db-migrate` が `Dirty database version N` で止まったら、手元のデータベースでマイグレーションが途中で失敗している。`make db-reset` はその中のものをすべて消し、すべてのマイグレーションを適用し直す（手元でだけ使う。手元のデータは消える）。
 
 開発中に LINE を使わずにログインする方法は、[開発中のログイン](TECH.md#開発中のログイン)を参照。
 
