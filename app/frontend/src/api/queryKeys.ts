@@ -9,4 +9,9 @@ export const queryKeys = {
   race: (raceId: string) => ["races", raceId] as const,
   invitations: (raceId: string) => ["races", raceId, "invitations"] as const,
   entries: (raceId: string) => ["races", raceId, "entries"] as const,
+  // A member's profile is under the roster's key, so invalidating the roster
+  // refreshes both.
+  rosterMembers: ["roster-members"],
+  rosterMember: (rosterMemberId: string) => ["roster-members", rosterMemberId] as const,
+  memberLinks: ["member-links"],
 } as const;
