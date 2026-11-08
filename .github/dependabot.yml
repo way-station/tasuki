@@ -1,0 +1,29 @@
+# Dependabot version updates (#38).
+#
+# - Every ecosystem is checked on Monday morning, Japan time.
+# - Only versions published at least 14 days ago are proposed (cooldown), so a
+#   hijacked release is likely to be found and removed first.
+# - Minor and patch updates of one ecosystem come together in one pull request.
+#   Major updates can break things, so each comes in its own pull request.
+# - Pull requests get the `chore` label; .github/labeler.yml adds the area
+#   (backend, frontend, infra) from the changed files.
+#
+# Not covered, updated by hand:
+# - Node and pnpm in app/frontend/mise.toml: Dependabot does not support mise.
+# - The golang image in infra/docker/backend/Dockerfile: it must match the `go`
+#   line of app/backend/go.mod, so both are updated together.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 14
+    groups:
+      github-actions:
+        update-types: [minor, patch]
+    labels: [chore]
