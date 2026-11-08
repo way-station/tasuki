@@ -8,6 +8,7 @@ func setRequired(t *testing.T) {
 	t.Setenv("MONGODB_URI", "mongodb://localhost:27017")
 	t.Setenv("DATABASE_URL", "postgres://localhost:5432/tasuki")
 	t.Setenv("FRONTEND_ORIGIN", "http://localhost:5173")
+	t.Setenv("TEAM_ID", "01900000-0000-7000-8000-000000000001")
 }
 
 func TestLoad(t *testing.T) {
