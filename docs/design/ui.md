@@ -110,3 +110,16 @@ Whether each one is a table or a list of cards on a phone is decided with the wi
 | --- | --- |
 | Empty | Nothing to show yet, with a sentence saying so, for example "No lap times yet." |
 | With actions | Rows that have their own buttons (R4, R6, L1, M1, M3). Each button names its row for screen readers, for example "Unlink Taro" |
+
+### Status labels
+
+Short labels for the state of a thing, always as text.
+
+| Thing | Labels |
+| --- | --- |
+| Running order | Draft, Confirmed |
+| Leg | Not decided |
+| Attendance | Attending, Not attending, Undecided, Not answered |
+| User link | No user, Waiting for approval, Approved |
+| Roster member | Left |
+| Joining | Waiting (A2), Rejected (A3) |
