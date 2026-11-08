@@ -38,3 +38,16 @@ pnpm dev   # http://localhost:5173
 Files you change on your machine reach the container, so the page reloads as you edit.
 
 The pages get their data from the backend: the dev server forwards `/api` to the backend's Dev Container. To use the screens, also start the backend (see [`app/backend/README.md`](../backend/README.md)) and run `make run` there. To log in without LINE during development, see [Logging in during development](../backend/TECH.md#logging-in-during-development).
+
+## 4. Run the tests and checks
+
+Inside the Dev Container:
+
+```sh
+pnpm test           # Vitest; pnpm test:watch reruns on changes
+pnpm build          # type check (tsc -b) and production build
+pnpm lint           # oxlint, including the import rules between layers
+pnpm format         # oxfmt; pnpm format:check only reports
+```
+
+The tests need no browser and no backend: they use jsdom and a fake API client. CI runs `pnpm generate:api` (and fails when the types are out of date), `lint`, `format:check`, `test`, and `build` on every pull request.
