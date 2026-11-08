@@ -65,3 +65,23 @@ make test-integration
 ```
 
 CI runs the tests, golangci-lint, and `make generate` on every pull request, and fails when the generated code is out of date.
+
+## Common commands
+
+| Command | Runs on | What it does |
+| --- | --- | --- |
+| `make run` | Dev Container | Starts the API on port 8080 |
+| `make test` / `make test-integration` | Dev Container | Unit tests / also the integration tests |
+| `make lint` / `make fmt` | Dev Container | golangci-lint |
+| `make generate` | Dev Container | Regenerates the committed code after `api/openapi.yaml` or the queries change |
+| `make db-migrate` / `db-rollback` / `db-reset` | Dev Container | Applies / undoes the last / reapplies every migration |
+| `make db-new NAME=create_users` | Dev Container | Creates the next pair of migration files |
+| `make dev-up` / `dev-shell` / `dev-down` | Your machine | Starts / enters / stops the Dev Container without VS Code |
+| `make up` / `down` | Your machine | Builds and runs the production image |
+
+## Next
+
+- [`TECH.md`](TECH.md): the stack, the directory structure, environment variables, migrations, sqlc, testing, and naming.
+- [`docs/design/api.md`](../../docs/design/api.md): the API design.
+- [`docs/adr/`](../../docs/adr): why things are the way they are.
+
