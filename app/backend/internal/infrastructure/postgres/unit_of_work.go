@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/way-station/tasuki/app/backend/internal/application/transaction"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres/sqlcgen"
 )
 
 type transactionKey struct{}
@@ -44,4 +45,13 @@ func (unitOfWork *UnitOfWork) Run(ctx context.Context, work func(ctx context.Con
 		return fmt.Errorf("commit transaction: %w", err)
 	}
 	return nil
+}
+
+// queriesFor returns queries that run in the transaction of ctx, or queries itself
+// outside a unit of work.
+func queriesFor(ctx context.Context, queries *sqlcgen.Queries) *sqlcgen.Queries {
+	if dbTransaction, ok := ctx.Value(transactionKey{}).(pgx.Tx); ok {
+		return queries.WithTx(dbTransaction)
+	}
+	return queries
 }
