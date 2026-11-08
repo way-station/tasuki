@@ -3,6 +3,7 @@ package postgres
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +23,26 @@ func parseID[ID ~string](id ID) (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("invalid id %q: %w", id, err)
 	}
 	return parsed, nil
+}
+
+// parseOptionalID converts an optional domain ID to a nullable uuid value.
+func parseOptionalID[ID ~string](id *ID) (*uuid.UUID, error) {
+	if id == nil {
+		return nil, nil
+	}
+	parsed, err := parseID(*id)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
+}
+
+// toInt32 converts a domain integer to an integer column value.
+func toInt32(value int, what string) (int32, error) {
+	if value < math.MinInt32 || value > math.MaxInt32 {
+		return 0, fmt.Errorf("%s %d does not fit in an integer column", what, value)
+	}
+	return int32(value), nil
 }
 
 func timestamptz(at time.Time) pgtype.Timestamptz {
