@@ -70,3 +70,23 @@ Every input has a visible label. Some have a help text below the label, for exam
 Repeating inputs: a list of the same input with add and remove buttons, for leg distances (R3), legs (R7, time races), and new lap times (L1).
 
 In the code: `Field` in `features/races/ui/RaceFormView.tsx`, and plain inputs in the other views.
+
+### Confirmation dialog
+
+Asks before an action with effects the user cannot undo. It has a title (the question), one or more messages (what will happen), a confirm button, and Cancel.
+
+| Where | Title (as in the code) | Confirm button |
+| --- | --- | --- |
+| R2 | "Answer not attending?" / "Change your answer?" | Danger / Primary |
+| R4 | "Cancel {name}'s invitation?" | Danger |
+| R6 | "Remove {name} from the entry?" | Danger |
+| R7 | "Save and delete lap times?", naming the runners who lose laps | Danger |
+| M1 | "Mark {name} as left?", "Unlink {name}'s user?" | Danger |
+| M3 | "Reject {name}?" | Danger |
+
+| State | When |
+| --- | --- |
+| Open | Focus moves into the dialog; the screen behind cannot be used |
+| Busy | The request is running; both buttons are disabled |
+
+In the code: `shared/ui/Confirmation.tsx` (`role="alertdialog"`).
