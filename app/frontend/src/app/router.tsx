@@ -9,6 +9,8 @@ import { InviteLandingContainer } from "../features/auth/container/InviteLanding
 import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
 import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
 import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
+import { MyLapsContainer } from "../features/laps/container/MyLapsContainer.tsx";
+import { ProfileContainer } from "../features/laps/container/ProfileContainer.tsx";
 import { AttendanceListContainer } from "../features/participation/container/AttendanceListContainer.tsx";
 import { EntryContainer } from "../features/participation/container/EntryContainer.tsx";
 import { InvitationsContainer } from "../features/participation/container/InvitationsContainer.tsx";
@@ -146,13 +148,13 @@ const raceLinkedRoute = createRoute({
 const raceLapsRoute = createRoute({
   getParentRoute: () => raceLinkedRoute,
   path: "laps",
-  component: () => <Placeholder screen="L1" title="My lap times" />,
+  component: MyLapsContainer,
 });
 
 const profileRoute = createRoute({
   getParentRoute: () => linkedRoute,
   path: "me",
-  component: () => <Placeholder screen="P1" title="My profile" />,
+  component: ProfileContainer,
 });
 
 const rosterRoute = createRoute({

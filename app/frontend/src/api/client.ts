@@ -16,6 +16,9 @@ export type Entry = components["schemas"]["Entry"];
 export type RunningOrderList = components["schemas"]["RunningOrderList"];
 export type RunningOrder = components["schemas"]["RunningOrder"];
 export type RunningOrderSave = components["schemas"]["RunningOrderSave"];
+export type MyLaps = components["schemas"]["MyLaps"];
+export type RaceLaps = components["schemas"]["RaceLaps"];
+export type Profile = components["schemas"]["Profile"];
 
 // Every call the frontend makes to the backend. Hooks depend on this
 // interface, never on fetch, so tests can pass a fake (ADR-0012). Each feature
@@ -59,6 +62,17 @@ export interface ApiClient {
   // Throws validation_failed when a leg has no runner, and state_conflict when
   // it is already confirmed.
   confirmRunningOrder(raceId: string, entryId: string, version: number): Promise<RunningOrder>;
+
+  // Lap times and the profile (docs/design/api.md). The my-laps calls throw
+  // not_found unless the caller is a runner in a confirmed running order of the
+  // race; each resolves to the caller's laps and average after the change.
+  getMyLaps(raceId: string): Promise<MyLaps>;
+  submitLaps(raceId: string, times: string[]): Promise<MyLaps>;
+  editLap(raceId: string, lapId: string, time: string): Promise<MyLaps>;
+  deleteLap(raceId: string, lapId: string): Promise<MyLaps>;
+  // Organizers only.
+  listRaceLaps(raceId: string): Promise<RaceLaps>;
+  getMyProfile(): Promise<Profile>;
 }
 
 type ApiClientOptions = {
@@ -226,6 +240,52 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
           body: { version },
         }),
       );
+    },
+
+    async getMyLaps(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}/my-laps", {
+          params: { path: { race_id: raceId } },
+        }),
+      );
+    },
+
+    async submitLaps(raceId, times) {
+      return dataOrThrow(
+        await client.POST("/api/v1/races/{race_id}/my-laps", {
+          params: { path: { race_id: raceId } },
+          body: { times },
+        }),
+      );
+    },
+
+    async editLap(raceId, lapId, time) {
+      return dataOrThrow(
+        await client.PATCH("/api/v1/races/{race_id}/my-laps/{lap_id}", {
+          params: { path: { race_id: raceId, lap_id: lapId } },
+          body: { time },
+        }),
+      );
+    },
+
+    async deleteLap(raceId, lapId) {
+      return dataOrThrow(
+        await client.DELETE("/api/v1/races/{race_id}/my-laps/{lap_id}", {
+          params: { path: { race_id: raceId, lap_id: lapId } },
+        }),
+      );
+    },
+
+    async listRaceLaps(raceId) {
+      return dataOrThrow(
+        await client.GET("/api/v1/races/{race_id}/laps", {
+          params: { path: { race_id: raceId } },
+        }),
+      );
+    },
+
+    async getMyProfile() {
+      return dataOrThrow(await client.GET("/api/v1/me/profile"));
     },
   };
 }

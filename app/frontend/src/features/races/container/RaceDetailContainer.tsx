@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { errorCode } from "../../../shared/errors/apiErrors.ts";
 import { useMe } from "../../auth/hooks/useMe.ts";
+import { RaceLapsSectionContainer } from "../../laps/container/RaceLapsSectionContainer.tsx";
 import { AttendanceAnswerContainer } from "../../participation/container/AttendanceAnswerContainer.tsx";
 import { RunningOrderSectionContainer } from "../../running-orders/container/RunningOrderSectionContainer.tsx";
 import { useRace } from "../hooks/useRace.ts";
@@ -53,6 +54,7 @@ export function RaceDetailContainer() {
           canSee={isOrganizer || myAttendance === "attending"}
         />
       }
+      laps={<RaceLapsSectionContainer raceId={raceId} canSee={isOrganizer} />}
     />
   );
 }
