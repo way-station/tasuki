@@ -142,14 +142,16 @@ Who can open it: organizers, and invited members whose answer is not "not attend
 ### R7 Running order editor (organizers)
 
 - Shows the legs in order with the runner of each leg, the status (draft / confirmed), and the prediction.
+  - The prediction is calculated from the saved running order. With unsaved changes it is still shown, with a note that saving updates it.
 - Legs:
   - Distance-based: one leg per leg distance in the description.
   - Time-based: the organizer adds and removes legs freely.
+  - Before the first save, the legs start empty: one per leg distance, or one leg for time-based races.
 - Runners are picked from the entry's members. One member can run any number of legs.
 - Actions:
   - Assign or clear the runner of a leg, and save.
-  - Confirm. Only when every leg has a runner. After confirming, members can see it.
-  - Edit after confirming. Changes are saved and shown to members right away; the order stays confirmed. A member removed from the order loses their lap times for this race, and their average time is recalculated.
+  - Confirm. Only when every leg has a runner and every change is saved: with unsaved changes, the screen asks to save first. After confirming, members can see it.
+  - Edit after confirming. Changes are saved and shown to members right away; the order stays confirmed. A runner whose number of legs goes down loses their lap times for this race, and their average time is recalculated. The screen names these runners and asks for confirmation before saving.
 - Every change is saved as history. The MVP has no screen to view the history.
 
 ## Lap times and profile
@@ -366,14 +368,16 @@ tasuki の MVP の画面を一覧にする。各画面に出すもの、でき�
 ### R7 走順の編集（幹事）
 
 - 区を順に並べ、区ごとの走者、状態（下書き／確定）、予想を出す
+  - 予想は保存した走順から計算する。保存していない変更があっても予想は出し、保存すると更新されることを添える
 - 区：
   - 距離制：説明欄の区ごとの距離と同じ数の区
   - 時間制：幹事が区を自由に足したり消したりする
+  - 最初に保存するまでは、区は空きで始まる。距離制は区の距離の数だけ、時間制は1区
 - 走者はエントリーのメンバーから選ぶ。1人が何区でも走れる
 - 操作：
   - 区の走者を決める、外す、保存する
-  - 確定する。すべての区に走者が入っているときだけ。確定するとメンバーが見られる
-  - 確定した後に直す。保存するとすぐメンバーに見え、確定のまま。走順から外れたメンバーは、この大会のラップタイムが消え、平均タイムは計算し直される
+  - 確定する。すべての区に走者が入り、変更をすべて保存しているときだけ。保存していない変更があれば、先に保存するよう画面で伝える。確定するとメンバーが見られる
+  - 確定した後に直す。保存するとすぐメンバーに見え、確定のまま。区の数が減った走者は、この大会のラップタイムが消え、平均タイムは計算し直される。保存する前に、その走者の名前を出して画面で確かめる
 - 変更はすべて履歴に残す。MVP には履歴を見る画面はない
 
 ## ラップタイムとプロフィール

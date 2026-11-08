@@ -5,7 +5,7 @@ import { useNotifications } from "../../../shared/notification/useNotifications.
 import { useAddEntryMember, useCreateEntry, useRemoveEntryMember } from "../hooks/mutations.ts";
 import { useEntryEditor } from "../hooks/useEntryEditor.ts";
 import type { MemberRef } from "../types/participation.ts";
-import { Confirmation } from "../ui/Confirmation.tsx";
+import { Confirmation } from "../../../shared/ui/Confirmation.tsx";
 import { EntryEditorView } from "../ui/EntryEditorView.tsx";
 import { ParticipationMessage } from "../ui/ParticipationMessage.tsx";
 
