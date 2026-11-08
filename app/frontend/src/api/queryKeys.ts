@@ -13,4 +13,9 @@ export const queryKeys = {
   myLaps: (raceId: string) => ["races", raceId, "my-laps"] as const,
   raceLaps: (raceId: string) => ["races", raceId, "laps"] as const,
   profile: ["profile"],
+  // A member's profile is under the roster's key, so invalidating the roster
+  // refreshes both.
+  rosterMembers: ["roster-members"],
+  rosterMember: (rosterMemberId: string) => ["roster-members", rosterMemberId] as const,
+  memberLinks: ["member-links"],
 } as const;

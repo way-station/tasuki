@@ -36,6 +36,15 @@ export function createFakeApiClient(stubs: Partial<ApiClient> = {}): ApiClient {
     deleteLap: notStubbed("deleteLap"),
     listRaceLaps: notStubbed("listRaceLaps"),
     getMyProfile: notStubbed("getMyProfile"),
+    listRosterMembers: notStubbed("listRosterMembers"),
+    createRosterMember: notStubbed("createRosterMember"),
+    getRosterMember: notStubbed("getRosterMember"),
+    setRosterMemberLeft: notStubbed("setRosterMemberLeft"),
+    unlinkRosterMember: notStubbed("unlinkRosterMember"),
+    createInviteLink: notStubbed("createInviteLink"),
+    listPendingMemberLinks: notStubbed("listPendingMemberLinks"),
+    approveMemberLink: notStubbed("approveMemberLink"),
+    rejectMemberLink: notStubbed("rejectMemberLink"),
     ...stubs,
   };
 }

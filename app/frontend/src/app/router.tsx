@@ -17,10 +17,12 @@ import { InvitationsContainer } from "../features/participation/container/Invita
 import { RaceDetailContainer } from "../features/races/container/RaceDetailContainer.tsx";
 import { RaceFormContainer } from "../features/races/container/RaceFormContainer.tsx";
 import { RaceListContainer } from "../features/races/container/RaceListContainer.tsx";
+import { ApprovalsContainer } from "../features/roster/container/ApprovalsContainer.tsx";
+import { MemberProfileContainer } from "../features/roster/container/MemberProfileContainer.tsx";
+import { RosterContainer } from "../features/roster/container/RosterContainer.tsx";
 import { RunningOrderEditorContainer } from "../features/running-orders/container/RunningOrderEditorContainer.tsx";
 import { Layout } from "./Layout.tsx";
 import { NotFound } from "./NotFound.tsx";
-import { Placeholder } from "./Placeholder.tsx";
 
 // One route per screen in docs/design/screens.md, all inside the common
 // layout. Each placeholder is replaced by its feature's container. Routes only
@@ -160,17 +162,17 @@ const profileRoute = createRoute({
 const rosterRoute = createRoute({
   getParentRoute: () => organizerRoute,
   path: "roster",
-  component: () => <Placeholder screen="M1" title="Roster" />,
+  component: RosterContainer,
 });
 const rosterMemberRoute = createRoute({
   getParentRoute: () => organizerRoute,
   path: "roster/$rosterMemberId",
-  component: () => <Placeholder screen="M2" title="Member profile" />,
+  component: MemberProfileContainer,
 });
 const approvalsRoute = createRoute({
   getParentRoute: () => organizerRoute,
   path: "approvals",
-  component: () => <Placeholder screen="M3" title="Approvals" />,
+  component: ApprovalsContainer,
 });
 
 const routeTree = rootRoute.addChildren([

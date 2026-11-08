@@ -435,4 +435,105 @@ describe("createApiClient", () => {
       expect(new URL(requests[0].url).pathname).toBe("/api/v1/me/profile");
     });
   });
+
+  describe("roster and approvals", () => {
+    const rosterMember = {
+      id: "m1",
+      name: "Taro",
+      left: false,
+      link_status: "none",
+      invite_link_expires_at: null,
+    } as const;
+
+    it("lists and adds roster members", async () => {
+      const { client, requests } = recordingClient(201, rosterMember);
+
+      await client.listRosterMembers();
+      await expect(client.createRosterMember("Taro")).resolves.toEqual(rosterMember);
+
+      expect(requests.map((request) => request.method)).toEqual(["GET", "POST"]);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/roster-members");
+      await expect(requests[1].json()).resolves.toEqual({ name: "Taro" });
+    });
+
+    it("gets a member's profile", async () => {
+      const detail = {
+        id: "m1",
+        name: "Taro",
+        left: false,
+        average_time: "3:40",
+        lap_count: 0,
+        laps_by_race: [],
+      };
+      const { client, requests } = recordingClient(200, detail);
+
+      await expect(client.getRosterMember("m1")).resolves.toEqual(detail);
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/roster-members/m1");
+    });
+
+    it("marks a member as left", async () => {
+      const { client, requests } = recordingClient(200, { ...rosterMember, left: true });
+
+      await client.setRosterMemberLeft("m1", true);
+
+      expect(requests[0].method).toBe("PATCH");
+      await expect(requests[0].json()).resolves.toEqual({ left: true });
+    });
+
+    it("unlinks a user", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await client.unlinkRosterMember("m1");
+
+      expect(requests[0].method).toBe("DELETE");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/roster-members/m1/link");
+    });
+
+    it("throws state_conflict when there is no approved user to unlink", async () => {
+      const { client } = recordingClient(409, problemBody(409, "state_conflict"));
+
+      await expect(client.unlinkRosterMember("m1")).rejects.toMatchObject({
+        code: "state_conflict",
+      });
+    });
+
+    it("creates an invite link", async () => {
+      const created = {
+        url: "https://tasuki.example/invite/abc",
+        expires_at: "2026-11-14T09:00:00Z",
+      };
+      const { client, requests } = recordingClient(201, created);
+
+      await expect(client.createInviteLink("m1")).resolves.toEqual(created);
+      expect(requests[0].method).toBe("POST");
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/roster-members/m1/invite-links");
+    });
+
+    it("lists waiting links", async () => {
+      const { client, requests } = recordingClient(200, { links: [] });
+
+      await expect(client.listPendingMemberLinks()).resolves.toEqual({ links: [] });
+      expect(new URL(requests[0].url).pathname).toBe("/api/v1/member-links");
+    });
+
+    it("approves and rejects waiting links", async () => {
+      const { client, requests } = recordingClient(204);
+
+      await client.approveMemberLink("link-1");
+      await client.rejectMemberLink("link-2");
+
+      expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+        "/api/v1/member-links/link-1/approve",
+        "/api/v1/member-links/link-2/reject",
+      ]);
+    });
+
+    it("throws state_conflict when the link is no longer waiting", async () => {
+      const { client } = recordingClient(409, problemBody(409, "state_conflict"));
+
+      await expect(client.approveMemberLink("link-1")).rejects.toMatchObject({
+        code: "state_conflict",
+      });
+    });
+  });
 });
