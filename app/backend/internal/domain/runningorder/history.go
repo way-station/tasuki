@@ -30,7 +30,7 @@ func (historyEntry *HistoryEntry) RaceID() shared.RaceID { return historyEntry.r
 // EntryID returns the entry.
 func (historyEntry *HistoryEntry) EntryID() shared.EntryID { return historyEntry.entryID }
 
-// ChangedBy returns the organizer's account.
+// ChangedBy returns the organizer's user.
 func (historyEntry *HistoryEntry) ChangedBy() shared.UserID { return historyEntry.changedBy }
 
 // ChangedAt returns when the running order was saved.
