@@ -13,7 +13,7 @@ type HistoryEntry struct {
 	runningOrderID shared.RunningOrderID
 	raceID         shared.RaceID
 	entryID        shared.EntryID
-	changedBy      shared.AccountID
+	changedBy      shared.UserID
 	changedAt      time.Time
 	status         Status
 	legs           []Leg
@@ -30,8 +30,8 @@ func (historyEntry *HistoryEntry) RaceID() shared.RaceID { return historyEntry.r
 // EntryID returns the entry.
 func (historyEntry *HistoryEntry) EntryID() shared.EntryID { return historyEntry.entryID }
 
-// ChangedBy returns the organizer's account.
-func (historyEntry *HistoryEntry) ChangedBy() shared.AccountID { return historyEntry.changedBy }
+// ChangedBy returns the organizer's user.
+func (historyEntry *HistoryEntry) ChangedBy() shared.UserID { return historyEntry.changedBy }
 
 // ChangedAt returns when the running order was saved.
 func (historyEntry *HistoryEntry) ChangedAt() time.Time { return historyEntry.changedAt }
@@ -46,7 +46,7 @@ func (historyEntry *HistoryEntry) Legs() []Leg { return append([]Leg(nil), histo
 type HistoryFactory struct{}
 
 // Snapshot returns the history entry for the running order as it is now.
-func (HistoryFactory) Snapshot(runningOrder *RunningOrder, raceID shared.RaceID, changedBy shared.AccountID, changedAt time.Time) *HistoryEntry {
+func (HistoryFactory) Snapshot(runningOrder *RunningOrder, raceID shared.RaceID, changedBy shared.UserID, changedAt time.Time) *HistoryEntry {
 	return &HistoryEntry{
 		runningOrderID: runningOrder.id,
 		raceID:         raceID,
