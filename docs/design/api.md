@@ -47,6 +47,15 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | 409 | `state_conflict` | The action is not allowed in the current state (details per endpoint) |
 | 422 | `validation_failed` | The body breaks a business rule (details per endpoint), with `errors` listing the fields |
 
+### Backend notes
+
+| Topic | Rule |
+| --- | --- |
+| Caller | A middleware in Presentation resolves the caller once per request (organizer or not, link status, the approved roster member) and returns `403 forbidden` when the caller's role does not allow the endpoint ("Who can call"). Use cases receive the resolved caller |
+| Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005) |
+| Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
+| Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
+
 ## Authentication and joining
 
 | Method and path | Caller | Screen | Purpose |
@@ -445,6 +454,15 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 409 | `version_conflict` | 読んだ後にほかの人が変えた |
 | 409 | `state_conflict` | 今の状態ではその操作ができない（内容はエンドポイントごと） |
 | 422 | `validation_failed` | 本文が業務のルールに反する（内容はエンドポイントごと）。`errors` に項目を並べる |
+
+### backend の決まり
+
+| 項目 | 決まり |
+| --- | --- |
+| 呼ぶ人 | Presentation の middleware が、リクエストごとに一度、呼ぶ人を調べる（幹事かどうか、紐付けの状態、承認された名簿のメンバー）。役割がエンドポイントを許さないとき（「呼べる人」）は、そこで `403 forbidden` を返す。ユースケースは調べた結果を受け取る |
+| チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005） |
+| 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
+| 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
 
 ## 認証と参加
 
