@@ -185,3 +185,30 @@ func TestRemovingAnEntryMemberEmptiesTheirLegs(t *testing.T) {
 		t.Errorf("legs = %d, want all 3 kept", count)
 	}
 }
+
+func TestEntryAndRunningOrderKeys(t *testing.T) {
+	client := newTestClient(t)
+	saveSchemaRunningOrder(t, client)
+
+	// A leg's runner must be a member of the same entry.
+	mustExec(t, client, "DELETE FROM entry_members WHERE entry_id = $1 AND roster_member_id = $2", schemaEntryID, schemaJiroID)
+	if code := execCode(t, client, "UPDATE running_order_legs SET roster_member_id = $1 WHERE leg_number = 2", schemaJiroID); code != foreignKeyFailed {
+		t.Errorf("runner outside the entry: code %q, want %s", code, foreignKeyFailed)
+	}
+	// Only members invited to the entry's race can join it: Jiro is not invited
+	// to the other race.
+	if code := execCode(t, client, "INSERT INTO entry_members (entry_id, race_id, roster_member_id) VALUES ($1, $2, $3)",
+		schemaEntryID, schemaOtherRace, schemaJiroID); code != foreignKeyFailed {
+		t.Errorf("entry member of another race: code %q, want %s", code, foreignKeyFailed)
+	}
+	// One running order per entry.
+	if code := execCode(t, client, "INSERT INTO running_orders (id, entry_id, status) VALUES (gen_random_uuid(), $1, 'draft')",
+		schemaEntryID); code != uniqueViolation {
+		t.Errorf("second running order: code %q, want %s", code, uniqueViolation)
+	}
+	// Deleting the running order deletes its legs.
+	mustExec(t, client, "DELETE FROM running_orders WHERE id = $1", schemaOrderID)
+	if count := countRows(t, client, "SELECT count(*) FROM running_order_legs"); count != 0 {
+		t.Errorf("legs after deleting the running order = %d, want 0", count)
+	}
+}
