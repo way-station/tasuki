@@ -25,3 +25,21 @@ Rules for every component:
 - A state is never shown by color alone: it also has text or an icon, so it reads the same without color.
 - Text and background colors meet WCAG AA contrast (#146).
 - Anything the user can press is large enough to press with a thumb on a phone; the size comes with #146.
+
+### Buttons
+
+| Variant | For | Examples |
+| --- | --- | --- |
+| Primary | The main action of a screen or a form. At most one per form | Save (R3, R7), Submit (L1), Add (M1), Confirm (R7) |
+| Secondary | Other actions | Cancel, Add leg (R7), Add another lap (L1), Copy link and Close (M1), Load the latest (R3, R7), opening another screen from R2 |
+| Danger | Actions the user cannot undo, or that delete data. Each one asks first (see Confirmation dialog), except Delete lap (L1): a deleted lap can be typed again | Answer not attending (R2), Cancel invitation (R4), Remove from the entry (R6), Mark as left and Unlink (M1), Reject (M3), Delete lap (L1) |
+
+| State | When |
+| --- | --- |
+| Default | |
+| Disabled | The action is not possible now, for example Confirm while a leg is empty (R7). The reason is written next to it |
+| Busy | A request for this action is running. Other actions of the screen are disabled too |
+
+**LINE Login button** (A1, A5) is not one of these variants: its colors, shape, and wording follow LINE's guidelines (`docs/design/ui-references.md`).
+
+In the code: plain `<button>` elements in each feature's `ui/`.
