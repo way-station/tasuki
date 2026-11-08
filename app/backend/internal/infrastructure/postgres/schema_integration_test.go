@@ -171,3 +171,17 @@ func TestCancellingAnInvitationRemovesAttendanceEntryAndLegs(t *testing.T) {
 		t.Errorf("legs of Jiro = %d, want 1", count)
 	}
 }
+
+func TestRemovingAnEntryMemberEmptiesTheirLegs(t *testing.T) {
+	client := newTestClient(t)
+	saveSchemaRunningOrder(t, client)
+
+	mustExec(t, client, "DELETE FROM entry_members WHERE entry_id = $1 AND roster_member_id = $2", schemaEntryID, schemaJiroID)
+
+	if count := countRows(t, client, "SELECT count(*) FROM running_order_legs WHERE leg_number = 2 AND roster_member_id IS NULL"); count != 1 {
+		t.Errorf("leg 2 is not empty")
+	}
+	if count := countRows(t, client, "SELECT count(*) FROM running_order_legs"); count != 3 {
+		t.Errorf("legs = %d, want all 3 kept", count)
+	}
+}
