@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { errorCode } from "../../../shared/errors/apiErrors.ts";
 import { useMe } from "../../auth/hooks/useMe.ts";
+import { RaceLapsSectionContainer } from "../../laps/container/RaceLapsSectionContainer.tsx";
 import { AttendanceAnswerContainer } from "../../participation/container/AttendanceAnswerContainer.tsx";
 import { useRace } from "../hooks/useRace.ts";
 import { RaceDetailView, type RaceSection } from "../ui/RaceDetailView.tsx";
@@ -35,16 +36,18 @@ export function RaceDetailContainer() {
   const open = (section: RaceSection) =>
     void navigate({ to: sectionPaths[section], params: { raceId } });
   const myAttendance = race.data.myAttendance;
+  const isOrganizer = me.data?.isOrganizer ?? false;
   return (
     <RaceDetailView
       race={race.data}
-      isOrganizer={me.data?.isOrganizer ?? false}
+      isOrganizer={isOrganizer}
       onOpen={open}
       attendance={
         myAttendance === undefined ? undefined : (
           <AttendanceAnswerContainer raceId={raceId} current={myAttendance} />
         )
       }
+      laps={<RaceLapsSectionContainer raceId={raceId} canSee={isOrganizer} />}
     />
   );
 }
