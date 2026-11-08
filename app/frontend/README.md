@@ -14,3 +14,27 @@ Nothing else is installed on your machine. Node and pnpm run inside the Dev Cont
 ## 1. Check the port
 
 The Vite dev server uses host port `5173` (`FRONTEND_PORT`). If it is already in use, copy [`infra/.env.example`](../../infra/.env.example) to `infra/.env` and change it.
+
+## 2. Open the Dev Container
+
+**With VS Code:** open `app/frontend` and run **Dev Containers: Reopen in Container**. `pnpm install` runs automatically. Closing the window stops the container.
+
+**With any editor:** run these on your machine, in `app/frontend`:
+
+```sh
+make dev-up      # build and start the container
+make dev-shell   # open a shell in it, then run pnpm install once
+make dev-down    # stop it when you are done
+```
+
+## 3. Run the frontend
+
+Inside the Dev Container:
+
+```sh
+pnpm dev   # http://localhost:5173
+```
+
+Files you change on your machine reach the container, so the page reloads as you edit.
+
+The pages get their data from the backend: the dev server forwards `/api` to the backend's Dev Container. To use the screens, also start the backend (see [`app/backend/README.md`](../backend/README.md)) and run `make run` there. To log in without LINE during development, see [Logging in during development](../backend/TECH.md#logging-in-during-development).
