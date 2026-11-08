@@ -43,3 +43,30 @@ Rules for every component:
 **LINE Login button** (A1, A5) is not one of these variants: its colors, shape, and wording follow LINE's guidelines (`docs/design/ui-references.md`).
 
 In the code: plain `<button>` elements in each feature's `ui/`.
+
+### Form inputs
+
+| Input | For | Used on |
+| --- | --- | --- |
+| Text | One line: race name, entry name, roster member name | R3, R6, M1 |
+| Multi-line text | The race's free text | R3 |
+| Number | km and minutes: leg distances, lap distance, time limit | R3 |
+| Date | Race date | R3 |
+| Date and time | Deadline, in the browser's time zone | R3 |
+| `MM:SS` time | Lap times per km | L1 |
+| `H:MM:SS` time | Target total time of a distance race | R3 |
+| Select | The runner of a leg, from the entry's members | R7 |
+| Choice (radio) | Race type; attendance answer | R3; R2 |
+| Read-only text | The created invite link, to select and copy | M1 |
+
+Every input has a visible label. Some have a help text below the label, for example "Enter the time per km as M:SS, for example 3:25." (L1) and "Names cannot be changed later." (M1).
+
+| State | When |
+| --- | --- |
+| Default | |
+| Invalid | The value breaks a rule, found before sending or returned by the backend. The message is shown below the input and tied to it for screen readers (`aria-invalid`, `aria-describedby`) |
+| Disabled | While the form is being sent |
+
+Repeating inputs: a list of the same input with add and remove buttons, for leg distances (R3), legs (R7, time races), and new lap times (L1).
+
+In the code: `Field` in `features/races/ui/RaceFormView.tsx`, and plain inputs in the other views.
