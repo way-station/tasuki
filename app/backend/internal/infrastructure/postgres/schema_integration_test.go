@@ -42,6 +42,15 @@ func execCode(t *testing.T, client *Client, sql string, args ...any) string {
 	return postgresError.Code
 }
 
+func countRows(t *testing.T, client *Client, sql string, args ...any) int {
+	t.Helper()
+	var count int
+	if err := client.Pool().QueryRow(context.Background(), sql, args...).Scan(&count); err != nil {
+		t.Fatalf("%s: %v", sql, err)
+	}
+	return count
+}
+
 // saveSchemaRoster saves a team with two roster members, Taro and Jiro.
 func saveSchemaRoster(t *testing.T, client *Client) {
 	t.Helper()
@@ -121,5 +130,44 @@ func TestMemberLinksOneApprovedAndOnePending(t *testing.T) {
 	mustExec(t, client, "UPDATE member_links SET unlinked_at = now() WHERE user_id = $1", schemaUserID)
 	if code := insertLink(schemaOtherUser, schemaTaroID, true, false); code != "" {
 		t.Errorf("approved link after unlinking: %s", code)
+	}
+}
+
+// saveSchemaRunningOrder saves a race with Taro and Jiro invited and in its entry,
+// and a running order where Taro runs legs 1 and 3 and Jiro runs leg 2.
+func saveSchemaRunningOrder(t *testing.T, client *Client) {
+	t.Helper()
+	saveSchemaRoster(t, client)
+	mustExec(t, client, `INSERT INTO races (id, team_id, name, description) VALUES
+		($1, $3, 'Hakone', '{}'), ($2, $3, 'Other race', '{}')`, schemaRaceID, schemaOtherRace, schemaTeamID)
+	mustExec(t, client, "INSERT INTO race_invitations (race_id, roster_member_id) VALUES ($1, $2), ($1, $3)",
+		schemaRaceID, schemaTaroID, schemaJiroID)
+	mustExec(t, client, "INSERT INTO attendances (race_id, roster_member_id, status) VALUES ($1, $2, 'attending'), ($1, $3, 'attending')",
+		schemaRaceID, schemaTaroID, schemaJiroID)
+	mustExec(t, client, "INSERT INTO entries (id, race_id, name) VALUES ($1, $2, 'Team A')", schemaEntryID, schemaRaceID)
+	mustExec(t, client, "INSERT INTO entry_members (entry_id, race_id, roster_member_id) VALUES ($1, $2, $3), ($1, $2, $4)",
+		schemaEntryID, schemaRaceID, schemaTaroID, schemaJiroID)
+	mustExec(t, client, "INSERT INTO running_orders (id, entry_id, status) VALUES ($1, $2, 'draft')", schemaOrderID, schemaEntryID)
+	mustExec(t, client, `INSERT INTO running_order_legs (running_order_id, entry_id, leg_number, roster_member_id) VALUES
+		($1, $2, 1, $3), ($1, $2, 2, $4), ($1, $2, 3, $3)`, schemaOrderID, schemaEntryID, schemaTaroID, schemaJiroID)
+}
+
+func TestCancellingAnInvitationRemovesAttendanceEntryAndLegs(t *testing.T) {
+	client := newTestClient(t)
+	saveSchemaRunningOrder(t, client)
+
+	mustExec(t, client, "DELETE FROM race_invitations WHERE race_id = $1 AND roster_member_id = $2", schemaRaceID, schemaTaroID)
+
+	if count := countRows(t, client, "SELECT count(*) FROM attendances WHERE roster_member_id = $1", schemaTaroID); count != 0 {
+		t.Errorf("attendances of Taro = %d, want 0", count)
+	}
+	if count := countRows(t, client, "SELECT count(*) FROM entry_members WHERE roster_member_id = $1", schemaTaroID); count != 0 {
+		t.Errorf("entry memberships of Taro = %d, want 0", count)
+	}
+	if count := countRows(t, client, "SELECT count(*) FROM running_order_legs WHERE roster_member_id IS NULL"); count != 2 {
+		t.Errorf("empty legs = %d, want 2 (Taro's legs 1 and 3)", count)
+	}
+	if count := countRows(t, client, "SELECT count(*) FROM running_order_legs WHERE roster_member_id = $1", schemaJiroID); count != 1 {
+		t.Errorf("legs of Jiro = %d, want 1", count)
 	}
 }
