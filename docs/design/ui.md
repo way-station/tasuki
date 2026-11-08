@@ -123,3 +123,14 @@ Short labels for the state of a thing, always as text.
 | User link | No user, Waiting for approval, Approved |
 | Roster member | Left |
 | Joining | Waiting (A2), Rejected (A3) |
+
+### Loading, empty, and error states
+
+| State | Shown as | Examples |
+| --- | --- | --- |
+| Loading | The screen's title area says "Loading…" until its data arrives | Every screen |
+| Empty | A sentence in place of the list | "No roster members yet.", "Nobody is waiting for approval." |
+| Not found | A screen-level message | "Race not found", "Roster member not found" |
+| Something went wrong | A screen-level message with what to do | "Something went wrong. Reload the page." |
+| Field errors | Below each input (see Form inputs) | R3, L1, M1 |
+| Someone else saved first | A message above the form that keeps the user's input, with "Load the latest (discard my changes)" | R3, R7 (`409 version_conflict`, ADR-0013) |
