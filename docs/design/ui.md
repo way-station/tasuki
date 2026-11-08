@@ -145,3 +145,14 @@ Short messages after an action, for example "Race saved." or "The roster changed
 | Error | At once (`role="alert"`) |
 
 In the code: `shared/ui/NotificationList.tsx`, fed by `shared/notification/`.
+
+### Page frame
+
+The layout every screen shares: a header with "tasuki" and the screen below it. R2 links to the screens of the race (R3–R7, L1) with buttons.
+
+In the code: `app/Layout.tsx`.
+
+## Wireframes (#148)
+
+Not started.
+
