@@ -49,3 +49,19 @@ make run          # http://localhost:8080/health
 `/health` answers `200` when MongoDB and PostgreSQL are reachable.
 
 To log in without LINE during development, see [Logging in during development](TECH.md#logging-in-during-development).
+
+## 4. Run the tests
+
+Inside the Dev Container:
+
+```sh
+make test                # unit tests, no database needed
+make lint                # golangci-lint
+make fmt                 # format the code
+
+# integration tests use a separate database; create its tables first
+make db-migrate DATABASE_URL=postgres://app:tasuki@postgres:5432/tasuki_test?sslmode=disable
+make test-integration
+```
+
+CI runs the tests, golangci-lint, and `make generate` on every pull request, and fails when the generated code is out of date.
