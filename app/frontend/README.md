@@ -51,3 +51,23 @@ pnpm format         # oxfmt; pnpm format:check only reports
 ```
 
 The tests need no browser and no backend: they use jsdom and a fake API client. CI runs `pnpm generate:api` (and fails when the types are out of date), `lint`, `format:check`, `test`, and `build` on every pull request.
+
+## Common commands
+
+| Command | Runs on | What it does |
+| --- | --- | --- |
+| `pnpm install` | Dev Container | Installs the packages |
+| `pnpm dev` | Dev Container | Starts the dev server on port 5173 |
+| `pnpm test` / `pnpm test:watch` | Dev Container | Runs the tests once / on every change |
+| `pnpm build` / `pnpm preview` | Dev Container | Builds for production / serves the build |
+| `pnpm lint` | Dev Container | oxlint |
+| `pnpm format` / `pnpm format:check` | Dev Container | oxfmt: formats / only reports |
+| `pnpm generate:api` | Dev Container | Regenerates the API types after `app/backend/api/openapi.yaml` changes |
+| `make dev-up` / `dev-shell` / `dev-down` | Your machine | Starts / enters / stops the Dev Container without VS Code |
+
+## Next
+
+- [`TECH.md`](TECH.md): the stack, the layers of a feature (ADR-0012), styling, routes, server data, tests, lint, and the generated API types.
+- [`docs/design/screens.md`](../../docs/design/screens.md): what each screen shows.
+- [`docs/adr/`](../../docs/adr): why things are the way they are.
+
