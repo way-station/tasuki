@@ -25,6 +25,19 @@ func parseID[ID ~string](id ID) (uuid.UUID, error) {
 	return parsed, nil
 }
 
+// parseIDs converts domain IDs to uuid column values.
+func parseIDs[ID ~string](ids []ID) ([]uuid.UUID, error) {
+	parsed := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		value, err := parseID(id)
+		if err != nil {
+			return nil, err
+		}
+		parsed = append(parsed, value)
+	}
+	return parsed, nil
+}
+
 // toInt32 converts a domain integer to an integer column value.
 func toInt32(value int, what string) (int32, error) {
 	if value < math.MinInt32 || value > math.MaxInt32 {
