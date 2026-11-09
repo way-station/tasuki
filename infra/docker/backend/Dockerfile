@@ -27,7 +27,7 @@ COPY app/backend/ ./
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 # The same image as the frontend Dev Container, so Node and pnpm come from app/frontend/mise.toml.
-FROM jdxcode/mise:2026.9.18-debian AS frontend-build
+FROM jdxcode/mise:2026.10.19-debian AS frontend-build
 COPY app/frontend/mise.toml /mise/config.toml
 RUN mise install
 WORKDIR /src
