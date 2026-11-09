@@ -218,7 +218,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 ### `DELETE .../invitations/{roster_member_id}`
 
-- Cancels the invitation. `204`.
+- Cancels the invitation. `204`. Cancelling the invitation of a member who is not invited does nothing.
 - Side effects: removes the attendance answer and the entry membership; removes the member from every leg of the running order. If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated from all remaining laps.
 
 ### `PUT /races/{race_id}/attendance`
@@ -240,7 +240,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 - `POST`: body `{ name }` → `201` entry. `409 state_conflict` when the race already has an entry (MVP limit: one).
 - Entries cannot be renamed or deleted.
 - `PUT .../members/...`: `204`. `422 validation_failed` when the member's attendance is not "attending".
-- `DELETE .../members/...`: `204`. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
+- `DELETE .../members/...`: `204`. Removing a member who is not in the entry does nothing. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
 
 ## Running order
 
@@ -570,7 +570,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - `GET invitations`：退会していない名簿のメンバー全員と、誘われているか、その回答
 - `PUT invitations/...`：誘う。`204`。誘い済みなら何もしない。`422 validation_failed`：退会している
-- `DELETE invitations/...`：招待を取り消す。`204`。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
+- `DELETE invitations/...`：招待を取り消す。`204`。誘っていないメンバーなら何もしない。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
 - `PUT attendance`：本文 `{ status }`。`200`。`404`：誘われていない、またはもう「不参加」と答えた。「参加」から変えると、エントリーから外したときと同じことが起きる
 
 ## エントリー
@@ -585,7 +585,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `POST`：本文 `{ name }` → `201`。大会にもうエントリーがあれば `409 state_conflict`（MVP では1つまで）
 - エントリーは名前の変更も削除もできない
 - `PUT .../members/...`：`204`。出欠が「参加」でなければ `422 validation_failed`
-- `DELETE .../members/...`：`204`。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
+- `DELETE .../members/...`：`204`。エントリーにいないメンバーなら何もしない。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
 
 ## 走順
 
