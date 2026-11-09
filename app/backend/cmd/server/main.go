@@ -15,6 +15,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
+	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/random"
@@ -52,6 +53,10 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	defer postgresClient.Close()
+	if err := postgres.RequireTeam(connectCtx, postgresClient, shared.TeamID(cfg.TeamID)); err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
 	authenticate, authController := newAuth(cfg, postgresClient)
