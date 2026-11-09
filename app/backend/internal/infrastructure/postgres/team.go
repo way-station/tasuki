@@ -24,3 +24,13 @@ func RequireTeam(ctx context.Context, client *Client, teamID shared.TeamID) erro
 	}
 	return err
 }
+
+// CreateTeamIfMissing creates the team's row unless it exists. Only make db-seed uses it,
+// for the development team.
+func CreateTeamIfMissing(ctx context.Context, client *Client, teamID shared.TeamID, name string) error {
+	id, err := parseID(teamID)
+	if err != nil {
+		return err
+	}
+	return sqlcgen.New(client.Pool()).CreateTeamIfMissing(ctx, sqlcgen.CreateTeamIfMissingParams{ID: id, Name: name})
+}
