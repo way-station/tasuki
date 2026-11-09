@@ -30,6 +30,13 @@ func inTransaction(ctx context.Context) bool {
 	return marked
 }
 
+type fakeUnitOfWork struct{ err error }
+
+func (fake *fakeUnitOfWork) Run(ctx context.Context, work func(ctx context.Context) error) error {
+	fake.err = work(context.WithValue(ctx, transactionKey{}, true))
+	return fake.err
+}
+
 // teamRace returns race r1 of the team.
 func teamRace(t *testing.T, team shared.TeamID) *race.Race {
 	t.Helper()
@@ -125,6 +132,62 @@ func (fake *fakeInvitationRepository) Delete(ctx context.Context, raceID shared.
 	fake.deleted = &invitationKey{raceID, memberID}
 	fake.deleteInTransaction = inTransaction(ctx)
 	return nil
+}
+
+type fakeEntryRepository struct {
+	stored             []*participation.Entry
+	saved              []*participation.Entry
+	savedInTransaction bool
+	saveErr            error
+}
+
+func entriesOf(entries ...*participation.Entry) *fakeEntryRepository {
+	return &fakeEntryRepository{stored: entries}
+}
+
+func entry(raceID shared.RaceID, members ...shared.MemberID) *participation.Entry {
+	return participation.NewEntryFactory(fixedIDs{}).Reconstruct("e1", raceID, "Team A", members)
+}
+
+func (fake *fakeEntryRepository) FindByID(_ context.Context, id shared.EntryID) (*participation.Entry, error) {
+	for _, stored := range fake.stored {
+		if stored.ID() == id {
+			return stored, nil
+		}
+	}
+	return nil, fmt.Errorf("entry %s: %w", id, shared.ErrNotFound)
+}
+
+func (fake *fakeEntryRepository) ListByRace(_ context.Context, raceID shared.RaceID) ([]*participation.Entry, error) {
+	var entries []*participation.Entry
+	for _, stored := range fake.stored {
+		if stored.RaceID() == raceID {
+			entries = append(entries, stored)
+		}
+	}
+	return entries, nil
+}
+
+func (fake *fakeEntryRepository) Save(ctx context.Context, saved *participation.Entry) error {
+	fake.saved = append(fake.saved, saved)
+	fake.savedInTransaction = inTransaction(ctx)
+	return fake.saveErr
+}
+
+type removedRunner struct {
+	raceID        shared.RaceID
+	memberID      shared.MemberID
+	inTransaction bool
+}
+
+type fakeRunnerRemover struct {
+	removed []removedRunner
+	err     error
+}
+
+func (fake *fakeRunnerRemover) RemoveRunner(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) error {
+	fake.removed = append(fake.removed, removedRunner{raceID: raceID, memberID: memberID, inTransaction: inTransaction(ctx)})
+	return fake.err
 }
 
 // member returns a caller linked to roster member m1.
