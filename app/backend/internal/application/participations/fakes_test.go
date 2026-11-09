@@ -237,3 +237,8 @@ func isValidation(err error) bool {
 	var validationErr *shared.ValidationError
 	return errors.As(err, &validationErr)
 }
+
+func isState(err error) bool {
+	var stateErr *shared.StateError
+	return errors.As(err, &stateErr)
+}
