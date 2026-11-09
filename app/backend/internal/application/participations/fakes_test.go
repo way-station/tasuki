@@ -134,6 +134,38 @@ func (fake *fakeInvitationRepository) Delete(ctx context.Context, raceID shared.
 	return nil
 }
 
+type fakeAttendanceRepository struct {
+	stored             map[invitationKey]*participation.Attendance
+	findErr            error
+	saved              *participation.Attendance
+	savedInTransaction bool
+}
+
+func answered(raceID shared.RaceID, answers map[shared.MemberID]participation.AttendanceStatus) *fakeAttendanceRepository {
+	fake := &fakeAttendanceRepository{stored: map[invitationKey]*participation.Attendance{}}
+	for memberID, status := range answers {
+		fake.stored[invitationKey{raceID, memberID}] = participation.AttendanceFactory{}.Reconstruct(raceID, memberID, status)
+	}
+	return fake
+}
+
+func (fake *fakeAttendanceRepository) Find(_ context.Context, raceID shared.RaceID, memberID shared.MemberID) (*participation.Attendance, error) {
+	if fake.findErr != nil {
+		return nil, fake.findErr
+	}
+	attendance, ok := fake.stored[invitationKey{raceID, memberID}]
+	if !ok {
+		return nil, fmt.Errorf("attendance of %s for %s: %w", memberID, raceID, shared.ErrNotFound)
+	}
+	return attendance, nil
+}
+
+func (fake *fakeAttendanceRepository) Save(ctx context.Context, attendance *participation.Attendance) error {
+	fake.saved = attendance
+	fake.savedInTransaction = inTransaction(ctx)
+	return nil
+}
+
 type fakeEntryRepository struct {
 	stored             []*participation.Entry
 	saved              []*participation.Entry
