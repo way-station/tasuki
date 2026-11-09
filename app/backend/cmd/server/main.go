@@ -13,8 +13,12 @@ import (
 
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
+	"github.com/way-station/tasuki/app/backend/internal/application/participations"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
+	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
+	"github.com/way-station/tasuki/app/backend/internal/domain/race"
+	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
@@ -59,7 +63,7 @@ func run(logger *slog.Logger) error {
 	}
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
-	authenticate, authController := newAuth(cfg, postgresClient)
+	authenticate, getMe, authController := newAuth(cfg, postgresClient)
 	var frontend http.Handler
 	if cfg.FrontendDir != "" {
 		frontend = presentation.NewFrontendHandler(cfg.FrontendDir)
@@ -68,10 +72,12 @@ func run(logger *slog.Logger) error {
 		logger.Warn("DEV-ONLY LOGIN IS ENABLED: anyone can log in as any LINE user. Never enable it in production (ADR-0009).")
 	}
 	router := presentation.NewRouter(presentation.Controllers{
-		Health: controller.NewHealthController(check),
-		Auth:   authController,
+		Health:        controller.NewHealthController(check),
+		Auth:          authController,
+		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
+		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
 		FrontendOrigin: cfg.FrontendOrigin,
 		DevLogin:       cfg.DevLoginEnabled,
 		Frontend:       frontend,
@@ -108,7 +114,7 @@ func run(logger *slog.Logger) error {
 }
 
 // newAuth wires the use cases of logging in and identifying the caller.
-func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *controller.AuthController) {
+func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *auth.GetMeUseCase, *controller.AuthController) {
 	ids := random.IDGenerator{}
 	userFactory := identity.NewUserFactory(ids)
 	sessionFactory := identity.NewSessionFactory(ids, random.TokenGenerator{})
@@ -119,5 +125,37 @@ func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.Authenti
 	logout := auth.NewLogoutUseCase(sessions, time.Now)
 	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), userFactory, identity.NewMemberLinkFactory(ids),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy(cfg.OrganizerLineUserIDs), auth.MeDTOFactory{})
-	return authenticate, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+	return authenticate, getMe, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+}
+
+// newParticipation wires the use cases of invitations, attendance, and entries for the team.
+func newParticipation(postgresClient *postgres.Client, teamID shared.TeamID) *controller.ParticipationController {
+	ids := random.IDGenerator{}
+	unitOfWork := postgres.NewUnitOfWork(postgresClient)
+	races := postgres.NewRaceRepository(postgresClient, race.NewFactory(ids))
+	members := postgres.NewRosterMemberRepository(postgresClient, roster.NewMemberFactory(ids))
+	invitations := postgres.NewInvitationRepository(postgresClient, participation.InvitationFactory{})
+	attendances := postgres.NewAttendanceRepository(postgresClient, participation.AttendanceFactory{})
+	entryFactory := participation.NewEntryFactory(ids)
+	entries := postgres.NewEntryRepository(postgresClient, entryFactory)
+	dtoFactory := participations.ParticipationDTOFactory{}
+	return controller.NewParticipationController(controller.ParticipationUseCases{
+		ListInvitations:   participations.NewListInvitationsUseCase(postgres.NewInvitationQueryService(postgresClient), participation.AttendancePolicy{}, dtoFactory, teamID),
+		Invite:            participations.NewInviteUseCase(races, members, invitations, participation.InvitationFactory{}, teamID),
+		CancelInvitation:  participations.NewCancelInvitationUseCase(unitOfWork, races, invitations, entries, noRunners{}, teamID),
+		AnswerAttendance:  participations.NewAnswerAttendanceUseCase(unitOfWork, invitations, attendances, entries, noRunners{}, participation.AttendanceFactory{}, dtoFactory),
+		ListEntries:       participations.NewListEntriesUseCase(postgres.NewEntryQueryService(postgresClient), dtoFactory, teamID),
+		CreateEntry:       participations.NewCreateEntryUseCase(races, entries, entryFactory, dtoFactory, teamID),
+		AddEntryMember:    participations.NewAddEntryMemberUseCase(races, entries, attendances, teamID),
+		RemoveEntryMember: participations.NewRemoveEntryMemberUseCase(unitOfWork, races, entries, noRunners{}, teamID),
+	}, participations.ParticipationCommandFactory{})
+}
+
+// noRunners stands in for the running order (#95) and lap (#99) Application layers, which
+// take a member off the running orders when they leave an entry. No running order can be
+// saved before them, so there is no runner to take off.
+type noRunners struct{}
+
+func (noRunners) RemoveRunner(context.Context, shared.RaceID, shared.MemberID) error {
+	return nil
 }
