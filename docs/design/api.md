@@ -55,6 +55,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005) |
 | Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
 | Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
+| Running orders and laps | When runners lose their laps (see `PUT .../running-order`), the running order Application layer deletes them and recalculates the averages through an interface, in the same unit of work. It is implemented by the lap Application layer (#99) |
 
 ## Authentication and joining
 
@@ -463,6 +464,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005） |
 | 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
 | 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
+| 走順とラップ | 走者がラップを失うとき（`PUT .../running-order`）、走順の Application 層は interface を通して、同じ作業単位の中でラップを消し、平均を計算し直す。実装はラップの Application 層（#99）に置く |
 
 ## 認証と参加
 
