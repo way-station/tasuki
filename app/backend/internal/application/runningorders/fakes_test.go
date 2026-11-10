@@ -4,9 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/way-station/tasuki/app/backend/internal/application/auth"
+	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
+
+const teamID shared.TeamID = "t1"
 
 var testNow = time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
 
@@ -35,4 +39,15 @@ func description(t *testing.T, params race.DescriptionParams) race.Description {
 		t.Fatal(err)
 	}
 	return described
+}
+
+// linkedMember returns a member linked to roster member m1.
+func linkedMember() auth.MeDTO {
+	factory := auth.MeDTOFactory{}
+	return factory.Create("u1", "Taro", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Taro"))
+}
+
+// organizer returns an organizer without a link.
+func organizer() auth.MeDTO {
+	return auth.MeDTOFactory{}.Create("u2", "Hanako", true, identity.CallerNone, nil)
 }
