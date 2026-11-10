@@ -69,6 +69,15 @@ type MemberLink struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type OutboxEntry struct {
+	ID            uuid.UUID
+	Steps         []byte
+	Attempts      int32
+	NextAttemptAt pgtype.Timestamptz
+	LastError     pgtype.Text
+	CreatedAt     pgtype.Timestamptz
+}
+
 type Race struct {
 	ID          uuid.UUID
 	TeamID      uuid.UUID
