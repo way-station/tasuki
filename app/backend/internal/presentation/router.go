@@ -8,20 +8,25 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
+	"github.com/way-station/tasuki/app/backend/internal/presentation/api"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/middleware"
 )
 
 // Controllers holds every controller the router serves.
 type Controllers struct {
-	Health *controller.HealthController
-	Auth   *controller.AuthController
+	Health        *controller.HealthController
+	Auth          *controller.AuthController
+	RunningOrders *controller.RunningOrderController
 }
 
 // Options configures the router.
 type Options struct {
 	// Authenticate identifies the caller of the API routes that need a session (ADR-0014).
 	Authenticate func(http.Handler) http.Handler
+	// ResolveCaller resolves the caller of the routes that check a role, after
+	// Authenticate (docs/design/api.md).
+	ResolveCaller func(http.Handler) http.Handler
 	// FrontendOrigin is the only Origin allowed on API requests that change data (ADR-0014).
 	FrontendOrigin string
 	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
@@ -41,7 +46,9 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RunningOrderController: controllers.RunningOrders}, options.Logger)
+	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
+	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
 		if options.DevLogin {
@@ -51,6 +58,14 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 			userRouter.Use(options.Authenticate)
 			userRouter.Get("/me", apiHandler.GetMe)
 			userRouter.Delete("/session", apiHandler.Logout)
+
+			userRouter.Group(func(callerRouter chi.Router) {
+				callerRouter.Use(options.ResolveCaller)
+				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}/running-orders", paramHandler.ListRunningOrders)
+				organizer := callerRouter.With(middleware.RequireOrganizer)
+				organizer.Put("/races/{race_id}/entries/{entry_id}/running-order", paramHandler.SaveRunningOrder)
+				organizer.Post("/races/{race_id}/entries/{entry_id}/running-order/confirm", paramHandler.ConfirmRunningOrder)
+			})
 		})
 	})
 
