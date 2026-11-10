@@ -284,7 +284,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   - Distance races: exactly one leg per leg distance. Time races: one or more legs, numbered from 1 without gaps.
   - Runners must be members of the entry.
 - A confirmed running order stays confirmed and the change is visible right away.
-- Every save is kept as one history entry (`running_order_history`).
+- Every save is kept as one history entry (`running_order_history`). So is every confirm. Changes made by the backend (legs when the race changes, a runner leaving the entry) are not kept.
 - If a runner's number of legs goes down in a confirmed running order, all their laps for this race are deleted and their average time is recalculated. Moving a runner to another leg without reducing their number of legs keeps the laps.
 
 ### `POST .../running-order/confirm`
@@ -599,7 +599,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `PUT`：本文 `{ version?, legs: [ { leg_number, roster_member_id | null } ] }`。最初の下書きを作るときは `version` を付けない。`200`
   - ルール（`422 validation_failed`）：距離制は区の距離と同じ数の区。時間制は1区以上で、1から欠けずに番号を振る。走者はエントリーのメンバー
   - 確定した走順は確定のまま、すぐに見える
-  - 保存のたびに履歴を1件残す（`running_order_history`）
+  - 保存のたびに履歴を1件残す（`running_order_history`）。確定でも残す。backend が自動で変えたとき（大会が変わったときの区、走者がエントリーから外れたとき）は残さない
   - 確定した走順で、ある走者の区の数が減ったら、その人のこの大会のラップはすべて消え、平均タイムは計算し直される。区の数を減らさずに別の区に移すだけなら、ラップは残る
 - `POST confirm`：本文 `{ version }`。`200`。空きの区があれば `422 validation_failed`。確定済みなら `409 state_conflict`
 
