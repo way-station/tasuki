@@ -662,7 +662,7 @@ paths:
       tags: [laps]
       operationId: submitLaps
       summary: Submit laps (L1)
-      description: The average time uses the submission formula.
+      description: The average time is recalculated from all of the member's laps.
       x-callers: [member]
       requestBody:
         required: true
