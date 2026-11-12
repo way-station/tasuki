@@ -383,7 +383,7 @@ export interface paths {
         put?: never;
         /**
          * Submit laps (L1)
-         * @description The average time uses the submission formula.
+         * @description The average time is recalculated from all of the member's laps.
          */
         post: operations["submitLaps"];
         delete?: never;
