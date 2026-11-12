@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
+	"github.com/way-station/tasuki/app/backend/internal/presentation/api"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/middleware"
 )
@@ -16,12 +17,16 @@ import (
 type Controllers struct {
 	Health *controller.HealthController
 	Auth   *controller.AuthController
+	Laps   *controller.LapController
 }
 
 // Options configures the router.
 type Options struct {
 	// Authenticate identifies the caller of the API routes that need a session (ADR-0014).
 	Authenticate func(http.Handler) http.Handler
+	// ResolveCaller resolves the caller of the routes that check a role, after
+	// Authenticate (docs/design/api.md).
+	ResolveCaller func(http.Handler) http.Handler
 	// FrontendOrigin is the only Origin allowed on API requests that change data (ADR-0014).
 	FrontendOrigin string
 	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
@@ -41,7 +46,9 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, LapController: controllers.Laps}, options.Logger)
+	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
+	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
 		if options.DevLogin {
@@ -51,6 +58,17 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 			userRouter.Use(options.Authenticate)
 			userRouter.Get("/me", apiHandler.GetMe)
 			userRouter.Delete("/session", apiHandler.Logout)
+
+			userRouter.Group(func(callerRouter chi.Router) {
+				callerRouter.Use(options.ResolveCaller)
+				member := callerRouter.With(middleware.RequireMember)
+				member.Get("/races/{race_id}/my-laps", paramHandler.GetMyLaps)
+				member.Post("/races/{race_id}/my-laps", paramHandler.SubmitLaps)
+				member.Patch("/races/{race_id}/my-laps/{lap_id}", paramHandler.EditLap)
+				member.Delete("/races/{race_id}/my-laps/{lap_id}", paramHandler.DeleteLap)
+				member.Get("/me/profile", paramHandler.GetMyProfile)
+				callerRouter.With(middleware.RequireOrganizer).Get("/races/{race_id}/laps", paramHandler.ListRaceLaps)
+			})
 		})
 	})
 
