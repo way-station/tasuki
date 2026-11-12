@@ -18,6 +18,7 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Times | Lap times and average times: `"MM:SS"` (e.g. `"3:28"`). Total times: `"H:MM:SS"` (e.g. `"2:45:30"`) |
 | Dates | Race date: `YYYY-MM-DD`. Deadline and other timestamps: RFC 3339 with offset (e.g. `2026-11-01T18:00:00+09:00`) |
 | Distances | km as numbers (e.g. `30.5`) |
+| Today | Japan time (`Asia/Tokyo`), for example for the races whose invitations are cancelled when a member leaves. The MVP has one team, in Japan |
 | Concurrent edits | Races and running orders carry a `version`. Updates send the version they read; if it changed, `409` with `code: version_conflict` |
 | Lists | No pagination in the MVP |
 | IDs | Opaque strings (the type is decided in #68) |
@@ -340,7 +341,7 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 ] }
 ```
 
-- A rejected link shows as `none`.
+- A rejected link shows as `none`. `invite_link_expires_at` is set only while the member has an invite link that can still be used.
 
 ### `POST /roster-members`
 
@@ -363,7 +364,7 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 
 ### `POST /roster-members/{roster_member_id}/invite-links`
 
-- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The previous link becomes unusable.
+- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The URL is the frontend origin (`FRONTEND_ORIGIN`) followed by `/invite/<token>`. The previous link becomes unusable.
 - `409 state_conflict`: the member has left, has an approved link, or has a pending link.
 
 ### `GET /member-links`
@@ -417,6 +418,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | タイム | ラップと平均タイム：`"MM:SS"`（例：`"3:28"`）。合計タイム：`"H:MM:SS"`（例：`"2:45:30"`） |
 | 日付 | 開催日：`YYYY-MM-DD`。締め切りなどの日時：オフセット付きの RFC 3339（例：`2026-11-01T18:00:00+09:00`） |
 | 距離 | km の数値（例：`30.5`） |
+| 今日 | 日本時間（`Asia/Tokyo`）で決める。例えば、退会のときに招待を取り消す大会。MVP のチームは日本の 1 チームだけ |
 | 同時編集 | 大会と走順は `version` を持つ。更新では読んだときの版を送り、変わっていたら `409`（`code: version_conflict`） |
 | 一覧 | MVP ではページ分けしない |
 | ID | 中身を意味を持たない文字列として扱う（型は #68 で決める） |
@@ -636,7 +638,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ
 - `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのユーザーのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
 - `DELETE .../link`：承認済みの紐付けを外す。`204`。ユーザーはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
-- `POST .../invite-links`：`201`：`{ url, expires_at }`。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
+- `POST .../invite-links`：`201`：`{ url, expires_at }`。URL は frontend のオリジン（`FRONTEND_ORIGIN`）のあとに `/invite/<token>` を続けたもの。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
 - `GET /member-links`：承認待ちの紐付け（LINE の表示名、名簿のメンバー、日時）
 - `POST .../approve`、`.../reject`：`204`。承認待ちでなければ `409 state_conflict`
 
