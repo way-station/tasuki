@@ -13,8 +13,11 @@ import (
 
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
+	"github.com/way-station/tasuki/app/backend/internal/application/laps"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
+	"github.com/way-station/tasuki/app/backend/internal/domain/lap"
+	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
@@ -57,9 +60,22 @@ func run(logger *slog.Logger) error {
 		_ = mongoClient.Close(connectCtx)
 		return err
 	}
+	if err := mongodb.EnsureIndexes(connectCtx, mongoClient); err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
+
+	// The outbox runs the steps of the writes across PostgreSQL and MongoDB (ADR-0016).
+	lapSteps := newLapStepRunner(postgresClient, mongoClient)
+	outboxStore, err := postgres.NewOutbox(postgresClient, random.IDGenerator{}, time.Now, logger, postgres.LapOutboxSteps(lapSteps)...)
+	if err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
+	go outboxStore.RunWorker(ctx)
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
-	authenticate, authController := newAuth(cfg, postgresClient)
+	authenticate, getMe, authController := newAuth(cfg, postgresClient)
 	var frontend http.Handler
 	if cfg.FrontendDir != "" {
 		frontend = presentation.NewFrontendHandler(cfg.FrontendDir)
@@ -72,6 +88,7 @@ func run(logger *slog.Logger) error {
 		Auth:   authController,
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
+		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
 		FrontendOrigin: cfg.FrontendOrigin,
 		DevLogin:       cfg.DevLoginEnabled,
 		Frontend:       frontend,
@@ -108,7 +125,7 @@ func run(logger *slog.Logger) error {
 }
 
 // newAuth wires the use cases of logging in and identifying the caller.
-func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *controller.AuthController) {
+func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *auth.GetMeUseCase, *controller.AuthController) {
 	ids := random.IDGenerator{}
 	userFactory := identity.NewUserFactory(ids)
 	sessionFactory := identity.NewSessionFactory(ids, random.TokenGenerator{})
@@ -119,5 +136,15 @@ func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.Authenti
 	logout := auth.NewLogoutUseCase(sessions, time.Now)
 	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), userFactory, identity.NewMemberLinkFactory(ids),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy(cfg.OrganizerLineUserIDs), auth.MeDTOFactory{})
-	return authenticate, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+	return authenticate, getMe, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+}
+
+// newLapStepRunner wires what runs the outbox steps of the laps: the lap records in MongoDB
+// and the average times in PostgreSQL.
+func newLapStepRunner(postgresClient *postgres.Client, mongoClient *mongodb.Client) *laps.LapStepRunner {
+	ids := random.IDGenerator{}
+	lapFactory := lap.NewFactory(ids)
+	records := mongodb.NewLapRecordRepository(mongoClient, lapFactory, lap.RecordFactory{}, time.Now)
+	members := postgres.NewRosterMemberRepository(postgresClient, roster.NewMemberFactory(ids))
+	return laps.NewLapStepRunner(records, members, lapFactory, lap.RecordFactory{}, roster.AverageService{})
 }
