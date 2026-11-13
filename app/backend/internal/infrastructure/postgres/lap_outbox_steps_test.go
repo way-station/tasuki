@@ -88,8 +88,8 @@ func TestLapOutboxSteps(t *testing.T) {
 				t.Errorf("%s: FinalPostgreSQL = %v", kind, step.FinalPostgreSQL)
 			}
 		}
-		if len(steps) != 4 {
-			t.Errorf("steps = %d, want 4", len(steps))
+		if len(steps) != 5 {
+			t.Errorf("steps = %d, want 5", len(steps))
 		}
 	})
 
