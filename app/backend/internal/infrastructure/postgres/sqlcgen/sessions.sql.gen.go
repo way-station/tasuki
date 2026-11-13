@@ -59,6 +59,54 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 	return i, err
 }
 
+const listActiveSessionsByUser = `-- name: ListActiveSessionsByUser :many
+SELECT id, user_id, token_hash, expires_at, revoked_at
+FROM sessions
+WHERE user_id = $1
+  AND revoked_at IS NULL
+  AND expires_at > $2
+ORDER BY created_at, id
+`
+
+type ListActiveSessionsByUserParams struct {
+	UserID uuid.UUID
+	Now    pgtype.Timestamptz
+}
+
+type ListActiveSessionsByUserRow struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	TokenHash []byte
+	ExpiresAt pgtype.Timestamptz
+	RevokedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListActiveSessionsByUser(ctx context.Context, arg ListActiveSessionsByUserParams) ([]ListActiveSessionsByUserRow, error) {
+	rows, err := q.db.Query(ctx, listActiveSessionsByUser, arg.UserID, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveSessionsByUserRow
+	for rows.Next() {
+		var i ListActiveSessionsByUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TokenHash,
+			&i.ExpiresAt,
+			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const saveSession = `-- name: SaveSession :exec
 INSERT INTO sessions (id, user_id, token_hash, expires_at, revoked_at)
 VALUES ($1, $2, $3, $4, $5)
