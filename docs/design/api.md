@@ -346,6 +346,7 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 ### `POST /roster-members`
 
 - Body: `{ name }` → `201` roster member.
+- `400 invalid_request`: the name is empty.
 
 ### `GET /roster-members/{roster_member_id}`
 
@@ -634,7 +635,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `POST /member-links/{link_id}/reject` | 幹事 | M3 |
 
 - `GET /roster-members`：名前の順。名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
-- `POST /roster-members`：本文 `{ name }` → `201`
+- `POST /roster-members`：本文 `{ name }` → `201`。名前が空なら `400 invalid_request`
 - `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ。大会は、その人のラップがある大会を開催日の新しい順に並べる。ラップは提出した順
 - `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのユーザーのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
 - `DELETE .../link`：承認済みの紐付けを外す。`204`。ユーザーはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
