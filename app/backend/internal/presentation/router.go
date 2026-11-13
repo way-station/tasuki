@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
+	"github.com/way-station/tasuki/app/backend/internal/presentation/api"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/middleware"
 )
@@ -16,6 +17,7 @@ import (
 type Controllers struct {
 	Health *controller.HealthController
 	Auth   *controller.AuthController
+	Roster *controller.RosterController
 }
 
 // Options configures the router.
@@ -44,7 +46,9 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RosterController: controllers.Roster}, options.Logger)
+	// The wrapper reads path parameters such as {roster_member_id} before calling apiHandler.
+	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
 		if options.DevLogin {
@@ -54,6 +58,20 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 			userRouter.Use(options.Authenticate)
 			userRouter.Get("/me", apiHandler.GetMe)
 			userRouter.Delete("/session", apiHandler.Logout)
+
+			userRouter.Group(func(callerRouter chi.Router) {
+				callerRouter.Use(options.ResolveCaller)
+				organizer := callerRouter.With(middleware.RequireOrganizer)
+				organizer.Get("/roster-members", paramHandler.ListRosterMembers)
+				organizer.Post("/roster-members", paramHandler.CreateRosterMember)
+				organizer.Get("/roster-members/{roster_member_id}", paramHandler.GetRosterMember)
+				organizer.Patch("/roster-members/{roster_member_id}", paramHandler.UpdateRosterMember)
+				organizer.Delete("/roster-members/{roster_member_id}/link", paramHandler.UnlinkRosterMember)
+				organizer.Post("/roster-members/{roster_member_id}/invite-links", paramHandler.CreateInviteLink)
+				organizer.Get("/member-links", paramHandler.ListPendingMemberLinks)
+				organizer.Post("/member-links/{link_id}/approve", paramHandler.ApproveMemberLink)
+				organizer.Post("/member-links/{link_id}/reject", paramHandler.RejectMemberLink)
+			})
 		})
 	})
 
