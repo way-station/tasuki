@@ -34,7 +34,7 @@ func (repository *RosterMemberRepository) FindByID(ctx context.Context, id share
 	if err != nil {
 		return nil, notFound(err, "roster member")
 	}
-	return repository.factory.Reconstruct(id, shared.TeamID(row.TeamID.String()), row.Name, timeOrNil(row.LeftAt)), nil
+	return repository.factory.Reconstruct(id, shared.TeamID(row.TeamID.String()), row.Name, timeOrNil(row.LeftAt), roster.DefaultAverage(), 0), nil
 }
 
 // Save inserts a new member, or stores whether a stored member has left.
