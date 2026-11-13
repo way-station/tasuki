@@ -37,7 +37,11 @@ func (repository *stepLapRepository) Save(_ context.Context, record *lap.Record)
 	return nil
 }
 
-func (repository *stepLapRepository) Delete(context.Context, shared.RaceID, shared.MemberID) error {
+func (repository *stepLapRepository) Delete(_ context.Context, raceID shared.RaceID, memberID shared.MemberID) error {
+	if repository.saved == nil {
+		return fmt.Errorf("lap record of %s in %s: %w", memberID, raceID, shared.ErrNotFound)
+	}
+	repository.saved = nil
 	return nil
 }
 
@@ -104,6 +108,19 @@ func TestLapOutboxSteps(t *testing.T) {
 		}
 		if members.member.Average().String() != "3:30" || members.member.LapCount() != 1 {
 			t.Errorf("average = %s over %d laps, want 3:30 over 1", members.member.Average(), members.member.LapCount())
+		}
+	})
+
+	t.Run("removes the laps of the race and recalculates the average from none", func(t *testing.T) {
+		runStored(t, steps, laps.AddLapsStep{RaceID: "r1", MemberID: "m1", Laps: []laps.StepLap{{ID: "l3", Seconds: 200, SubmittedAt: submittedAt}}})
+		runStored(t, steps, laps.RecalculateAverageStep{MemberID: "m1"})
+		runStored(t, steps, laps.RemoveRaceLapsStep{RaceID: "r1", MemberID: "m1"})
+		runStored(t, steps, laps.RecalculateAverageStep{MemberID: "m1"})
+		if records.saved != nil {
+			t.Errorf("record = %v, want none", records.saved.Laps())
+		}
+		if members.member.Average() != roster.DefaultAverage() || members.member.LapCount() != 0 {
+			t.Errorf("average = %s over %d laps, want the default over 0", members.member.Average(), members.member.LapCount())
 		}
 	})
 
