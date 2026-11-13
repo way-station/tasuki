@@ -29,12 +29,26 @@ func TestRosterMemberRepository(t *testing.T) {
 		t.Fatalf("Save new: %v", err)
 	}
 	found, err := repository.FindByID(ctx, created.ID())
-	if err != nil || found.TeamID() != rosterTestTeamID || found.Name() != "Taro" || found.Left() {
-		t.Fatalf("FindByID = %+v, %v, want Taro of the team who has not left", found, err)
+	if err != nil || found.TeamID() != rosterTestTeamID || found.Name() != "Taro" || found.Left() || found.Average() != roster.DefaultAverage() || found.LapCount() != 0 {
+		t.Fatalf("FindByID = %+v, %v, want Taro of the team who has not left, with the default average", found, err)
 	}
 
+	t.Run("stores the average time and the lap count", func(t *testing.T) {
+		lapTime, err := shared.ParsePace("3:30")
+		if err != nil {
+			t.Fatal(err)
+		}
+		roster.AverageService{}.Recalculate(found, []shared.Pace{lapTime, lapTime})
+		if err := repository.Save(ctx, found); err != nil {
+			t.Fatalf("Save average: %v", err)
+		}
+		stored, err := repository.FindByID(ctx, created.ID())
+		if err != nil || stored.Average().String() != "3:30" || stored.LapCount() != 2 {
+			t.Errorf("FindByID = %+v, %v, want 3:30 over 2 laps", stored, err)
+		}
+	})
+
 	t.Run("stores leaving and rejoining, and keeps the average time", func(t *testing.T) {
-		mustExec(t, client, "UPDATE roster_members SET average_seconds = 230, lap_count = 4 WHERE id = $1", string(created.ID()))
 		found.Leave(testNow)
 		if err := repository.Save(ctx, found); err != nil {
 			t.Fatalf("Save leave: %v", err)
@@ -54,7 +68,7 @@ func TestRosterMemberRepository(t *testing.T) {
 		if rejoined, err := repository.FindByID(ctx, created.ID()); err != nil || rejoined.Left() {
 			t.Errorf("FindByID after rejoining = %+v, %v, want not left", rejoined, err)
 		}
-		if count := countRows(t, client, "SELECT count(*) FROM roster_members WHERE id = $1 AND average_seconds = 230 AND lap_count = 4", string(created.ID())); count != 1 {
+		if count := countRows(t, client, "SELECT count(*) FROM roster_members WHERE id = $1 AND average_seconds = 210 AND lap_count = 2", string(created.ID())); count != 1 {
 			t.Error("the average time or the lap count was changed")
 		}
 	})
