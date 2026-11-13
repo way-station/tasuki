@@ -2,7 +2,7 @@ COMPOSE     := docker compose -f ../../infra/compose.yaml
 COMPOSE_DEV := $(COMPOSE) -f ../../infra/compose.dev.yaml
 
 .PHONY: run build test test-integration lint fmt generate \
-	db-migrate db-rollback db-reset db-new \
+	db-migrate db-rollback db-reset db-seed db-new \
 	dev-up dev-shell dev-down up down
 
 # ---- Run inside the Dev Container ------------------------------------------
@@ -47,6 +47,11 @@ db-rollback:
 db-reset:
 	$(MIGRATE) drop -f
 	$(MIGRATE) up
+
+# Creates the development team's row (TEAM_ID), which the server needs to start. Run it
+# after db-reset.
+db-seed:
+	go run ./cmd/seed
 
 # Creates the next pair of migration files: make db-new NAME=create_users
 db-new:
