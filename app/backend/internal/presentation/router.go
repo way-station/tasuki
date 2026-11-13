@@ -22,6 +22,9 @@ type Controllers struct {
 type Options struct {
 	// Authenticate identifies the caller of the API routes that need a session (ADR-0014).
 	Authenticate func(http.Handler) http.Handler
+	// ResolveCaller resolves the caller of the routes that check a role, after
+	// Authenticate (docs/design/api.md).
+	ResolveCaller func(http.Handler) http.Handler
 	// FrontendOrigin is the only Origin allowed on API requests that change data (ADR-0014).
 	FrontendOrigin string
 	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
