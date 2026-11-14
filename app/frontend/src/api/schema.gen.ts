@@ -716,10 +716,10 @@ export interface components {
             description: components["schemas"]["RaceDescription"];
         };
         /**
-         * @description `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+         * @description `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
          * @enum {string|null}
          */
-        MyAttendance: "attending" | "undecided" | null;
+        MyAttendance: "attending" | "undecided" | "not_attending" | null;
         RaceSummary: {
             id: components["schemas"]["Id"];
             name: string;
