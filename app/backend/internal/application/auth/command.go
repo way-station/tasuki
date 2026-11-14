@@ -29,3 +29,27 @@ func (LoginCommandFactory) Create(lineUserID, displayName string) (LoginCommand,
 	}
 	return LoginCommand{lineUserID: lineUserID, displayName: displayName}, nil
 }
+
+// StartLineLoginCommand starts LINE Login, from an invite link or without one. It is
+// created by StartLineLoginCommandFactory.
+type StartLineLoginCommand struct {
+	inviteToken *string
+}
+
+// InviteToken returns the token of the invite link the user came from, and false if the
+// user did not come from one.
+func (command StartLineLoginCommand) InviteToken() (string, bool) {
+	if command.inviteToken == nil {
+		return "", false
+	}
+	return *command.inviteToken, true
+}
+
+// StartLineLoginCommandFactory assembles StartLineLoginCommand values.
+type StartLineLoginCommandFactory struct{}
+
+// Create returns the command. inviteToken is nil when the user did not come from an invite
+// link; any other value, blank too, is looked up as a token.
+func (StartLineLoginCommandFactory) Create(inviteToken *string) StartLineLoginCommand {
+	return StartLineLoginCommand{inviteToken: inviteToken}
+}
