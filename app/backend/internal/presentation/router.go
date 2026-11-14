@@ -17,6 +17,7 @@ import (
 type Controllers struct {
 	Health        *controller.HealthController
 	Auth          *controller.AuthController
+	LineLogin     *controller.LineLoginController
 	Races         *controller.RaceController
 	Participation *controller.ParticipationController
 	RunningOrders *controller.RunningOrderController
@@ -35,6 +36,9 @@ type Options struct {
 	FrontendOrigin string
 	// DevLogin registers POST /api/v1/dev/login (ADR-0009). Never set in production.
 	DevLogin bool
+	// LineLogin registers POST /api/v1/auth/line/authorize and GET /api/v1/auth/line/callback
+	// (ADR-0007). It is false while LINE Login is not configured.
+	LineLogin bool
 	// Frontend serves every GET and HEAD outside /api and /health, so the API and the
 	// frontend share one origin (ADR-0018). In development it is nil, and the Vite dev
 	// server serves the frontend.
@@ -50,13 +54,19 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps, RosterController: controllers.Roster}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, LineLoginController: controllers.LineLogin, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps, RosterController: controllers.Roster}, options.Logger)
 	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
 		if options.DevLogin {
 			apiRouter.Post("/dev/login", apiHandler.DevLogin)
+		}
+		apiRouter.Get("/invite-links/{token}", paramHandler.GetInviteLink)
+		apiRouter.Post("/session", apiHandler.CreateSession)
+		if options.LineLogin {
+			apiRouter.Post("/auth/line/authorize", apiHandler.AuthorizeLine)
+			apiRouter.Get("/auth/line/callback", paramHandler.LineCallback)
 		}
 		apiRouter.Group(func(userRouter chi.Router) {
 			userRouter.Use(options.Authenticate)
