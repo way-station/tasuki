@@ -307,16 +307,3 @@ func TestLapStepRunnerRecalculateAverage(t *testing.T) {
 		}
 	})
 }
-
-func pace(t *testing.T, text string) shared.Pace {
-	t.Helper()
-	parsed, err := shared.ParsePace(text)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return parsed
-}
-
-const teamID shared.TeamID = "t1"
-
-var errDatabase = errors.New("database is down")

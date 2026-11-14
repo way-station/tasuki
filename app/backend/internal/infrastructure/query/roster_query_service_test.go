@@ -13,8 +13,6 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
 )
 
-var errDatabase = errors.New("database is down")
-
 // fakeRosterReader knows member m1 of team t1 and the races r1 (newest) and r2.
 type fakeRosterReader struct {
 	askedRaces []shared.RaceID

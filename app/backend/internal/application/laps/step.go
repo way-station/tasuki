@@ -1,5 +1,3 @@
-// Package laps holds the use cases of lap times and the profile, and the outbox steps that
-// write the laps and the average times (docs/design/api.md, ADR-0011, ADR-0016).
 package laps
 
 import (

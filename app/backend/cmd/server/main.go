@@ -106,6 +106,7 @@ func run(logger *slog.Logger) error {
 		Auth:          authController,
 		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
+		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Roster:        newRoster(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID), cfg.FrontendOrigin, tokyo),
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
@@ -209,6 +210,26 @@ func newInvitationCanceller(postgresClient *postgres.Client, unitOfWork transact
 	cancel := participations.NewCancelInvitationUseCase(unitOfWork, postgres.NewRaceRepository(postgresClient, race.NewFactory(ids)),
 		postgres.NewInvitationRepository(postgresClient, participation.InvitationFactory{}), entries, runners, teamID)
 	return participations.NewLeaveInvitationCanceller(cancel, participations.ParticipationCommandFactory{})
+}
+
+// newLaps wires the use cases of the lap times and the profile for the team. The writes add
+// their steps to outboxStore.
+func newLaps(postgresClient *postgres.Client, mongoClient *mongodb.Client, outboxStore outbox.Outbox, teamID shared.TeamID) *controller.LapController {
+	ids := random.IDGenerator{}
+	unitOfWork := postgres.NewUnitOfWork(postgresClient)
+	records := mongodb.NewLapRecordRepository(mongoClient, lap.NewFactory(ids), lap.RecordFactory{}, time.Now)
+	profiles := postgres.NewProfileQueryService(postgresClient)
+	queries := query.NewLapQueryService(postgres.NewLapReader(postgresClient), mongodb.NewLapRecordReader(mongoClient), profiles)
+	dtoFactory := laps.LapDTOFactory{}
+	return controller.NewLapController(
+		laps.NewGetMyLapsUseCase(queries, dtoFactory, teamID),
+		laps.NewSubmitLapsUseCase(unitOfWork, queries, outboxStore, lap.SubmissionPolicy{}, lap.NewFactory(ids), outbox.EntryFactory{}, time.Now, teamID),
+		laps.NewEditLapUseCase(unitOfWork, queries, records, outboxStore, lap.SubmissionPolicy{}, outbox.EntryFactory{}, teamID),
+		laps.NewDeleteLapUseCase(unitOfWork, queries, records, outboxStore, lap.SubmissionPolicy{}, outbox.EntryFactory{}, teamID),
+		laps.NewListRaceLapsUseCase(queries, lap.VisibilityPolicy{}, dtoFactory, teamID),
+		laps.NewGetProfileUseCase(profiles, dtoFactory),
+		laps.LapCommandFactory{},
+	)
 }
 
 // newParticipation wires the use cases of invitations, attendance, and entries for the team.

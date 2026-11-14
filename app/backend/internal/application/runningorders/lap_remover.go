@@ -1,5 +1,3 @@
-// Package runningorders holds the use cases of running orders and their predictions
-// (docs/design/api.md, ADR-0011).
 package runningorders
 
 import (

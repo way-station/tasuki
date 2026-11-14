@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -259,8 +258,4 @@ func toAPIDate(date shared.Date) (openapi_types.Date, error) {
 func toFloat64(value float32) float64 {
 	widened, _ := strconv.ParseFloat(strconv.FormatFloat(float64(value), 'g', -1, 32), 64)
 	return widened
-}
-
-func versionConflict() api.ConflictApplicationProblemPlusJSONResponse {
-	return api.ConflictApplicationProblemPlusJSONResponse{Type: "about:blank", Title: "Conflict", Status: http.StatusConflict, Code: api.ProblemCodeVersionConflict}
 }
