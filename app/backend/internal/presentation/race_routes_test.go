@@ -10,10 +10,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/application/races"
-	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
@@ -21,35 +19,6 @@ import (
 )
 
 const raceTeamID shared.TeamID = "team-1"
-
-// The session token of each caller in these tests is their user ID.
-const (
-	organizerToken = "organizer"
-	memberToken    = "member"
-	waitingToken   = "waiting"
-)
-
-type tokenAuthenticator struct{}
-
-func (tokenAuthenticator) Execute(_ context.Context, token string) (shared.UserID, error) {
-	if token == "" {
-		return "", auth.ErrUnauthenticated
-	}
-	return shared.UserID(token), nil
-}
-
-type tokenCallers struct{}
-
-func (tokenCallers) Execute(_ context.Context, userID shared.UserID) (auth.MeDTO, error) {
-	factory := auth.MeDTOFactory{}
-	switch userID {
-	case organizerToken:
-		return factory.Create(userID, "Organizer", true, identity.CallerNone, nil), nil
-	case memberToken:
-		return factory.Create(userID, "Member", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Member")), nil
-	}
-	return factory.Create(userID, "Waiting", false, identity.CallerPending, nil), nil
-}
 
 // memoryRaces stores races in memory and reads them as the race query service does.
 // answers holds the answers of roster member m1.
@@ -118,12 +87,6 @@ func (store *memoryRaces) FindRace(ctx context.Context, teamID shared.TeamID, ra
 	return races.RaceRecord{ID: raceID, Name: found.Name(), Version: found.Version(), Description: params, Answer: store.answerOf(raceID, rosterMemberID)}, nil
 }
 
-type passUnitOfWork struct{}
-
-func (passUnitOfWork) Run(ctx context.Context, work func(ctx context.Context) error) error {
-	return work(ctx)
-}
-
 type passAdjuster struct{}
 
 func (passAdjuster) AdjustRunningOrders(context.Context, shared.RaceID, race.Description) error {
@@ -149,13 +112,6 @@ func newRaceRouter(store *memoryRaces) http.Handler {
 	})
 }
 
-func sessionOf(token string) *http.Cookie {
-	if token == "" {
-		return nil
-	}
-	return &http.Cookie{Name: middleware.SessionCookieName, Value: token, Path: "/api", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode}
-}
-
 const distanceRaceBody = `{"name":"Hakone","description":{"type":"distance","race_date":"2026-11-23",` +
 	`"deadline":"2026-11-01T18:00:00+09:00","text":"Meet at 7:00","leg_distances_km":[5,3.2],"target":{"total_time":"2:45:00"}}}`
 
@@ -166,12 +122,6 @@ func decodeObject(t *testing.T, body []byte) map[string]any {
 		t.Fatalf("decode %s: %v", body, err)
 	}
 	return object
-}
-
-func problemCode(t *testing.T, body []byte) string {
-	t.Helper()
-	code, _ := decodeObject(t, body)["code"].(string)
-	return code
 }
 
 func createTestRace(t *testing.T, handler http.Handler) string {

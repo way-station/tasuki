@@ -14,6 +14,7 @@ import (
 // controller fall through to notImplemented, which is embedded one level deeper.
 type Server struct {
 	*controller.AuthController
+	*controller.ParticipationController
 	*controller.RaceController
 	fallback
 }
