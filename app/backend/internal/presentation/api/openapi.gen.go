@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -118,9 +119,10 @@ func (e MeStatus) Valid() bool {
 
 // Defines values for MyAttendance.
 const (
-	MyAttendanceAttending   MyAttendance = "attending"
-	MyAttendanceLessThannil MyAttendance = "<nil>"
-	MyAttendanceUndecided   MyAttendance = "undecided"
+	MyAttendanceAttending    MyAttendance = "attending"
+	MyAttendanceLessThannil  MyAttendance = "<nil>"
+	MyAttendanceNotAttending MyAttendance = "not_attending"
+	MyAttendanceUndecided    MyAttendance = "undecided"
 )
 
 // Valid indicates whether the value is a known member of the MyAttendance enum.
@@ -129,6 +131,8 @@ func (e MyAttendance) Valid() bool {
 	case MyAttendanceAttending:
 		return true
 	case MyAttendanceLessThannil:
+		return true
+	case MyAttendanceNotAttending:
 		return true
 	case MyAttendanceUndecided:
 		return true
@@ -310,9 +314,9 @@ type InvitationList struct {
 // InvitationMember defines model for InvitationMember.
 type InvitationMember struct {
 	// Attendance `null` when not invited or not answered yet
-	Attendance *AttendanceStatus `json:"attendance"`
-	Invited    bool              `json:"invited"`
-	Name       string            `json:"name"`
+	Attendance nullable.Nullable[AttendanceStatus] `json:"attendance"`
+	Invited    bool                                `json:"invited"`
+	Name       string                              `json:"name"`
 
 	// RosterMemberId Opaque ID (the type is decided in
 	RosterMemberId Id `json:"roster_member_id"`
@@ -360,7 +364,7 @@ type Leg struct {
 	LegNumber  int      `json:"leg_number"`
 
 	// Runner `null` for an empty leg (shown as not decided)
-	Runner *RosterMemberRef `json:"runner"`
+	Runner nullable.Nullable[RosterMemberRef] `json:"runner"`
 }
 
 // LegAssignment defines model for LegAssignment.
@@ -368,7 +372,7 @@ type LegAssignment struct {
 	LegNumber int `json:"leg_number"`
 
 	// RosterMemberId `null` for an empty leg
-	RosterMemberId *Id `json:"roster_member_id"`
+	RosterMemberId nullable.Nullable[Id] `json:"roster_member_id"`
 }
 
 // Me defines model for Me.
@@ -377,8 +381,8 @@ type Me struct {
 	IsOrganizer bool   `json:"is_organizer"`
 
 	// RosterMember Set only when `status` is `approved`
-	RosterMember *RosterMemberBasic `json:"roster_member"`
-	Status       MeStatus           `json:"status"`
+	RosterMember nullable.Nullable[RosterMemberBasic] `json:"roster_member"`
+	Status       MeStatus                             `json:"status"`
 
 	// UserId Identifies the user, so the frontend can keep drafts per user (ADR-0013)
 	UserId Id `json:"user_id"`
@@ -407,7 +411,7 @@ type MemberLinkList struct {
 // Example: 3:28
 type MmSs = string
 
-// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
 type MyAttendance string
 
 // MyLaps defines model for MyLaps.
@@ -427,10 +431,10 @@ type Prediction struct {
 	HasEmptyLegs bool `json:"has_empty_legs"`
 
 	// Laps Time races, rounded down
-	Laps *int `json:"laps"`
+	Laps nullable.Nullable[int] `json:"laps"`
 
 	// TotalTime Distance races
-	TotalTime *HMmSs `json:"total_time"`
+	TotalTime nullable.Nullable[HMmSs] `json:"total_time"`
 }
 
 // Problem RFC 9457 problem details
@@ -470,9 +474,9 @@ type Race struct {
 	// Id Opaque ID (the type is decided in
 	Id Id `json:"id"`
 
-	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
-	MyAttendance *MyAttendance `json:"my_attendance,omitempty"`
-	Name         string        `json:"name"`
+	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
+	MyAttendance nullable.Nullable[MyAttendance] `json:"my_attendance,omitempty"`
+	Name         string                          `json:"name"`
 
 	// RunningOrderConfirmed Returned to organizers and to members who answered attending
 	RunningOrderConfirmed *bool `json:"running_order_confirmed,omitempty"`
@@ -532,10 +536,10 @@ type RaceSummary struct {
 	// Id Opaque ID (the type is decided in
 	Id Id `json:"id"`
 
-	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
-	MyAttendance *MyAttendance      `json:"my_attendance,omitempty"`
-	Name         string             `json:"name"`
-	RaceDate     openapi_types.Date `json:"race_date"`
+	// MyAttendance `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
+	MyAttendance nullable.Nullable[MyAttendance] `json:"my_attendance,omitempty"`
+	Name         string                          `json:"name"`
+	RaceDate     openapi_types.Date              `json:"race_date"`
 
 	// RunningOrderConfirmed Returned to organizers and to members who answered attending
 	RunningOrderConfirmed *bool `json:"running_order_confirmed,omitempty"`
@@ -566,9 +570,9 @@ type RaceUpdate struct {
 // RosterMember defines model for RosterMember.
 type RosterMember struct {
 	// Id Opaque ID (the type is decided in
-	Id                  Id         `json:"id"`
-	InviteLinkExpiresAt *time.Time `json:"invite_link_expires_at"`
-	Left                bool       `json:"left"`
+	Id                  Id                           `json:"id"`
+	InviteLinkExpiresAt nullable.Nullable[time.Time] `json:"invite_link_expires_at"`
+	Left                bool                         `json:"left"`
 
 	// LinkStatus A rejected link shows as `none`
 	LinkStatus RosterMemberLinkStatus `json:"link_status"`
@@ -640,8 +644,8 @@ type RunningOrder struct {
 	Legs      []Leg  `json:"legs"`
 
 	// Prediction `null` when no leg has a runner
-	Prediction *Prediction        `json:"prediction"`
-	Status     RunningOrderStatus `json:"status"`
+	Prediction nullable.Nullable[Prediction] `json:"prediction"`
+	Status     RunningOrderStatus            `json:"status"`
 
 	// Version Organizers only
 	Version *Version `json:"version,omitempty"`
