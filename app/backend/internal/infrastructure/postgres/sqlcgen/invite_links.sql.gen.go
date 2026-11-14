@@ -41,6 +41,77 @@ func (q *Queries) GetInviteLinkByTokenHash(ctx context.Context, tokenHash []byte
 	return i, err
 }
 
+const getInviteLinkWithTeamByID = `-- name: GetInviteLinkWithTeamByID :one
+SELECT l.id, l.roster_member_id, l.token_hash, l.expires_at, l.used_at, l.revoked_at, t.name AS team_name
+FROM invite_links l
+JOIN roster_members m ON m.id = l.roster_member_id
+JOIN teams t ON t.id = m.team_id
+WHERE l.id = $1
+FOR UPDATE OF l
+`
+
+type GetInviteLinkWithTeamByIDRow struct {
+	ID             uuid.UUID
+	RosterMemberID uuid.UUID
+	TokenHash      []byte
+	ExpiresAt      pgtype.Timestamptz
+	UsedAt         pgtype.Timestamptz
+	RevokedAt      pgtype.Timestamptz
+	TeamName       string
+}
+
+// The link, with the name of the team of its roster member. LINE Login's callback uses the
+// link up, so the row stays locked until the transaction ends: two callbacks cannot both
+// use it.
+func (q *Queries) GetInviteLinkWithTeamByID(ctx context.Context, id uuid.UUID) (GetInviteLinkWithTeamByIDRow, error) {
+	row := q.db.QueryRow(ctx, getInviteLinkWithTeamByID, id)
+	var i GetInviteLinkWithTeamByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RosterMemberID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.RevokedAt,
+		&i.TeamName,
+	)
+	return i, err
+}
+
+const getInviteLinkWithTeamByTokenHash = `-- name: GetInviteLinkWithTeamByTokenHash :one
+SELECT l.id, l.roster_member_id, l.token_hash, l.expires_at, l.used_at, l.revoked_at, t.name AS team_name
+FROM invite_links l
+JOIN roster_members m ON m.id = l.roster_member_id
+JOIN teams t ON t.id = m.team_id
+WHERE l.token_hash = $1
+`
+
+type GetInviteLinkWithTeamByTokenHashRow struct {
+	ID             uuid.UUID
+	RosterMemberID uuid.UUID
+	TokenHash      []byte
+	ExpiresAt      pgtype.Timestamptz
+	UsedAt         pgtype.Timestamptz
+	RevokedAt      pgtype.Timestamptz
+	TeamName       string
+}
+
+// The link whose token has the hash, with the name of the team of its roster member.
+func (q *Queries) GetInviteLinkWithTeamByTokenHash(ctx context.Context, tokenHash []byte) (GetInviteLinkWithTeamByTokenHashRow, error) {
+	row := q.db.QueryRow(ctx, getInviteLinkWithTeamByTokenHash, tokenHash)
+	var i GetInviteLinkWithTeamByTokenHashRow
+	err := row.Scan(
+		&i.ID,
+		&i.RosterMemberID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.RevokedAt,
+		&i.TeamName,
+	)
+	return i, err
+}
+
 const getOpenInviteLinkOfMember = `-- name: GetOpenInviteLinkOfMember :one
 SELECT id, roster_member_id, token_hash, expires_at, used_at, revoked_at
 FROM invite_links
