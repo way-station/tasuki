@@ -116,6 +116,7 @@ Every team-owned table belongs to a team (ADR-0005).
 | `entry_members` | Entry, roster member (how attending members are split into entries) |
 | `running_orders` | Entry, status (draft / confirmed) |
 | `running_order_legs` | Running order, leg number, roster member |
+| `outbox_entries` | The remaining steps of a write across PostgreSQL and MongoDB, attempts, next attempt, last error (ADR-0016) |
 
 ## MongoDB collections
 
@@ -147,6 +148,7 @@ Status: draft written by Claude from the ADRs and the rules above, for the maint
 | Unlinked users | Kept, with `unlinked_at` set; `approved_at` stays |
 | Invite links | Renamed from `invitations` to `invite_links`, so they are not confused with `race_invitations` |
 | LINE Login in progress, one-time codes | `login_attempts` (10 minutes) and `login_codes` (1 minute) in PostgreSQL, next to `sessions`, so any instance can finish a login. A row is deleted when it is used, so it works once; rows of abandoned logins stay |
+| Outbox retries | The request runs the steps right after the commit. A failed entry is retried 1, 2, 4, … minutes later, at most 1 hour apart, up to 10 attempts in all; then it stays and an error is logged (ADR-0016) |
 
 ### Relations
 
@@ -340,6 +342,20 @@ CREATE TABLE running_order_legs (
     ON DELETE SET NULL (roster_member_id)
 );
 CREATE INDEX running_order_legs_runner ON running_order_legs (entry_id, roster_member_id);
+
+-- The remaining work of a use case that writes to both PostgreSQL and MongoDB (ADR-0016).
+-- The steps run right after the commit, and the row is deleted together with the final
+-- step. Until then the retry worker picks the row up when next_attempt_at has come, up to
+-- 10 attempts in all; a row that keeps failing stays for someone to look at.
+CREATE TABLE outbox_entries (
+  id              uuid PRIMARY KEY,
+  steps           jsonb NOT NULL,                      -- [ { kind, payload } ] in the order they run
+  attempts        integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  next_attempt_at timestamptz NOT NULL,
+  last_error      text,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX outbox_entries_next_attempt_at ON outbox_entries (next_attempt_at);
 ```
 
 ### MongoDB collections
@@ -497,6 +513,7 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | `entry_members` | エントリー、名簿のメンバー（参加するメンバーをエントリーに分ける） |
 | `running_orders` | エントリー、状態（下書き／確定） |
 | `running_order_legs` | 走順、区の番号、名簿のメンバー |
+| `outbox_entries` | PostgreSQL と MongoDB にまたがる書き込みの残りの手順、試した回数、次に試す日時、最後のエラー（ADR-0016） |
 
 ## MongoDB のコレクション
 
@@ -528,6 +545,7 @@ MongoDB は PostgreSQL の ID を参照するだけで、データを複製し�
 | 解除した紐付け | 残す。`unlinked_at` を入れる。`approved_at` は残す |
 | 招待リンク | `race_invitations` と紛らわしくないよう、`invitations` を `invite_links` に名前を変える |
 | LINE ログインの途中、一度きりのコード | `sessions` と同じ PostgreSQL の `login_attempts`（10 分）と `login_codes`（1 分）。どのインスタンスでもログインを終えられる。使ったら行を消すので1回だけ使える。途中でやめたログインの行は残る |
+| outbox のやり直し | リクエストがコミットのすぐあとに手順を実行する。失敗した entry は 1、2、4…分後にやり直し、間は最大 1 時間、全部で 10 回まで試す。それでも失敗すれば行を残し、エラーをログに出す（ADR-0016） |
 
 ### リレーション
 
