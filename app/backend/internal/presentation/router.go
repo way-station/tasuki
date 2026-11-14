@@ -15,9 +15,11 @@ import (
 
 // Controllers holds every controller the router serves.
 type Controllers struct {
-	Health *controller.HealthController
-	Auth   *controller.AuthController
-	Roster *controller.RosterController
+	Health        *controller.HealthController
+	Auth          *controller.AuthController
+	Races         *controller.RaceController
+	Participation *controller.ParticipationController
+	Roster        *controller.RosterController
 }
 
 // Options configures the router.
@@ -46,8 +48,8 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RosterController: controllers.Roster}, options.Logger)
-	// The wrapper reads path parameters such as {roster_member_id} before calling apiHandler.
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RosterController: controllers.Roster}, options.Logger)
+	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.RequireOrigin(options.FrontendOrigin))
@@ -62,6 +64,18 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 			userRouter.Group(func(callerRouter chi.Router) {
 				callerRouter.Use(options.ResolveCaller)
 				organizer := callerRouter.With(middleware.RequireOrganizer)
+				organizer.Get("/races/{race_id}/invitations", paramHandler.ListInvitations)
+				organizer.Put("/races/{race_id}/invitations/{roster_member_id}", paramHandler.Invite)
+				organizer.Delete("/races/{race_id}/invitations/{roster_member_id}", paramHandler.CancelInvitation)
+				callerRouter.With(middleware.RequireMember).Put("/races/{race_id}/attendance", paramHandler.AnswerAttendance)
+				organizer.Get("/races/{race_id}/entries", paramHandler.ListEntries)
+				organizer.Post("/races/{race_id}/entries", paramHandler.CreateEntry)
+				organizer.Put("/races/{race_id}/entries/{entry_id}/members/{roster_member_id}", paramHandler.AddEntryMember)
+				organizer.Delete("/races/{race_id}/entries/{entry_id}/members/{roster_member_id}", paramHandler.RemoveEntryMember)
+				callerRouter.With(middleware.RequireMember).Get("/races", apiHandler.ListRaces)
+				callerRouter.With(middleware.RequireOrganizer).Post("/races", apiHandler.CreateRace)
+				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}", paramHandler.GetRace)
+				callerRouter.With(middleware.RequireOrganizer).Put("/races/{race_id}", paramHandler.UpdateRace)
 				organizer.Get("/roster-members", paramHandler.ListRosterMembers)
 				organizer.Post("/roster-members", paramHandler.CreateRosterMember)
 				organizer.Get("/roster-members/{roster_member_id}", paramHandler.GetRosterMember)

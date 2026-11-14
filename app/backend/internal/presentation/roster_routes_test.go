@@ -2,7 +2,6 @@ package presentation
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/application/rosters"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
@@ -26,60 +24,6 @@ import (
 const rosterTeamID shared.TeamID = "team-1"
 
 var rosterNow = time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
-
-// The session token of each caller in these tests is their user ID. The member acts as
-// roster member m1.
-const (
-	organizerToken = "organizer"
-	memberToken    = "member"
-	waitingToken   = "waiting"
-)
-
-type tokenAuthenticator struct{}
-
-func (tokenAuthenticator) Execute(_ context.Context, token string) (shared.UserID, error) {
-	if token == "" {
-		return "", auth.ErrUnauthenticated
-	}
-	return shared.UserID(token), nil
-}
-
-type tokenCallers struct{}
-
-func (tokenCallers) Execute(_ context.Context, userID shared.UserID) (auth.MeDTO, error) {
-	factory := auth.MeDTOFactory{}
-	switch userID {
-	case organizerToken:
-		return factory.Create(userID, "Organizer", true, identity.CallerNone, nil), nil
-	case memberToken:
-		return factory.Create(userID, "Member", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Taro")), nil
-	}
-	return factory.Create(userID, "Waiting", false, identity.CallerPending, nil), nil
-}
-
-func sessionOf(token string) *http.Cookie {
-	if token == "" {
-		return nil
-	}
-	return &http.Cookie{Name: middleware.SessionCookieName, Value: token, Path: "/api", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode}
-}
-
-func problemCode(t *testing.T, body []byte) string {
-	t.Helper()
-	var problem struct {
-		Code string `json:"code"`
-	}
-	if err := json.Unmarshal(body, &problem); err != nil {
-		t.Fatalf("decode %s: %v", body, err)
-	}
-	return problem.Code
-}
-
-type passUnitOfWork struct{}
-
-func (passUnitOfWork) Run(ctx context.Context, work func(ctx context.Context) error) error {
-	return work(ctx)
-}
 
 // rosterStore holds Taro (m1), Jiro (m2), and Saburo (m3) of the team, Goro (m9) of another
 // team, their member links, and their invite links. Taro has a lap in race r1.
