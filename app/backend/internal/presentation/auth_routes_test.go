@@ -108,16 +108,18 @@ func newAuthRouter(devLogin bool) http.Handler {
 	sessions := memorySessions{store: store}
 
 	authenticate := auth.NewAuthenticateUseCase(sessions, clock)
+	getMe := auth.NewGetMeUseCase(memoryMe{store: store}, userFactory, identity.NewMemberLinkFactory(&sequentialIDs{}),
+		identity.LinkStatusService{}, identity.NewOrganizerPolicy([]string{"U-organizer"}), auth.MeDTOFactory{})
 	authController := controller.NewAuthController(
 		auth.NewLoginUseCase(memoryUsers{store: store}, sessions, userFactory, sessionFactory, auth.SessionDTOFactory{}, clock),
 		auth.NewLogoutUseCase(sessions, clock),
-		auth.NewGetMeUseCase(memoryMe{store: store}, userFactory, identity.NewMemberLinkFactory(&sequentialIDs{}),
-			identity.LinkStatusService{}, identity.NewOrganizerPolicy([]string{"U-organizer"}), auth.MeDTOFactory{}),
+		getMe,
 		auth.LoginCommandFactory{},
 	)
 	check := health.NewCheckUseCase(fakeHealth{}, fakeHealth{}, health.StatusDTOFactory{}, logger)
 	return NewRouter(Controllers{Health: controller.NewHealthController(check), Auth: authController}, Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
+		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
 		FrontendOrigin: testOrigin,
 		DevLogin:       devLogin,
 		Logger:         logger,
