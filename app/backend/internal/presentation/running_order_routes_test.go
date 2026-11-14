@@ -2,7 +2,6 @@ package presentation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,10 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/application/runningorders"
-	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
 	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/runningorder"
@@ -23,54 +20,6 @@ import (
 )
 
 const runningOrderTeamID shared.TeamID = "team-1"
-
-// The session token of each caller in these tests is their user ID. The member acts as
-// roster member m1.
-const (
-	organizerToken = "organizer"
-	memberToken    = "member"
-	waitingToken   = "waiting"
-)
-
-type tokenAuthenticator struct{}
-
-func (tokenAuthenticator) Execute(_ context.Context, token string) (shared.UserID, error) {
-	if token == "" {
-		return "", auth.ErrUnauthenticated
-	}
-	return shared.UserID(token), nil
-}
-
-type tokenCallers struct{}
-
-func (tokenCallers) Execute(_ context.Context, userID shared.UserID) (auth.MeDTO, error) {
-	factory := auth.MeDTOFactory{}
-	switch userID {
-	case organizerToken:
-		return factory.Create(userID, "Organizer", true, identity.CallerNone, nil), nil
-	case memberToken:
-		return factory.Create(userID, "Member", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Taro")), nil
-	}
-	return factory.Create(userID, "Waiting", false, identity.CallerPending, nil), nil
-}
-
-func sessionOf(token string) *http.Cookie {
-	if token == "" {
-		return nil
-	}
-	return &http.Cookie{Name: middleware.SessionCookieName, Value: token, Path: "/api", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode}
-}
-
-func problemCode(t *testing.T, body []byte) string {
-	t.Helper()
-	var problem struct {
-		Code string `json:"code"`
-	}
-	if err := json.Unmarshal(body, &problem); err != nil {
-		t.Fatalf("decode %s: %v", body, err)
-	}
-	return problem.Code
-}
 
 // runningOrderStore holds the distance race r1 (5 km and 3.2 km) of the team, its entry e1
 // of Taro (m1, 3:40/km) and Jiro (m2, 3:30/km), the running order of e1, and the answer of m1.
@@ -198,12 +147,6 @@ func (queries storeRunningOrderQueries) ListRunningOrders(_ context.Context, tea
 		record.RunningOrders = []runningorders.RunningOrderRecord{order}
 	}
 	return record, nil
-}
-
-type passUnitOfWork struct{}
-
-func (passUnitOfWork) Run(ctx context.Context, work func(ctx context.Context) error) error {
-	return work(ctx)
 }
 
 func newRunningOrderRouter(store *runningOrderStore) http.Handler {
