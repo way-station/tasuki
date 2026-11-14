@@ -53,3 +53,20 @@ type StartLineLoginCommandFactory struct{}
 func (StartLineLoginCommandFactory) Create(inviteToken *string) StartLineLoginCommand {
 	return StartLineLoginCommand{inviteToken: inviteToken}
 }
+
+// CompleteLineLoginCommand is LINE's callback: the state the login started with, and the
+// authorization code, or the error LINE set when the login failed or was cancelled. It is
+// created by CompleteLineLoginCommandFactory.
+type CompleteLineLoginCommand struct {
+	state     string
+	code      string
+	lineError string
+}
+
+// CompleteLineLoginCommandFactory assembles CompleteLineLoginCommand values.
+type CompleteLineLoginCommandFactory struct{}
+
+// Create returns the command. code and lineError are empty when LINE did not set them.
+func (CompleteLineLoginCommandFactory) Create(state, code, lineError string) CompleteLineLoginCommand {
+	return CompleteLineLoginCommand{state: state, code: code, lineError: lineError}
+}
