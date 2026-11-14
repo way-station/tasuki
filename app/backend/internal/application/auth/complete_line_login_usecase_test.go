@@ -85,8 +85,8 @@ func newCompleteLineLoginFixture(t *testing.T, invite *identity.InviteLink) *com
 		inviteQuery: fakeInviteLinkQueryService{byID: map[shared.InviteLinkID]InviteLinkRecord{}},
 		inviteLinks: &fakeInviteLinkRepository{},
 		members: fakeRosterMemberRepository{byID: map[shared.MemberID]*roster.Member{
-			"m1": memberFactory.Reconstruct("m1", "t1", "Taro Yamada", nil),
-			"m2": memberFactory.Reconstruct("m2", "t1", "Hanako", timeAt(-1)),
+			"m1": memberFactory.Reconstruct("m1", "t1", "Taro Yamada", nil, roster.DefaultAverage(), 0),
+			"m2": memberFactory.Reconstruct("m2", "t1", "Hanako", timeAt(-1), roster.DefaultAverage(), 0),
 		}},
 		codes: &fakeLoginCodeRepository{},
 		at:    clock,

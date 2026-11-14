@@ -383,7 +383,7 @@ export interface paths {
         put?: never;
         /**
          * Submit laps (L1)
-         * @description The average time uses the submission formula.
+         * @description The average time is recalculated from all of the member's laps.
          */
         post: operations["submitLaps"];
         delete?: never;
@@ -716,10 +716,10 @@ export interface components {
             description: components["schemas"]["RaceDescription"];
         };
         /**
-         * @description `null` = invited, not answered yet. Omitted when the caller is not invited (organizers).
+         * @description `null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only.
          * @enum {string|null}
          */
-        MyAttendance: "attending" | "undecided" | null;
+        MyAttendance: "attending" | "undecided" | "not_attending" | null;
         RaceSummary: {
             id: components["schemas"]["Id"];
             name: string;

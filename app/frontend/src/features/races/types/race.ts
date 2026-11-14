@@ -10,8 +10,8 @@ export type RaceUpdateBody = components["schemas"]["RaceUpdate"];
 export type RaceType = "distance" | "time";
 
 // The caller's answer. "not_answered" is an invitation without an answer yet.
-// Races answered "not attending" never reach the frontend.
-export type MyAttendance = "attending" | "undecided" | "not_answered";
+// Members never see races they answered "not attending"; linked organizers do.
+export type MyAttendance = "attending" | "undecided" | "not_attending" | "not_answered";
 
 // A race in the list (R1).
 export type RaceListItem = {
