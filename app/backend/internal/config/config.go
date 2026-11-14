@@ -29,12 +29,25 @@ type Config struct {
 	OrganizerLineUserIDs []string
 	// DevLoginEnabled turns on the dev-only login (ADR-0009). Set only in development.
 	DevLoginEnabled bool
+	// LineChannelID, LineChannelSecret, and LineRedirectURI are the LINE Login channel and
+	// the URL of GET /api/v1/auth/line/callback that is registered on it (ADR-0007).
+	LineChannelID     string
+	LineChannelSecret string
+	LineRedirectURI   string
+}
+
+// LineLoginEnabled reports whether LINE Login is configured: only then are its routes
+// registered. Without it, a browser can still check invite links, but cannot log in with
+// LINE.
+func (cfg Config) LineLoginEnabled() bool {
+	return cfg.LineChannelID != "" && cfg.LineChannelSecret != "" && cfg.LineRedirectURI != ""
 }
 
 // Load reads the configuration from the environment.
 // MONGODB_URI, DATABASE_URL, FRONTEND_ORIGIN, and TEAM_ID (a UUID) are required. FRONTEND_DIR, ORGANIZER_LINE_USER_IDS
-// (comma-separated), and DEV_LOGIN_ENABLED (only "true" turns it on) are optional. The
-// others fall back to defaults.
+// (comma-separated), DEV_LOGIN_ENABLED (only "true" turns it on), and LINE_CHANNEL_ID,
+// LINE_CHANNEL_SECRET, and LINE_REDIRECT_URI (LINE Login, all three or none) are optional.
+// The others fall back to defaults.
 func Load() (Config, error) {
 	cfg := Config{
 		Port:          getenv("PORT", "8080"),
@@ -45,6 +58,10 @@ func Load() (Config, error) {
 
 		OrganizerLineUserIDs: splitList(os.Getenv("ORGANIZER_LINE_USER_IDS")),
 		DevLoginEnabled:      os.Getenv("DEV_LOGIN_ENABLED") == "true",
+
+		LineChannelID:     os.Getenv("LINE_CHANNEL_ID"),
+		LineChannelSecret: os.Getenv("LINE_CHANNEL_SECRET"),
+		LineRedirectURI:   os.Getenv("LINE_REDIRECT_URI"),
 	}
 	if cfg.MongoURI == "" {
 		return Config{}, errors.New("MONGODB_URI is required")

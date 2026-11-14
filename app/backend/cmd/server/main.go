@@ -28,6 +28,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/runningorder"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/line"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/query"
@@ -101,9 +102,13 @@ func run(logger *slog.Logger) error {
 	if cfg.DevLoginEnabled {
 		logger.Warn("DEV-ONLY LOGIN IS ENABLED: anyone can log in as any LINE user. Never enable it in production (ADR-0009).")
 	}
+	if !cfg.LineLoginEnabled() {
+		logger.Warn("LINE Login is not configured: set LINE_CHANNEL_ID, LINE_CHANNEL_SECRET, and LINE_REDIRECT_URI to log in with LINE (ADR-0007).")
+	}
 	router := presentation.NewRouter(presentation.Controllers{
 		Health:        controller.NewHealthController(check),
 		Auth:          authController,
+		LineLogin:     newLineLogin(cfg, postgresClient, logger),
 		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
 		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
@@ -113,6 +118,7 @@ func run(logger *slog.Logger) error {
 		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
 		FrontendOrigin: cfg.FrontendOrigin,
 		DevLogin:       cfg.DevLoginEnabled,
+		LineLogin:      cfg.LineLoginEnabled(),
 		Frontend:       frontend,
 		Logger:         logger,
 	})
@@ -144,6 +150,39 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	return mongoClient.Close(shutdownCtx)
+}
+
+// newLineLogin wires LINE Login with a one-time code (ADR-0007, ADR-0014). Its controller is
+// built even while LINE Login is not configured, because GET /invite-links/{token} and
+// POST /session do not call LINE.
+func newLineLogin(cfg config.Config, postgresClient *postgres.Client, logger *slog.Logger) *controller.LineLoginController {
+	ids := random.IDGenerator{}
+	tokens := random.TokenGenerator{}
+	inviteFactory := identity.NewInviteLinkFactory(ids, tokens)
+	inviteQuery := postgres.NewInviteLinkQueryService(postgresClient)
+	inviteLinks := postgres.NewInviteLinkRepository(postgresClient, inviteFactory)
+	attemptFactory := identity.NewLoginAttemptFactory(ids, tokens)
+	attempts := postgres.NewLoginAttemptRepository(postgresClient, attemptFactory)
+	codeFactory := identity.NewLoginCodeFactory(ids, tokens)
+	codes := postgres.NewLoginCodeRepository(postgresClient, codeFactory)
+	userFactory := identity.NewUserFactory(ids)
+	linkFactory := identity.NewMemberLinkFactory(ids)
+	sessionFactory := identity.NewSessionFactory(ids, tokens)
+	lineClient := line.NewClient(cfg.LineChannelID, cfg.LineChannelSecret, cfg.LineRedirectURI)
+	return controller.NewLineLoginController(
+		auth.NewCheckInviteLinkUseCase(inviteQuery, inviteFactory, auth.InviteLinkDTOFactory{}, time.Now),
+		auth.NewStartLineLoginUseCase(inviteLinks, attempts, attemptFactory, lineClient, time.Now),
+		auth.NewCompleteLineLoginUseCase(postgres.NewUnitOfWork(postgresClient), attempts, lineClient,
+			postgres.NewUserRepository(postgresClient, userFactory), userFactory,
+			postgres.NewMemberLinkRepository(postgresClient, linkFactory), linkFactory,
+			inviteQuery, inviteLinks, inviteFactory,
+			postgres.NewRosterMemberRepository(postgresClient, roster.NewMemberFactory(ids)), codes, codeFactory, time.Now),
+		auth.NewExchangeLoginCodeUseCase(codes, postgres.NewSessionRepository(postgresClient, sessionFactory), sessionFactory, auth.SessionDTOFactory{}, time.Now),
+		auth.StartLineLoginCommandFactory{},
+		auth.CompleteLineLoginCommandFactory{},
+		cfg.FrontendOrigin,
+		logger,
+	)
 }
 
 // newAuth wires the use cases of logging in and identifying the caller.
