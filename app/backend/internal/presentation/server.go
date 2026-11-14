@@ -15,6 +15,7 @@ import (
 type Server struct {
 	*controller.AuthController
 	*controller.ParticipationController
+	*controller.RaceController
 	fallback
 }
 

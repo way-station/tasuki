@@ -16,7 +16,7 @@ func TestAttendanceRepository(t *testing.T) {
 	saveTestTeam(t, client)
 	ctx := context.Background()
 	repository := NewAttendanceRepository(client, participation.AttendanceFactory{})
-	raceID := saveTestRace(t, client, testTeamID)
+	raceID := saveTestRace(t, client, testTeamID, "Ekiden")
 	memberID := saveTestMember(t, client, testTeamID, "Taro", nil)
 	invitation := participation.InvitationFactory{}.Reconstruct(raceID, memberID)
 	if err := NewInvitationRepository(client, participation.InvitationFactory{}).Save(ctx, invitation); err != nil {

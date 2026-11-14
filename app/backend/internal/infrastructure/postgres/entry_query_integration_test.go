@@ -19,7 +19,7 @@ func TestEntryQueryService(t *testing.T) {
 	const otherTeamID shared.TeamID = "01900000-0000-7000-8000-000000000002"
 	mustExec(t, client, "INSERT INTO teams (id, name) VALUES ($1, 'Other team')", string(otherTeamID))
 	ctx := context.Background()
-	raceID := saveTestRace(t, client, testTeamID)
+	raceID := saveTestRace(t, client, testTeamID, "Ekiden")
 	invitations := NewInvitationRepository(client, participation.InvitationFactory{})
 	factory := participation.NewEntryFactory(random.IDGenerator{})
 	entries := NewEntryRepository(client, factory)
@@ -61,7 +61,7 @@ func TestEntryQueryService(t *testing.T) {
 		}
 	}
 
-	otherRaceID := saveTestRace(t, client, otherTeamID)
+	otherRaceID := saveTestRace(t, client, otherTeamID, "Ekiden")
 	if _, err := queryService.ListEntries(ctx, testTeamID, otherRaceID); !errors.Is(err, shared.ErrNotFound) {
 		t.Errorf("ListEntries(race of another team) error = %v, want ErrNotFound", err)
 	}
