@@ -9,23 +9,9 @@ import (
 	"time"
 
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
-	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/random"
 )
-
-// saveTestRace stores a race of the team and returns its ID.
-func saveTestRace(t *testing.T, client *Client, teamID shared.TeamID) shared.RaceID {
-	t.Helper()
-	created, err := race.NewFactory(random.IDGenerator{}).New(teamID, "Ekiden", distanceDescription(t, 5, 3.2))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := NewRaceRepository(client, race.NewFactory(random.IDGenerator{})).Save(context.Background(), created); err != nil {
-		t.Fatal(err)
-	}
-	return created.ID()
-}
 
 // saveTestMember stores a roster member of the team, who has left at leftAt unless it is
 // nil, and returns their ID.
@@ -36,21 +22,12 @@ func saveTestMember(t *testing.T, client *Client, teamID shared.TeamID, name str
 	return id
 }
 
-func countRows(t *testing.T, client *Client, sql string, args ...any) int {
-	t.Helper()
-	var count int
-	if err := client.Pool().QueryRow(context.Background(), sql, args...).Scan(&count); err != nil {
-		t.Fatal(err)
-	}
-	return count
-}
-
 func TestInvitationRepository(t *testing.T) {
 	client := newTestClient(t)
 	saveTestTeam(t, client)
 	ctx := context.Background()
 	repository := NewInvitationRepository(client, participation.InvitationFactory{})
-	raceID, otherRaceID := saveTestRace(t, client, testTeamID), saveTestRace(t, client, testTeamID)
+	raceID, otherRaceID := saveTestRace(t, client, testTeamID, "Ekiden"), saveTestRace(t, client, testTeamID, "Ekiden")
 	memberID := saveTestMember(t, client, testTeamID, "Taro", nil)
 
 	for _, invited := range []shared.RaceID{raceID, otherRaceID} {

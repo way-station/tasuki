@@ -17,6 +17,7 @@ import (
 type Controllers struct {
 	Health        *controller.HealthController
 	Auth          *controller.AuthController
+	Races         *controller.RaceController
 	RunningOrders *controller.RunningOrderController
 }
 
@@ -46,7 +47,7 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RunningOrderController: controllers.RunningOrders}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, RunningOrderController: controllers.RunningOrders}, options.Logger)
 	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
@@ -65,6 +66,10 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 				organizer := callerRouter.With(middleware.RequireOrganizer)
 				organizer.Put("/races/{race_id}/entries/{entry_id}/running-order", paramHandler.SaveRunningOrder)
 				organizer.Post("/races/{race_id}/entries/{entry_id}/running-order/confirm", paramHandler.ConfirmRunningOrder)
+				callerRouter.With(middleware.RequireMember).Get("/races", apiHandler.ListRaces)
+				callerRouter.With(middleware.RequireOrganizer).Post("/races", apiHandler.CreateRace)
+				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}", paramHandler.GetRace)
+				callerRouter.With(middleware.RequireOrganizer).Put("/races/{race_id}", paramHandler.UpdateRace)
 			})
 		})
 	})
