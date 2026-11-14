@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // Config holds the runtime settings of the backend.
@@ -21,6 +23,8 @@ type Config struct {
 	// FrontendDir holds the built frontend to serve. Empty in development,
 	// where the Vite dev server serves the frontend.
 	FrontendDir string
+	// TeamID is the MVP's one team (ADR-0005, docs/design/api.md). Its teams row must exist.
+	TeamID string
 	// OrganizerLineUserIDs lists the organizers by LINE user ID (ADR-0006).
 	OrganizerLineUserIDs []string
 	// DevLoginEnabled turns on the dev-only login (ADR-0009). Set only in development.
@@ -28,7 +32,7 @@ type Config struct {
 }
 
 // Load reads the configuration from the environment.
-// MONGODB_URI, DATABASE_URL, and FRONTEND_ORIGIN are required. FRONTEND_DIR, ORGANIZER_LINE_USER_IDS
+// MONGODB_URI, DATABASE_URL, FRONTEND_ORIGIN, and TEAM_ID (a UUID) are required. FRONTEND_DIR, ORGANIZER_LINE_USER_IDS
 // (comma-separated), and DEV_LOGIN_ENABLED (only "true" turns it on) are optional. The
 // others fall back to defaults.
 func Load() (Config, error) {
@@ -53,6 +57,11 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("FRONTEND_ORIGIN: %w", err)
 	}
 	cfg.FrontendOrigin = frontendOrigin
+	teamID, err := uuid.Parse(os.Getenv("TEAM_ID"))
+	if err != nil {
+		return Config{}, fmt.Errorf("TEAM_ID must be a UUID: %w", err)
+	}
+	cfg.TeamID = teamID.String()
 	return cfg, nil
 }
 

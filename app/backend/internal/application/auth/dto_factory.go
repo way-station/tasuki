@@ -30,3 +30,11 @@ type SessionDTOFactory struct{}
 func (SessionDTOFactory) Create(token string, expiresAt time.Time) SessionDTO {
 	return SessionDTO{token: token, expiresAt: expiresAt}
 }
+
+// InviteLinkDTOFactory assembles InviteLinkDTO values.
+type InviteLinkDTOFactory struct{}
+
+// Create returns a usable invite link of the team named teamName.
+func (InviteLinkDTOFactory) Create(teamName string) InviteLinkDTO {
+	return InviteLinkDTO{teamName: teamName}
+}
