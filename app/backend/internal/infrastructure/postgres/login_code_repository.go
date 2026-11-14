@@ -8,7 +8,8 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres/sqlcgen"
 )
 
-// LoginCodeRepository implements identity.LoginCodeRepository with PostgreSQL.
+// LoginCodeRepository implements identity.LoginCodeRepository with PostgreSQL. It runs in
+// the transaction of a unit of work when there is one.
 type LoginCodeRepository struct {
 	queries *sqlcgen.Queries
 	factory identity.LoginCodeFactory
@@ -31,7 +32,7 @@ func (repository *LoginCodeRepository) Save(ctx context.Context, code *identity.
 	if err != nil {
 		return err
 	}
-	return repository.queries.InsertLoginCode(ctx, sqlcgen.InsertLoginCodeParams{
+	return queriesFor(ctx, repository.queries).InsertLoginCode(ctx, sqlcgen.InsertLoginCodeParams{
 		ID:        codeID,
 		UserID:    userID,
 		CodeHash:  code.CodeHash(),
@@ -41,7 +42,7 @@ func (repository *LoginCodeRepository) Save(ctx context.Context, code *identity.
 
 // Take deletes and returns the code whose hash is codeHash.
 func (repository *LoginCodeRepository) Take(ctx context.Context, codeHash []byte) (*identity.LoginCode, error) {
-	row, err := repository.queries.TakeLoginCode(ctx, codeHash)
+	row, err := queriesFor(ctx, repository.queries).TakeLoginCode(ctx, codeHash)
 	if err != nil {
 		return nil, notFound(err, "login code")
 	}
