@@ -43,3 +43,7 @@ func notFound() api.NotFoundApplicationProblemPlusJSONResponse {
 func versionConflict() api.ConflictApplicationProblemPlusJSONResponse {
 	return api.ConflictApplicationProblemPlusJSONResponse{Type: "about:blank", Title: "Conflict", Status: http.StatusConflict, Code: api.ProblemCodeVersionConflict}
 }
+
+func inviteUnusable() api.Problem {
+	return api.Problem{Type: "about:blank", Title: "Not Found", Status: http.StatusNotFound, Code: api.ProblemCodeInviteUnusable}
+}
