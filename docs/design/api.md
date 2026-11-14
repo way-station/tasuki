@@ -55,6 +55,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005). The `teams` row is created by hand, before the first start; the backend checks at startup that `TEAM_ID` is in `teams` and refuses to start otherwise. In development, `make db-seed` creates it |
 | Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
 | Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
+| Leaving an entry and running orders | Cancelling an invitation, changing away from "attending", and removing an entry member take the member off the running orders (and delete their laps if the order is confirmed) through an interface of the participation Application layer, in the same unit of work. It is implemented by the running order (#95) and lap (#99) Application layers |
 
 ## Authentication and joining
 
@@ -162,7 +163,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
     "id": "...",
     "name": "...",
     "race_date": "2026-11-23",
-    "my_attendance": "attending" | "undecided" | null,   // null = invited, not answered; field omitted if not invited (organizers)
+    "my_attendance": "attending" | "undecided" | "not_attending" | null,   // null = invited, not answered; field omitted if not invited (organizers). "not_attending" reaches linked organizers only
     "running_order_confirmed": true                     // organizers, and members who answered attending
   }
 ] }
@@ -184,7 +185,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   "name": "...",
   "version": 3,                     // organizers only
   "description": { ... },           // deadline only for organizers
-  "my_attendance": "attending" | "undecided" | null,   // omitted if not invited
+  "my_attendance": "attending" | "undecided" | "not_attending" | null,   // omitted if not invited; "not_attending" reaches linked organizers only
   "running_order_confirmed": true,  // organizers, and members who answered attending
   "can_submit_laps": true           // true when the caller is a runner in a confirmed running order
 }
@@ -217,7 +218,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 ### `DELETE .../invitations/{roster_member_id}`
 
-- Cancels the invitation. `204`.
+- Cancels the invitation. `204`. Cancelling the invitation of a member who is not invited does nothing.
 - Side effects: removes the attendance answer and the entry membership; removes the member from every leg of the running order. If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated from all remaining laps.
 
 ### `PUT /races/{race_id}/attendance`
@@ -239,7 +240,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 - `POST`: body `{ name }` → `201` entry. `409 state_conflict` when the race already has an entry (MVP limit: one).
 - Entries cannot be renamed or deleted.
 - `PUT .../members/...`: `204`. `422 validation_failed` when the member's attendance is not "attending".
-- `DELETE .../members/...`: `204`. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
+- `DELETE .../members/...`: `204`. Removing a member who is not in the entry does nothing. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
 
 ## Running order
 
@@ -475,6 +476,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005）。`teams` の行は、初めて起動する前に手で作る。backend は起動のときに `TEAM_ID` が `teams` にあるかを確かめ、なければ起動しない。開発では `make db-seed` で作る |
 | 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
 | 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
+| エントリーから外すことと走順 | 招待の取り消し、「参加」からの回答の変更、エントリーから外すことは、参加の Application 層の interface を通して、同じ作業単位の中で走順から外す（走順が確定していればラップも消す）。実装は走順（#95）とラップ（#99）の Application 層に置く |
 
 ## 認証と参加
 
@@ -555,7 +557,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - 幹事：チームのすべての大会。メンバー：誘われた大会のうち、「不参加」と答えたものを除いたもの
 - 新しく登録した順
-- `my_attendance`：`attending`／`undecided`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）
+- `my_attendance`：`attending`／`undecided`／`not_attending`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）。`not_attending` を受け取るのは、名簿に紐付いた幹事だけ
 - `running_order_confirmed`：幹事と、参加と答えたメンバーにだけ出す
 - frontend は `my_attendance = attending` の大会を「参加する大会」に、それ以外を「招待」に出す
 
@@ -580,7 +582,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - `GET invitations`：退会していない名簿のメンバー全員と、誘われているか、その回答
 - `PUT invitations/...`：誘う。`204`。誘い済みなら何もしない。`422 validation_failed`：退会している
-- `DELETE invitations/...`：招待を取り消す。`204`。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
+- `DELETE invitations/...`：招待を取り消す。`204`。誘っていないメンバーなら何もしない。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
 - `PUT attendance`：本文 `{ status }`。`200`。`404`：誘われていない、またはもう「不参加」と答えた。「参加」から変えると、エントリーから外したときと同じことが起きる
 
 ## エントリー
@@ -595,7 +597,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `POST`：本文 `{ name }` → `201`。大会にもうエントリーがあれば `409 state_conflict`（MVP では1つまで）
 - エントリーは名前の変更も削除もできない
 - `PUT .../members/...`：`204`。出欠が「参加」でなければ `422 validation_failed`
-- `DELETE .../members/...`：`204`。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
+- `DELETE .../members/...`：`204`。エントリーにいないメンバーなら何もしない。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
 
 ## 走順
 

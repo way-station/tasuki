@@ -2,7 +2,6 @@ package presentation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,11 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/application/laps"
 	"github.com/way-station/tasuki/app/backend/internal/application/outbox"
-	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/lap"
 	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
@@ -24,60 +21,6 @@ import (
 )
 
 const lapTeamID shared.TeamID = "team-1"
-
-// The session token of each caller in these tests is their user ID. The member acts as
-// roster member m1.
-const (
-	organizerToken = "organizer"
-	memberToken    = "member"
-	waitingToken   = "waiting"
-)
-
-type tokenAuthenticator struct{}
-
-func (tokenAuthenticator) Execute(_ context.Context, token string) (shared.UserID, error) {
-	if token == "" {
-		return "", auth.ErrUnauthenticated
-	}
-	return shared.UserID(token), nil
-}
-
-type tokenCallers struct{}
-
-func (tokenCallers) Execute(_ context.Context, userID shared.UserID) (auth.MeDTO, error) {
-	factory := auth.MeDTOFactory{}
-	switch userID {
-	case organizerToken:
-		return factory.Create(userID, "Organizer", true, identity.CallerNone, nil), nil
-	case memberToken:
-		return factory.Create(userID, "Member", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Taro")), nil
-	}
-	return factory.Create(userID, "Waiting", false, identity.CallerPending, nil), nil
-}
-
-func sessionOf(token string) *http.Cookie {
-	if token == "" {
-		return nil
-	}
-	return &http.Cookie{Name: middleware.SessionCookieName, Value: token, Path: "/api", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode}
-}
-
-func problemCode(t *testing.T, body []byte) string {
-	t.Helper()
-	var problem struct {
-		Code string `json:"code"`
-	}
-	if err := json.Unmarshal(body, &problem); err != nil {
-		t.Fatalf("decode %s: %v", body, err)
-	}
-	return problem.Code
-}
-
-type passUnitOfWork struct{}
-
-func (passUnitOfWork) Run(ctx context.Context, work func(ctx context.Context) error) error {
-	return work(ctx)
-}
 
 // lapStore holds race r1 of the team, whose confirmed running order has Taro (m1) and Jiro
 // (m2), the lap records, and the members' averages. The outbox runs the steps right away,
