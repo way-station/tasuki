@@ -13,18 +13,24 @@ import (
 )
 
 const getRosterMember = `-- name: GetRosterMember :one
-SELECT id, team_id, name, left_at
+SELECT id, team_id, name, left_at, average_seconds, lap_count
 FROM roster_members
 WHERE id = $1
+FOR UPDATE
 `
 
 type GetRosterMemberRow struct {
-	ID     uuid.UUID
-	TeamID uuid.UUID
-	Name   string
-	LeftAt pgtype.Timestamptz
+	ID             uuid.UUID
+	TeamID         uuid.UUID
+	Name           string
+	LeftAt         pgtype.Timestamptz
+	AverageSeconds int32
+	LapCount       int32
 }
 
+// Locks the row in a unit of work, so that a member who is saved later in the same
+// transaction is not changed by another one in between (for example the average time
+// recalculated by a lap step while the member is marked as left).
 func (q *Queries) GetRosterMember(ctx context.Context, id uuid.UUID) (GetRosterMemberRow, error) {
 	row := q.db.QueryRow(ctx, getRosterMember, id)
 	var i GetRosterMemberRow
@@ -33,33 +39,41 @@ func (q *Queries) GetRosterMember(ctx context.Context, id uuid.UUID) (GetRosterM
 		&i.TeamID,
 		&i.Name,
 		&i.LeftAt,
+		&i.AverageSeconds,
+		&i.LapCount,
 	)
 	return i, err
 }
 
 const saveRosterMember = `-- name: SaveRosterMember :exec
-INSERT INTO roster_members (id, team_id, name, left_at)
-VALUES ($1, $2, $3, $4)
+INSERT INTO roster_members (id, team_id, name, left_at, average_seconds, lap_count)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (id) DO UPDATE
-SET left_at    = EXCLUDED.left_at,
-    updated_at = now()
+SET left_at         = EXCLUDED.left_at,
+    average_seconds = EXCLUDED.average_seconds,
+    lap_count       = EXCLUDED.lap_count,
+    updated_at      = now()
 `
 
 type SaveRosterMemberParams struct {
-	ID     uuid.UUID
-	TeamID uuid.UUID
-	Name   string
-	LeftAt pgtype.Timestamptz
+	ID             uuid.UUID
+	TeamID         uuid.UUID
+	Name           string
+	LeftAt         pgtype.Timestamptz
+	AverageSeconds int32
+	LapCount       int32
 }
 
-// Inserts a new member, or updates whether they have left. Names cannot be changed, and
-// the average time and the lap count are left to the lap records.
+// Inserts a new member, or updates whether they have left and their average time and lap
+// count. Names cannot be changed.
 func (q *Queries) SaveRosterMember(ctx context.Context, arg SaveRosterMemberParams) error {
 	_, err := q.db.Exec(ctx, saveRosterMember,
 		arg.ID,
 		arg.TeamID,
 		arg.Name,
 		arg.LeftAt,
+		arg.AverageSeconds,
+		arg.LapCount,
 	)
 	return err
 }

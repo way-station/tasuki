@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
@@ -71,25 +70,4 @@ func (reader *MemberLapReader) LapsByRace(ctx context.Context, memberID shared.M
 		byRace[shared.RaceID(raceID)] = laps
 	}
 	return byRace, nil
-}
-
-// bsonUUID converts an ID to a BSON UUID (binary subtype 4).
-func bsonUUID(id string) (bson.Binary, error) {
-	parsed, err := uuid.Parse(id)
-	if err != nil {
-		return bson.Binary{}, fmt.Errorf("invalid id %q: %w", id, err)
-	}
-	return bson.Binary{Subtype: bson.TypeBinaryUUID, Data: parsed[:]}, nil
-}
-
-// idOf converts a BSON UUID back to an ID.
-func idOf(binary bson.Binary) (string, error) {
-	if binary.Subtype != bson.TypeBinaryUUID {
-		return "", fmt.Errorf("binary subtype %d is not a UUID", binary.Subtype)
-	}
-	parsed, err := uuid.FromBytes(binary.Data)
-	if err != nil {
-		return "", fmt.Errorf("invalid stored UUID: %w", err)
-	}
-	return parsed.String(), nil
 }
