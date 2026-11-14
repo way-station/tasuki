@@ -14,6 +14,7 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
 	"github.com/way-station/tasuki/app/backend/internal/application/participations"
+	"github.com/way-station/tasuki/app/backend/internal/application/races"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
@@ -74,6 +75,7 @@ func run(logger *slog.Logger) error {
 	router := presentation.NewRouter(presentation.Controllers{
 		Health:        controller.NewHealthController(check),
 		Auth:          authController,
+		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
@@ -157,5 +159,27 @@ func newParticipation(postgresClient *postgres.Client, teamID shared.TeamID) *co
 type noRunners struct{}
 
 func (noRunners) RemoveRunner(context.Context, shared.RaceID, shared.MemberID) error {
+	return nil
+}
+
+// newRaces wires the use cases of races for the team.
+func newRaces(postgresClient *postgres.Client, teamID shared.TeamID) *controller.RaceController {
+	raceRepository := postgres.NewRaceRepository(postgresClient, race.NewFactory(random.IDGenerator{}))
+	query := postgres.NewRaceQueryService(postgresClient)
+	return controller.NewRaceController(
+		races.NewListRacesUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
+		races.NewGetRaceUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
+		races.NewCreateRaceUseCase(raceRepository, race.NewFactory(random.IDGenerator{}), teamID),
+		races.NewUpdateRaceUseCase(postgres.NewUnitOfWork(postgresClient), raceRepository, noRunningOrders{}, teamID),
+		races.RaceCommandFactory{},
+	)
+}
+
+// noRunningOrders stands in for the running order Application layer (#95), which adjusts
+// the running orders when a race changes. No running order can be saved before it, so
+// there is nothing to adjust.
+type noRunningOrders struct{}
+
+func (noRunningOrders) AdjustRunningOrders(context.Context, shared.RaceID, race.Description) error {
 	return nil
 }
