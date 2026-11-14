@@ -163,7 +163,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
     "id": "...",
     "name": "...",
     "race_date": "2026-11-23",
-    "my_attendance": "attending" | "undecided" | null,   // null = invited, not answered; field omitted if not invited (organizers)
+    "my_attendance": "attending" | "undecided" | "not_attending" | null,   // null = invited, not answered; field omitted if not invited (organizers). "not_attending" reaches linked organizers only
     "running_order_confirmed": true                     // organizers, and members who answered attending
   }
 ] }
@@ -185,7 +185,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   "name": "...",
   "version": 3,                     // organizers only
   "description": { ... },           // deadline only for organizers
-  "my_attendance": "attending" | "undecided" | null,   // omitted if not invited
+  "my_attendance": "attending" | "undecided" | "not_attending" | null,   // omitted if not invited; "not_attending" reaches linked organizers only
   "running_order_confirmed": true,  // organizers, and members who answered attending
   "can_submit_laps": true           // true when the caller is a runner in a confirmed running order
 }
@@ -545,7 +545,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - 幹事：チームのすべての大会。メンバー：誘われた大会のうち、「不参加」と答えたものを除いたもの
 - 新しく登録した順
-- `my_attendance`：`attending`／`undecided`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）
+- `my_attendance`：`attending`／`undecided`／`not_attending`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）。`not_attending` を受け取るのは、名簿に紐付いた幹事だけ
 - `running_order_confirmed`：幹事と、参加と答えたメンバーにだけ出す
 - frontend は `my_attendance = attending` の大会を「参加する大会」に、それ以外を「招待」に出す
 

@@ -19,7 +19,7 @@ func TestEntryRepository(t *testing.T) {
 	ctx := context.Background()
 	factory := participation.NewEntryFactory(random.IDGenerator{})
 	repository := NewEntryRepository(client, factory)
-	raceID := saveTestRace(t, client, testTeamID)
+	raceID := saveTestRace(t, client, testTeamID, "Ekiden")
 	invitations := NewInvitationRepository(client, participation.InvitationFactory{})
 	var members []shared.MemberID
 	for _, name := range []string{"Taro", "Jiro", "Saburo"} {

@@ -13,8 +13,10 @@ import (
 
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
+	"github.com/way-station/tasuki/app/backend/internal/application/races"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
+	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
@@ -59,7 +61,7 @@ func run(logger *slog.Logger) error {
 	}
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
-	authenticate, authController := newAuth(cfg, postgresClient)
+	authenticate, getMe, authController := newAuth(cfg, postgresClient)
 	var frontend http.Handler
 	if cfg.FrontendDir != "" {
 		frontend = presentation.NewFrontendHandler(cfg.FrontendDir)
@@ -70,8 +72,10 @@ func run(logger *slog.Logger) error {
 	router := presentation.NewRouter(presentation.Controllers{
 		Health: controller.NewHealthController(check),
 		Auth:   authController,
+		Races:  newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
+		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
 		FrontendOrigin: cfg.FrontendOrigin,
 		DevLogin:       cfg.DevLoginEnabled,
 		Frontend:       frontend,
@@ -108,7 +112,7 @@ func run(logger *slog.Logger) error {
 }
 
 // newAuth wires the use cases of logging in and identifying the caller.
-func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *controller.AuthController) {
+func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.AuthenticateUseCase, *auth.GetMeUseCase, *controller.AuthController) {
 	ids := random.IDGenerator{}
 	userFactory := identity.NewUserFactory(ids)
 	sessionFactory := identity.NewSessionFactory(ids, random.TokenGenerator{})
@@ -119,5 +123,27 @@ func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.Authenti
 	logout := auth.NewLogoutUseCase(sessions, time.Now)
 	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), userFactory, identity.NewMemberLinkFactory(ids),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy(cfg.OrganizerLineUserIDs), auth.MeDTOFactory{})
-	return authenticate, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+	return authenticate, getMe, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+}
+
+// newRaces wires the use cases of races for the team.
+func newRaces(postgresClient *postgres.Client, teamID shared.TeamID) *controller.RaceController {
+	raceRepository := postgres.NewRaceRepository(postgresClient, race.NewFactory(random.IDGenerator{}))
+	query := postgres.NewRaceQueryService(postgresClient)
+	return controller.NewRaceController(
+		races.NewListRacesUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
+		races.NewGetRaceUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
+		races.NewCreateRaceUseCase(raceRepository, race.NewFactory(random.IDGenerator{}), teamID),
+		races.NewUpdateRaceUseCase(postgres.NewUnitOfWork(postgresClient), raceRepository, noRunningOrders{}, teamID),
+		races.RaceCommandFactory{},
+	)
+}
+
+// noRunningOrders stands in for the running order Application layer (#95), which adjusts
+// the running orders when a race changes. No running order can be saved before it, so
+// there is nothing to adjust.
+type noRunningOrders struct{}
+
+func (noRunningOrders) AdjustRunningOrders(context.Context, shared.RaceID, race.Description) error {
+	return nil
 }
