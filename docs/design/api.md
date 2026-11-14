@@ -211,6 +211,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 - Cancels the invitation. `204`.
 - Side effects: removes the attendance answer and the entry membership; removes the member from every leg of the running order. If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated from all remaining laps.
+- The laps are deleted through the outbox (ADR-0016): one entry per member, whose steps delete the member's laps for the race and then recalculate their average time.
 
 ### `PUT /races/{race_id}/attendance`
 
@@ -553,7 +554,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - `GET invitations`：退会していない名簿のメンバー全員と、誘われているか、その回答
 - `PUT invitations/...`：誘う。`204`。誘い済みなら何もしない。`422 validation_failed`：退会している
-- `DELETE invitations/...`：招待を取り消す。`204`。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
+- `DELETE invitations/...`：招待を取り消す。`204`。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す。ラップは outbox で消す（ADR-0016）。メンバーごとに 1 つのエントリーを作り、その手順で、この大会のラップを消してから平均タイムを計算し直す
 - `PUT attendance`：本文 `{ status }`。`200`。`404`：誘われていない、またはもう「不参加」と答えた。「参加」から変えると、エントリーから外したときと同じことが起きる
 
 ## エントリー
