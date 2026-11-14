@@ -1038,6 +1038,15 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            /** @description `invite_unusable`: the invite token is unknown, expired, used, or replaced */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     lineCallback: {
