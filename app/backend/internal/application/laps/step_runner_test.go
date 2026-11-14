@@ -85,8 +85,16 @@ func (fake *fakeLapRepository) Save(_ context.Context, record *lap.Record) error
 	return nil
 }
 
-func (fake *fakeLapRepository) Delete(context.Context, shared.RaceID, shared.MemberID) error {
-	return fmt.Errorf("records are not deleted by this package")
+func (fake *fakeLapRepository) Delete(_ context.Context, raceID shared.RaceID, memberID shared.MemberID) error {
+	if fake.err != nil {
+		return fake.err
+	}
+	key := recordKey{raceID: raceID, memberID: memberID}
+	if _, ok := fake.stored[key]; !ok {
+		return fmt.Errorf("lap record of %s in %s: %w", memberID, raceID, shared.ErrNotFound)
+	}
+	delete(fake.stored, key)
+	return nil
 }
 
 func (fake *fakeLapRepository) times(raceID shared.RaceID, memberID shared.MemberID) []string {
@@ -222,6 +230,47 @@ func TestLapStepRunnerDeleteLap(t *testing.T) {
 		}
 		if got := records.times("r1", "m1"); !slices.Equal(got, []string{"l2 3:25"}) || records.saves != 1 {
 			t.Errorf("laps, saves = %v, %d, want l2 saved once", got, records.saves)
+		}
+	})
+}
+
+func TestLapStepRunnerRemoveRaceLaps(t *testing.T) {
+	step := RemoveRaceLapsStep{RaceID: "r1", MemberID: "m1"}
+	others := func() []*lap.Record {
+		return []*lap.Record{recordOf("r2", "m1", storedLap(t, "l3", "3:40")), recordOf("r1", "m2", storedLap(t, "l4", "3:50"))}
+	}
+
+	t.Run("deletes the member's laps for the race and keeps the others", func(t *testing.T) {
+		records := recordsOf(append(others(), recordOf("r1", "m1", storedLap(t, "l1", "3:30"), storedLap(t, "l2", "3:25")))...)
+		if err := stepRunner(records, &fakeMemberRepository{}).RemoveRaceLaps(context.Background(), step); err != nil {
+			t.Fatalf("RemoveRaceLaps() error = %v", err)
+		}
+		if got := records.times("r1", "m1"); got != nil {
+			t.Errorf("laps of m1 in r1 = %v, want none", got)
+		}
+		if !slices.Equal(records.times("r2", "m1"), []string{"l3 3:40"}) || !slices.Equal(records.times("r1", "m2"), []string{"l4 3:50"}) {
+			t.Errorf("the other records changed: %v", records.stored)
+		}
+	})
+
+	t.Run("does nothing more when it runs twice", func(t *testing.T) {
+		records := recordsOf(append(others(), recordOf("r1", "m1", storedLap(t, "l1", "3:30")))...)
+		runner := stepRunner(records, &fakeMemberRepository{})
+		for range 2 {
+			if err := runner.RemoveRaceLaps(context.Background(), step); err != nil {
+				t.Fatalf("RemoveRaceLaps() error = %v", err)
+			}
+		}
+		if got := records.times("r1", "m1"); got != nil || len(records.stored) != 2 {
+			t.Errorf("laps of m1 in r1 = %v, records = %d, want none and 2", got, len(records.stored))
+		}
+	})
+
+	t.Run("returns a database error", func(t *testing.T) {
+		records := recordsOf()
+		records.err = errDatabase
+		if err := stepRunner(records, &fakeMemberRepository{}).RemoveRaceLaps(context.Background(), step); !errors.Is(err, errDatabase) {
+			t.Errorf("RemoveRaceLaps() error = %v, want %v", err, errDatabase)
 		}
 	})
 }

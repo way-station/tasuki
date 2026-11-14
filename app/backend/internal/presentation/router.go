@@ -21,6 +21,7 @@ type Controllers struct {
 	Participation *controller.ParticipationController
 	RunningOrders *controller.RunningOrderController
 	Laps          *controller.LapController
+	Roster        *controller.RosterController
 }
 
 // Options configures the router.
@@ -49,7 +50,7 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps, RosterController: controllers.Roster}, options.Logger)
 	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
@@ -87,6 +88,15 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 				member.Delete("/races/{race_id}/my-laps/{lap_id}", paramHandler.DeleteLap)
 				member.Get("/me/profile", paramHandler.GetMyProfile)
 				callerRouter.With(middleware.RequireOrganizer).Get("/races/{race_id}/laps", paramHandler.ListRaceLaps)
+				organizer.Get("/roster-members", paramHandler.ListRosterMembers)
+				organizer.Post("/roster-members", paramHandler.CreateRosterMember)
+				organizer.Get("/roster-members/{roster_member_id}", paramHandler.GetRosterMember)
+				organizer.Patch("/roster-members/{roster_member_id}", paramHandler.UpdateRosterMember)
+				organizer.Delete("/roster-members/{roster_member_id}/link", paramHandler.UnlinkRosterMember)
+				organizer.Post("/roster-members/{roster_member_id}/invite-links", paramHandler.CreateInviteLink)
+				organizer.Get("/member-links", paramHandler.ListPendingMemberLinks)
+				organizer.Post("/member-links/{link_id}/approve", paramHandler.ApproveMemberLink)
+				organizer.Post("/member-links/{link_id}/reject", paramHandler.RejectMemberLink)
 			})
 		})
 	})

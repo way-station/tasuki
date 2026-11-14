@@ -76,6 +76,16 @@ func (runner *LapStepRunner) DeleteLap(ctx context.Context, step DeleteLapStep) 
 	})
 }
 
+// RemoveRaceLaps deletes the member's laps for the race. Laps that are already gone are
+// left as they are.
+func (runner *LapStepRunner) RemoveRaceLaps(ctx context.Context, step RemoveRaceLapsStep) error {
+	err := runner.records.Delete(ctx, step.RaceID, step.MemberID)
+	if errors.Is(err, shared.ErrNotFound) {
+		return nil
+	}
+	return err
+}
+
 // change applies change to the member's record for the race and saves it. When the record
 // or the lap is gone, nothing is saved.
 func (runner *LapStepRunner) change(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID, change func(record *lap.Record) error) error {

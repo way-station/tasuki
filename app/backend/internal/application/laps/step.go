@@ -14,6 +14,7 @@ const (
 	EditLapKind            = "lap.edit_lap"
 	DeleteLapKind          = "lap.delete_lap"
 	RecalculateAverageKind = "lap.recalculate_average"
+	RemoveRaceLapsKind     = "lap.remove_race_laps"
 )
 
 // AddLapsStep adds newly submitted laps to the member's lap record for the race (MongoDB).
@@ -63,9 +64,20 @@ type RecalculateAverageStep struct {
 // Kind returns RecalculateAverageKind.
 func (RecalculateAverageStep) Kind() string { return RecalculateAverageKind }
 
+// RemoveRaceLapsStep deletes all of the member's laps for the race (MongoDB), after they
+// were taken off a confirmed running order. RecalculateAverageStep follows it.
+type RemoveRaceLapsStep struct {
+	RaceID   shared.RaceID   `json:"race_id"`
+	MemberID shared.MemberID `json:"member_id"`
+}
+
+// Kind returns RemoveRaceLapsKind.
+func (RemoveRaceLapsStep) Kind() string { return RemoveRaceLapsKind }
+
 var (
 	_ outbox.Step = AddLapsStep{}
 	_ outbox.Step = EditLapStep{}
 	_ outbox.Step = DeleteLapStep{}
 	_ outbox.Step = RecalculateAverageStep{}
+	_ outbox.Step = RemoveRaceLapsStep{}
 )

@@ -18,6 +18,7 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Times | Lap times and average times: `"MM:SS"` (e.g. `"3:28"`). Total times: `"H:MM:SS"` (e.g. `"2:45:30"`) |
 | Dates | Race date: `YYYY-MM-DD`. Deadline and other timestamps: RFC 3339 with offset (e.g. `2026-11-01T18:00:00+09:00`) |
 | Distances | km as numbers (e.g. `30.5`) |
+| Today | Japan time (`Asia/Tokyo`), for example for the races whose invitations are cancelled when a member leaves. The MVP has one team, in Japan |
 | Concurrent edits | Races and running orders carry a `version`. Updates send the version they read; if it changed, `409` with `code: version_conflict` |
 | Lists | No pagination in the MVP |
 | IDs | Opaque strings (the type is decided in #68) |
@@ -221,6 +222,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 - Cancels the invitation. `204`. Cancelling the invitation of a member who is not invited does nothing.
 - Side effects: removes the attendance answer and the entry membership; removes the member from every leg of the running order. If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated from all remaining laps.
+- The laps are deleted through the outbox (ADR-0016): one entry per member, whose steps delete the member's laps for the race and then recalculate their average time.
 
 ### `PUT /races/{race_id}/attendance`
 
@@ -363,15 +365,16 @@ Lap records are in MongoDB and the average time in PostgreSQL, so the writes go 
 ] }
 ```
 
-- A rejected link shows as `none`.
+- By name. A rejected link shows as `none`. `invite_link_expires_at` is set only while the member has an invite link that can still be used.
 
 ### `POST /roster-members`
 
 - Body: `{ name }` → `201` roster member.
+- `400 invalid_request`: the name is empty.
 
 ### `GET /roster-members/{roster_member_id}`
 
-- `200`: `{ "id", "name", "left", "average_time", "lap_count", "laps_by_race": [ { "race_id", "race_name", "laps": [ { "id", "time" } ] } ] }`.
+- `200`: `{ "id", "name", "left", "average_time", "lap_count", "laps_by_race": [ { "race_id", "race_name", "laps": [ { "id", "time" } ] } ] }`. `laps_by_race` has the races where the member has laps, newest race date first; the laps are in the order they were submitted.
 
 ### `PATCH /roster-members/{roster_member_id}`
 
@@ -386,7 +389,7 @@ Lap records are in MongoDB and the average time in PostgreSQL, so the writes go 
 
 ### `POST /roster-members/{roster_member_id}/invite-links`
 
-- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The previous link becomes unusable.
+- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The URL is the frontend origin (`FRONTEND_ORIGIN`) followed by `/invite/<token>`. The previous link becomes unusable.
 - `409 state_conflict`: the member has left, has an approved link, or has a pending link.
 
 ### `GET /member-links`
@@ -440,6 +443,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | タイム | ラップと平均タイム：`"MM:SS"`（例：`"3:28"`）。合計タイム：`"H:MM:SS"`（例：`"2:45:30"`） |
 | 日付 | 開催日：`YYYY-MM-DD`。締め切りなどの日時：オフセット付きの RFC 3339（例：`2026-11-01T18:00:00+09:00`） |
 | 距離 | km の数値（例：`30.5`） |
+| 今日 | 日本時間（`Asia/Tokyo`）で決める。例えば、退会のときに招待を取り消す大会。MVP のチームは日本の 1 チームだけ |
 | 同時編集 | 大会と走順は `version` を持つ。更新では読んだときの版を送り、変わっていたら `409`（`code: version_conflict`） |
 | 一覧 | MVP ではページ分けしない |
 | ID | 中身を意味を持たない文字列として扱う（型は #68 で決める） |
@@ -584,7 +588,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - `GET invitations`：退会していない名簿のメンバー全員と、誘われているか、その回答
 - `PUT invitations/...`：誘う。`204`。誘い済みなら何もしない。`422 validation_failed`：退会している
-- `DELETE invitations/...`：招待を取り消す。`204`。誘っていないメンバーなら何もしない。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
+- `DELETE invitations/...`：招待を取り消す。`204`。誘っていないメンバーなら何もしない。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す。ラップは outbox で消す（ADR-0016）。メンバーごとに 1 つのエントリーを作り、その手順で、この大会のラップを消してから平均タイムを計算し直す
 - `PUT attendance`：本文 `{ status }`。`200`。`404`：誘われていない、またはもう「不参加」と答えた。「参加」から変えると、エントリーから外したときと同じことが起きる
 
 ## エントリー
@@ -677,12 +681,12 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `POST /member-links/{link_id}/approve` | 幹事 | M3 |
 | `POST /member-links/{link_id}/reject` | 幹事 | M3 |
 
-- `GET /roster-members`：名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
-- `POST /roster-members`：本文 `{ name }` → `201`
-- `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ
+- `GET /roster-members`：名前の順。名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
+- `POST /roster-members`：本文 `{ name }` → `201`。名前が空なら `400 invalid_request`
+- `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ。大会は、その人のラップがある大会を開催日の新しい順に並べる。ラップは提出した順
 - `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのユーザーのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
 - `DELETE .../link`：承認済みの紐付けを外す。`204`。ユーザーはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
-- `POST .../invite-links`：`201`：`{ url, expires_at }`。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
+- `POST .../invite-links`：`201`：`{ url, expires_at }`。URL は frontend のオリジン（`FRONTEND_ORIGIN`）のあとに `/invite/<token>` を続けたもの。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
 - `GET /member-links`：承認待ちの紐付け（LINE の表示名、名簿のメンバー、日時）
 - `POST .../approve`、`.../reject`：`204`。承認待ちでなければ `409 state_conflict`
 

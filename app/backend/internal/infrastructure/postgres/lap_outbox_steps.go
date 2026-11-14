@@ -17,6 +17,7 @@ func LapOutboxSteps(runner *laps.LapStepRunner) []OutboxStep {
 		{Kind: laps.AddLapsKind, Decode: decodeStep[laps.AddLapsStep], Run: runStep(runner.AddLaps)},
 		{Kind: laps.EditLapKind, Decode: decodeStep[laps.EditLapStep], Run: runStep(runner.EditLap)},
 		{Kind: laps.DeleteLapKind, Decode: decodeStep[laps.DeleteLapStep], Run: runStep(runner.DeleteLap)},
+		{Kind: laps.RemoveRaceLapsKind, Decode: decodeStep[laps.RemoveRaceLapsStep], Run: runStep(runner.RemoveRaceLaps)},
 		{Kind: laps.RecalculateAverageKind, Decode: decodeStep[laps.RecalculateAverageStep], Run: runStep(runner.RecalculateAverage), FinalPostgreSQL: true},
 	}
 }
