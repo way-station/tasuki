@@ -19,6 +19,7 @@ type Controllers struct {
 	Auth          *controller.AuthController
 	Races         *controller.RaceController
 	Participation *controller.ParticipationController
+	RunningOrders *controller.RunningOrderController
 	Laps          *controller.LapController
 }
 
@@ -48,7 +49,7 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, LapController: controllers.Laps}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps}, options.Logger)
 	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
@@ -72,6 +73,9 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 				organizer.Post("/races/{race_id}/entries", paramHandler.CreateEntry)
 				organizer.Put("/races/{race_id}/entries/{entry_id}/members/{roster_member_id}", paramHandler.AddEntryMember)
 				organizer.Delete("/races/{race_id}/entries/{entry_id}/members/{roster_member_id}", paramHandler.RemoveEntryMember)
+				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}/running-orders", paramHandler.ListRunningOrders)
+				organizer.Put("/races/{race_id}/entries/{entry_id}/running-order", paramHandler.SaveRunningOrder)
+				organizer.Post("/races/{race_id}/entries/{entry_id}/running-order/confirm", paramHandler.ConfirmRunningOrder)
 				callerRouter.With(middleware.RequireMember).Get("/races", apiHandler.ListRaces)
 				callerRouter.With(middleware.RequireOrganizer).Post("/races", apiHandler.CreateRace)
 				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}", paramHandler.GetRace)
