@@ -3,6 +3,9 @@ package controller
 import (
 	"context"
 	"errors"
+	"time"
+
+	"github.com/oapi-codegen/nullable"
 
 	"github.com/way-station/tasuki/app/backend/internal/application/rosters"
 	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
@@ -178,9 +181,9 @@ func (controller *RosterController) RejectMemberLink(ctx context.Context, reques
 }
 
 func toAPIRosterMember(dto rosters.RosterMemberDTO) api.RosterMember {
-	member := api.RosterMember{Id: string(dto.MemberID()), Name: dto.Name(), Left: dto.Left(), LinkStatus: toAPILinkStatus(dto.LinkStatus())}
+	member := api.RosterMember{Id: string(dto.MemberID()), Name: dto.Name(), Left: dto.Left(), LinkStatus: toAPILinkStatus(dto.LinkStatus()), InviteLinkExpiresAt: nullable.NewNullNullable[time.Time]()}
 	if expiresAt, ok := dto.InviteLinkExpiresAt(); ok {
-		member.InviteLinkExpiresAt = &expiresAt
+		member.InviteLinkExpiresAt = nullable.NewNullableWithValue(expiresAt)
 	}
 	return member
 }

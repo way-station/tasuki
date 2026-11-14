@@ -7,8 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/way-station/tasuki/app/backend/internal/application/auth"
+	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
 	"github.com/way-station/tasuki/app/backend/internal/domain/race"
+	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
 
@@ -68,6 +71,22 @@ func (fake *fakeRaceRepository) Save(context.Context, *race.Race) error {
 	return errors.New("races are not saved by this package")
 }
 
+type fakeMemberRepository struct {
+	stored map[shared.MemberID]*roster.Member
+}
+
+func (fake *fakeMemberRepository) FindByID(_ context.Context, id shared.MemberID) (*roster.Member, error) {
+	member, ok := fake.stored[id]
+	if !ok {
+		return nil, fmt.Errorf("roster member %s: %w", id, shared.ErrNotFound)
+	}
+	return member, nil
+}
+
+func (fake *fakeMemberRepository) Save(context.Context, *roster.Member) error {
+	return errors.New("roster members are not saved by this package")
+}
+
 type invitationKey struct {
 	raceID   shared.RaceID
 	memberID shared.MemberID
@@ -112,6 +131,38 @@ func (fake *fakeInvitationRepository) Save(_ context.Context, invitation *partic
 func (fake *fakeInvitationRepository) Delete(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) error {
 	fake.deleted = &invitationKey{raceID, memberID}
 	fake.deleteInTransaction = inTransaction(ctx)
+	return nil
+}
+
+type fakeAttendanceRepository struct {
+	stored             map[invitationKey]*participation.Attendance
+	findErr            error
+	saved              *participation.Attendance
+	savedInTransaction bool
+}
+
+func answered(raceID shared.RaceID, answers map[shared.MemberID]participation.AttendanceStatus) *fakeAttendanceRepository {
+	fake := &fakeAttendanceRepository{stored: map[invitationKey]*participation.Attendance{}}
+	for memberID, status := range answers {
+		fake.stored[invitationKey{raceID, memberID}] = participation.AttendanceFactory{}.Reconstruct(raceID, memberID, status)
+	}
+	return fake
+}
+
+func (fake *fakeAttendanceRepository) Find(_ context.Context, raceID shared.RaceID, memberID shared.MemberID) (*participation.Attendance, error) {
+	if fake.findErr != nil {
+		return nil, fake.findErr
+	}
+	attendance, ok := fake.stored[invitationKey{raceID, memberID}]
+	if !ok {
+		return nil, fmt.Errorf("attendance of %s for %s: %w", memberID, raceID, shared.ErrNotFound)
+	}
+	return attendance, nil
+}
+
+func (fake *fakeAttendanceRepository) Save(ctx context.Context, attendance *participation.Attendance) error {
+	fake.saved = attendance
+	fake.savedInTransaction = inTransaction(ctx)
 	return nil
 }
 
@@ -169,4 +220,25 @@ type fakeRunnerRemover struct {
 func (fake *fakeRunnerRemover) RemoveRunner(ctx context.Context, raceID shared.RaceID, memberID shared.MemberID) error {
 	fake.removed = append(fake.removed, removedRunner{raceID: raceID, memberID: memberID, inTransaction: inTransaction(ctx)})
 	return fake.err
+}
+
+// member returns a caller linked to roster member m1.
+func member() auth.MeDTO {
+	factory := auth.MeDTOFactory{}
+	return factory.Create("u1", "Taro", false, identity.CallerApproved, factory.CreateRosterMember("m1", "Taro"))
+}
+
+// organizer returns an organizer without a link.
+func organizer() auth.MeDTO {
+	return auth.MeDTOFactory{}.Create("u2", "Hanako", true, identity.CallerNone, nil)
+}
+
+func isValidation(err error) bool {
+	var validationErr *shared.ValidationError
+	return errors.As(err, &validationErr)
+}
+
+func isState(err error) bool {
+	var stateErr *shared.StateError
+	return errors.As(err, &stateErr)
 }
