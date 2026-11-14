@@ -162,15 +162,6 @@ func recordFilter(raceID shared.RaceID, memberID shared.MemberID) (bson.D, error
 	return bson.D{{Key: "race_id", Value: race}, {Key: "roster_member_id", Value: member}}, nil
 }
 
-// bsonUUID converts an ID to a BSON UUID (binary subtype 4).
-func bsonUUID(id string) (bson.Binary, error) {
-	parsed, err := uuid.Parse(id)
-	if err != nil {
-		return bson.Binary{}, fmt.Errorf("invalid id %q: %w", id, err)
-	}
-	return bson.Binary{Subtype: bson.TypeBinaryUUID, Data: parsed[:]}, nil
-}
-
 // idOf converts a BSON UUID back to an ID.
 func idOf(binary bson.Binary) (string, error) {
 	if binary.Subtype != bson.TypeBinaryUUID {

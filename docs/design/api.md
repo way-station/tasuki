@@ -56,6 +56,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
 | Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
 | Leaving an entry and running orders | Cancelling an invitation, changing away from "attending", and removing an entry member take the member off the running orders (and delete their laps if the order is confirmed) through an interface of the participation Application layer, in the same unit of work. It is implemented by the running order (#95) and lap (#99) Application layers |
+| Running orders and laps | When runners lose their laps (see `PUT .../running-order`), the running order Application layer deletes them and recalculates the averages through an interface, in the same unit of work. It is implemented by the lap Application layer (#99) |
 
 ## Authentication and joining
 
@@ -285,7 +286,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   - Distance races: exactly one leg per leg distance. Time races: one or more legs, numbered from 1 without gaps.
   - Runners must be members of the entry.
 - A confirmed running order stays confirmed and the change is visible right away.
-- Every save is kept as one history entry (`running_order_history`).
+- Every save is kept as one history entry (`running_order_history`). So is every confirm. Changes made by the backend (legs when the race changes, a runner leaving the entry) are not kept.
 - If a runner's number of legs goes down in a confirmed running order, all their laps for this race are deleted and their average time is recalculated. Moving a runner to another leg without reducing their number of legs keeps the laps.
 
 ### `POST .../running-order/confirm`
@@ -477,6 +478,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
 | 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
 | エントリーから外すことと走順 | 招待の取り消し、「参加」からの回答の変更、エントリーから外すことは、参加の Application 層の interface を通して、同じ作業単位の中で走順から外す（走順が確定していればラップも消す）。実装は走順（#95）とラップ（#99）の Application 層に置く |
+| 走順とラップ | 走者がラップを失うとき（`PUT .../running-order`）、走順の Application 層は interface を通して、同じ作業単位の中でラップを消し、平均を計算し直す。実装はラップの Application 層（#99）に置く |
 
 ## 認証と参加
 
@@ -613,7 +615,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `PUT`：本文 `{ version?, legs: [ { leg_number, roster_member_id | null } ] }`。最初の下書きを作るときは `version` を付けない。`200`
   - ルール（`422 validation_failed`）：距離制は区の距離と同じ数の区。時間制は1区以上で、1から欠けずに番号を振る。走者はエントリーのメンバー
   - 確定した走順は確定のまま、すぐに見える
-  - 保存のたびに履歴を1件残す（`running_order_history`）
+  - 保存のたびに履歴を1件残す（`running_order_history`）。確定でも残す。backend が自動で変えたとき（大会が変わったときの区、走者がエントリーから外れたとき）は残さない
   - 確定した走順で、ある走者の区の数が減ったら、その人のこの大会のラップはすべて消え、平均タイムは計算し直される。区の数を減らさずに別の区に移すだけなら、ラップは残る
 - `POST confirm`：本文 `{ version }`。`200`。空きの区があれば `422 validation_failed`。確定済みなら `409 state_conflict`
 

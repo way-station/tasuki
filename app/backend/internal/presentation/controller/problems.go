@@ -39,3 +39,7 @@ func unauthenticated() api.UnauthenticatedApplicationProblemPlusJSONResponse {
 func notFound() api.NotFoundApplicationProblemPlusJSONResponse {
 	return api.NotFoundApplicationProblemPlusJSONResponse{Type: "about:blank", Title: "Not Found", Status: http.StatusNotFound, Code: api.ProblemCodeNotFound}
 }
+
+func versionConflict() api.ConflictApplicationProblemPlusJSONResponse {
+	return api.ConflictApplicationProblemPlusJSONResponse{Type: "about:blank", Title: "Conflict", Status: http.StatusConflict, Code: api.ProblemCodeVersionConflict}
+}
