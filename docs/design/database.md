@@ -65,6 +65,8 @@ This document describes the data tasuki's MVP stores and the rules it follows. C
 | Time-based | Number of laps | Time limit ÷ the mean of the average times of the runners in the running order = distance (km). Distance ÷ lap distance, rounded down to whole laps |
 
 - Example (time-based): 180 min ÷ `3:30`/km ≈ 51.4 km; with 2 km laps → 25 laps.
+- Time-based: the mean counts each leg, so a runner who runs two legs counts twice.
+- Distance-based: the legs are added without rounding, and the total is rounded half up to whole seconds.
 - Empty legs are left out of the prediction, and the prediction says that some legs are empty.
 - Predictions are estimates and may differ from the result.
 
@@ -462,6 +464,8 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | 時間制 | 周回数 | 制限時間 ÷ 走順に入っている人の平均タイムの平均 = 距離（km）。距離 ÷ 1周の距離を、切り捨てて整数の周回数にする |
 
 - 例（時間制）：180分 ÷ `3:30`/km ≈ 51.4km。1周 2km なら 25周
+- 時間制：平均は区ごとに数える。2つの区を走る人は2回数える
+- 距離制：区ごとのタイムは丸めずに足し、合計を秒で四捨五入する
 - 空いた区は予想から除き、空きの区があることを示す
 - 予想なので、結果と前後することがある
 
