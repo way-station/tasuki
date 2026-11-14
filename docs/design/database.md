@@ -50,10 +50,10 @@ This document describes the data tasuki's MVP stores and the rules it follows. C
 | 1 | That lap |
 | 2 or more | The mean of all laps |
 
-- When new laps are submitted, the average is recalculated from the stored average and lap count:
-  `new average = (average × lap count + sum of new laps) ÷ (lap count + number of new laps)`
-  - Example: 5 laps averaging `3:30`, then `3:20`, `3:25`, `3:25` → (3:30 × 5 + 3:20 + 3:25 + 3:25) ÷ 8 = 3:27.5 → `3:28`
-- When a lap is edited or deleted (by the member, or because the runner was removed from the running order), the average and lap count are recalculated from all of the member's remaining laps.
+- When laps are submitted, edited, or deleted (by the member, or because the runner was removed from the running order), the average and lap count are recalculated from all of the member's laps in every race:
+  `average = sum of all laps ÷ number of laps`
+  - Example: laps `3:20`, `3:25`, `3:25` → (3:20 + 3:25 + 3:25) ÷ 3 = 3:23.3 → `3:23`
+  - The average is not updated from the stored average and lap count, because these writes go through the outbox and can be retried later and in a different order (ADR-0016). Recalculating from all laps gives the same result however often and in whatever order the steps run.
 - Times are stored and shown as `MM:SS`. Fractions of a second are rounded half up.
 - The profile shows the average time. Members enter nothing in the profile.
 
@@ -65,6 +65,8 @@ This document describes the data tasuki's MVP stores and the rules it follows. C
 | Time-based | Number of laps | Time limit ÷ the mean of the average times of the runners in the running order = distance (km). Distance ÷ lap distance, rounded down to whole laps |
 
 - Example (time-based): 180 min ÷ `3:30`/km ≈ 51.4 km; with 2 km laps → 25 laps.
+- Time-based: the mean counts each leg, so a runner who runs two legs counts twice.
+- Distance-based: the legs are added without rounding, and the total is rounded half up to whole seconds.
 - Empty legs are left out of the prediction, and the prediction says that some legs are empty.
 - Predictions are estimates and may differ from the result.
 
@@ -447,10 +449,10 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | 1回 | そのラップ |
 | 2回以上 | すべてのラップの平均 |
 
-- 新しいラップが提出されたら、保存している平均タイムとラップ数から計算し直す
-  `新しい平均 = (平均 × ラップ数 + 新しいラップの合計) ÷ (ラップ数 + 新しいラップの数)`
-  - 例：5回で平均 `3:30` の人が `3:20`、`3:25`、`3:25` を出した → (3:30 × 5 + 3:20 + 3:25 + 3:25) ÷ 8 = 3:27.5 → `3:28`
-- ラップが直されたり消されたりしたとき（本人の操作、または走順から外れたとき）は、その人の残っているすべてのラップから、平均タイムとラップ数を計算し直す
+- ラップが提出されたり、直されたり、消されたりしたとき（本人の操作、または走順から外れたとき）は、その人のすべての大会のすべてのラップから、平均タイムとラップ数を計算し直す
+  `平均 = すべてのラップの合計 ÷ ラップの数`
+  - 例：ラップが `3:20`、`3:25`、`3:25` → (3:20 + 3:25 + 3:25) ÷ 3 = 3:23.3 → `3:23`
+  - 保存している平均タイムとラップ数から足していく計算はしない。これらの書き込みは outbox を通るので、あとから、順番が入れ替わってやり直されることがある（ADR-0016）。すべてのラップから計算し直せば、手順を何回、どの順で実行しても結果は同じになる
 - タイムは `MM:SS` で保存し、表示する。秒の端数は四捨五入する
 - プロフィールには平均タイムを表示する。メンバーがプロフィールに入力するものはない
 
@@ -462,6 +464,8 @@ tasuki の MVP が保存するデータと、そのルールを書く。列の�
 | 時間制 | 周回数 | 制限時間 ÷ 走順に入っている人の平均タイムの平均 = 距離（km）。距離 ÷ 1周の距離を、切り捨てて整数の周回数にする |
 
 - 例（時間制）：180分 ÷ `3:30`/km ≈ 51.4km。1周 2km なら 25周
+- 時間制：平均は区ごとに数える。2つの区を走る人は2回数える
+- 距離制：区ごとのタイムは丸めずに足し、合計を秒で四捨五入する
 - 空いた区は予想から除き、空きの区があることを示す
 - 予想なので、結果と前後することがある
 

@@ -2,7 +2,6 @@ package runningorders
 
 import (
 	"context"
-	"errors"
 
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
 	"github.com/way-station/tasuki/app/backend/internal/domain/runningorder"
@@ -41,33 +40,4 @@ func (useCase *RemoveRunnerUseCase) RemoveRunner(ctx context.Context, raceID sha
 		return err
 	}
 	return useCase.laps.RemoveLaps(ctx, raceID, []shared.MemberID{memberID})
-}
-
-// forEachRunningOrder calls change with the saved running order of each entry of the race.
-func forEachRunningOrder(ctx context.Context, entries participation.EntryRepository, runningOrders runningorder.Repository, raceID shared.RaceID, change func(*runningorder.RunningOrder) error) error {
-	raceEntries, err := entries.ListByRace(ctx, raceID)
-	if err != nil {
-		return err
-	}
-	for _, entry := range raceEntries {
-		runningOrder, err := runningOrders.FindByEntry(ctx, entry.ID())
-		if errors.Is(err, shared.ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		if err := change(runningOrder); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// saveIfChanged saves the running order when its legs changed since it was read.
-func saveIfChanged(ctx context.Context, runningOrders runningorder.Repository, runningOrder *runningorder.RunningOrder) error {
-	if runningOrder.Version() == runningOrder.LoadedVersion() {
-		return nil
-	}
-	return runningOrders.Save(ctx, runningOrder)
 }

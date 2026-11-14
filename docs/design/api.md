@@ -57,6 +57,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
 | Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
 | Leaving an entry and running orders | Cancelling an invitation, changing away from "attending", and removing an entry member take the member off the running orders (and delete their laps if the order is confirmed) through an interface of the participation Application layer, in the same unit of work. It is implemented by the running order (#95) and lap (#99) Application layers |
+| Running orders and laps | When runners lose their laps (see `PUT .../running-order`), the running order Application layer deletes them and recalculates the averages through an interface, in the same unit of work. It is implemented by the lap Application layer (#99) |
 
 ## Authentication and joining
 
@@ -287,7 +288,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   - Distance races: exactly one leg per leg distance. Time races: one or more legs, numbered from 1 without gaps.
   - Runners must be members of the entry.
 - A confirmed running order stays confirmed and the change is visible right away.
-- Every save is kept as one history entry (`running_order_history`).
+- Every save is kept as one history entry (`running_order_history`). So is every confirm. Changes made by the backend (legs when the race changes, a runner leaving the entry) are not kept.
 - If a runner's number of legs goes down in a confirmed running order, all their laps for this race are deleted and their average time is recalculated. Moving a runner to another leg without reducing their number of legs keeps the laps.
 
 ### `POST .../running-order/confirm`
@@ -315,10 +316,22 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 | `GET /races/{race_id}/laps` | Organizer | R2 |
 
 - `GET my-laps`: `{ "laps": [ { "id", "time": "3:25" } ], "average_time": "3:28", "lap_count": 8 }`. Laps are in the order they were submitted.
-- `POST my-laps`: body `{ times: ["3:20", "3:25"] }` → `201` with the same shape. The average uses the submission formula.
-- `PATCH`: body `{ time }` → `200` same shape. `DELETE` → `200` same shape. The average is recalculated from all of the member's laps.
-- `404`: not a runner in a confirmed running order of this race (also for organizers who are not runners).
-- `GET /races/{race_id}/laps` (organizers): `{ "runners": [ { "roster_member_id", "name", "laps": [ { "id", "time" } ] } ] }`. View only.
+- `POST my-laps`: body `{ times: ["3:20", "3:25"] }` → `201` with the same shape.
+- `PATCH`: body `{ time }` → `200` same shape. `DELETE` → `200` same shape.
+- After a submission, an edit, or a deletion, the average is recalculated from all of the member's laps (`docs/design/database.md`).
+- `404`: not a runner in a confirmed running order of this race (also for organizers who are not runners), or, for `PATCH` and `DELETE`, the member has no such lap in this race.
+- `GET /races/{race_id}/laps` (organizers): `{ "runners": [ { "roster_member_id", "name", "laps": [ { "id", "time" } ] } ] }`. Every runner of the confirmed running orders of the race, by name; a runner with no laps yet has an empty `laps`. View only.
+
+### How laps are written
+
+Lap records are in MongoDB and the average time in PostgreSQL, so the writes go through the outbox (ADR-0016):
+
+1. In one unit of work, the use case checks that the caller is a runner in a confirmed running order (and, for `PATCH` and `DELETE`, that the lap exists) and adds an outbox entry. Nothing else is written to PostgreSQL. A new lap gets its ID here.
+2. After the commit, the MongoDB step changes the lap record: add the laps whose IDs are not in the record yet, set the time of the lap, or delete the lap. A lap that is already gone is left as it is, so running a step twice does nothing more.
+3. The final PostgreSQL step recalculates the average and lap count from all of the member's laps, in the transaction that deletes the outbox entry.
+
+- The steps are defined in the lap Application layer, which also runs them; the Infrastructure layer registers each kind with the outbox.
+- The response is read after the steps ran. If a step failed, it shows the state before the change until the retry worker completes it.
 
 ## Profile
 
@@ -469,6 +482,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
 | 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
 | エントリーから外すことと走順 | 招待の取り消し、「参加」からの回答の変更、エントリーから外すことは、参加の Application 層の interface を通して、同じ作業単位の中で走順から外す（走順が確定していればラップも消す）。実装は走順（#95）とラップ（#99）の Application 層に置く |
+| 走順とラップ | 走者がラップを失うとき（`PUT .../running-order`）、走順の Application 層は interface を通して、同じ作業単位の中でラップを消し、平均を計算し直す。実装はラップの Application 層（#99）に置く |
 
 ## 認証と参加
 
@@ -605,7 +619,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `PUT`：本文 `{ version?, legs: [ { leg_number, roster_member_id | null } ] }`。最初の下書きを作るときは `version` を付けない。`200`
   - ルール（`422 validation_failed`）：距離制は区の距離と同じ数の区。時間制は1区以上で、1から欠けずに番号を振る。走者はエントリーのメンバー
   - 確定した走順は確定のまま、すぐに見える
-  - 保存のたびに履歴を1件残す（`running_order_history`）
+  - 保存のたびに履歴を1件残す（`running_order_history`）。確定でも残す。backend が自動で変えたとき（大会が変わったときの区、走者がエントリーから外れたとき）は残さない
   - 確定した走順で、ある走者の区の数が減ったら、その人のこの大会のラップはすべて消え、平均タイムは計算し直される。区の数を減らさずに別の区に移すだけなら、ラップは残る
 - `POST confirm`：本文 `{ version }`。`200`。空きの区があれば `422 validation_failed`。確定済みなら `409 state_conflict`
 
@@ -628,10 +642,22 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `GET /races/{race_id}/laps` | 幹事 | R2 |
 
 - `GET my-laps`：自分のラップ（提出した順）、平均タイム、ラップ数
-- `POST my-laps`：本文 `{ times: ["3:20", "3:25"] }` → `201`。平均は提出の式で計算する
-- `PATCH`：本文 `{ time }` → `200`。`DELETE` → `200`。平均はその人の全ラップから計算し直す
-- `404`：この大会の確定した走順の走者ではない（走者でない幹事も同じ）
-- `GET laps`（幹事）：走者ごとのラップ。見るだけ
+- `POST my-laps`：本文 `{ times: ["3:20", "3:25"] }` → `201`
+- `PATCH`：本文 `{ time }` → `200`。`DELETE` → `200`
+- 提出、修正、削除のあとは、その人の全ラップから平均を計算し直す（`docs/design/database.md`）
+- `404`：この大会の確定した走順の走者ではない（走者でない幹事も同じ）。`PATCH` と `DELETE` では、この大会にその人のそのラップがないときも
+- `GET laps`（幹事）：その大会の確定した走順の走者全員のラップを、名前の順に返す。まだラップがない走者は `laps` が空。見るだけ
+
+### ラップの書き方
+
+ラップの記録は MongoDB、平均タイムは PostgreSQL にあるので、outbox を通して書く（ADR-0016）：
+
+1. ユースケースは 1 つの作業単位で、呼ぶ人が確定した走順の走者であること（`PATCH` と `DELETE` ではそのラップがあること）を確かめ、outbox の entry を足す。PostgreSQL にはほかに何も書かない。新しいラップの ID はここで決める
+2. コミットのあと、MongoDB の手順がラップの記録を変える：記録にまだない ID のラップを足す、ラップのタイムを変える、ラップを消す。もうないラップはそのままにするので、手順を 2 回実行してもそれ以上は何も起きない
+3. 最後の PostgreSQL の手順が、outbox の entry を消すのと同じトランザクションで、その人の全ラップから平均タイムとラップ数を計算し直す
+
+- 手順はラップの Application 層で決め、実行もそこで行う。Infrastructure 層は種類ごとに手順を outbox に登録する
+- レスポンスは手順を実行したあとに読む。手順が失敗したときは、再試行の仕組みが終わらせるまで、変更の前の状態が見える
 
 ## プロフィール
 
