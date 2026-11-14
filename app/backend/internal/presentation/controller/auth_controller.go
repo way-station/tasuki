@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oapi-codegen/nullable"
+
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
@@ -82,13 +84,14 @@ func (controller *AuthController) GetMe(ctx context.Context, _ api.GetMeRequestO
 	}
 
 	response := api.GetMe200JSONResponse{
-		UserId:      string(caller.UserID()),
-		DisplayName: caller.DisplayName(),
-		IsOrganizer: caller.IsOrganizer(),
-		Status:      meStatus(caller.Status()),
+		UserId:       string(caller.UserID()),
+		DisplayName:  caller.DisplayName(),
+		IsOrganizer:  caller.IsOrganizer(),
+		Status:       meStatus(caller.Status()),
+		RosterMember: nullable.NewNullNullable[api.RosterMemberBasic](),
 	}
 	if member, ok := caller.RosterMember(); ok {
-		response.RosterMember = &api.RosterMemberBasic{Id: string(member.ID()), Name: member.Name()}
+		response.RosterMember = nullable.NewNullableWithValue(api.RosterMemberBasic{Id: string(member.ID()), Name: member.Name()})
 	}
 	return response, nil
 }
