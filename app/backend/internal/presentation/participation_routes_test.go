@@ -93,9 +93,9 @@ func newParticipationStore() *participationStore {
 	factory := roster.NewMemberFactory(nil)
 	return &participationStore{
 		members: []*roster.Member{
-			factory.Reconstruct("m1", participationTeamID, "Taro", nil),
-			factory.Reconstruct("m2", participationTeamID, "Jiro", nil),
-			factory.Reconstruct("m3", participationTeamID, "Saburo", &leftAt),
+			factory.Reconstruct("m1", participationTeamID, "Taro", nil, roster.DefaultAverage(), 0),
+			factory.Reconstruct("m2", participationTeamID, "Jiro", nil, roster.DefaultAverage(), 0),
+			factory.Reconstruct("m3", participationTeamID, "Saburo", &leftAt, roster.DefaultAverage(), 0),
 		},
 		invitations: map[memberKey]bool{{"r1", "m1"}: true},
 		answers:     map[memberKey]participation.AttendanceStatus{{"r1", "m1"}: participation.Attending},

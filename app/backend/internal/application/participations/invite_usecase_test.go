@@ -15,9 +15,9 @@ func TestInviteUseCase(t *testing.T) {
 	leftAt := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
 	memberFactory := roster.NewMemberFactory(fixedIDs{})
 	members := &fakeMemberRepository{stored: map[shared.MemberID]*roster.Member{
-		"m1": memberFactory.Reconstruct("m1", teamID, "Taro", nil),
-		"m2": memberFactory.Reconstruct("m2", teamID, "Jiro", &leftAt),
-		"m9": memberFactory.Reconstruct("m9", "t2", "Kuro", nil),
+		"m1": memberFactory.Reconstruct("m1", teamID, "Taro", nil, roster.DefaultAverage(), 0),
+		"m2": memberFactory.Reconstruct("m2", teamID, "Jiro", &leftAt, roster.DefaultAverage(), 0),
+		"m9": memberFactory.Reconstruct("m9", "t2", "Kuro", nil, roster.DefaultAverage(), 0),
 	}}
 	invite := func(races *fakeRaceRepository, invitations *fakeInvitationRepository, memberID shared.MemberID) error {
 		command := ParticipationCommandFactory{}.Invitation("r1", memberID)

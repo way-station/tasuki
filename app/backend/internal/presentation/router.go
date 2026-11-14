@@ -20,6 +20,7 @@ type Controllers struct {
 	Races         *controller.RaceController
 	Participation *controller.ParticipationController
 	RunningOrders *controller.RunningOrderController
+	Laps          *controller.LapController
 }
 
 // Options configures the router.
@@ -48,7 +49,7 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 
 	router.Get("/health", controllers.Health.Get)
 
-	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders}, options.Logger)
+	apiHandler := newAPIHandler(Server{AuthController: controllers.Auth, RaceController: controllers.Races, ParticipationController: controllers.Participation, RunningOrderController: controllers.RunningOrders, LapController: controllers.Laps}, options.Logger)
 	// The wrapper reads path parameters such as {race_id} before calling apiHandler.
 	paramHandler := &api.ServerInterfaceWrapper{Handler: apiHandler, ErrorHandlerFunc: writeInvalidRequest}
 	router.Route("/api/v1", func(apiRouter chi.Router) {
@@ -79,6 +80,13 @@ func NewRouter(controllers Controllers, options Options) http.Handler {
 				callerRouter.With(middleware.RequireOrganizer).Post("/races", apiHandler.CreateRace)
 				callerRouter.With(middleware.RequireMember).Get("/races/{race_id}", paramHandler.GetRace)
 				callerRouter.With(middleware.RequireOrganizer).Put("/races/{race_id}", paramHandler.UpdateRace)
+				member := callerRouter.With(middleware.RequireMember)
+				member.Get("/races/{race_id}/my-laps", paramHandler.GetMyLaps)
+				member.Post("/races/{race_id}/my-laps", paramHandler.SubmitLaps)
+				member.Patch("/races/{race_id}/my-laps/{lap_id}", paramHandler.EditLap)
+				member.Delete("/races/{race_id}/my-laps/{lap_id}", paramHandler.DeleteLap)
+				member.Get("/me/profile", paramHandler.GetMyProfile)
+				callerRouter.With(middleware.RequireOrganizer).Get("/races/{race_id}/laps", paramHandler.ListRaceLaps)
 			})
 		})
 	})

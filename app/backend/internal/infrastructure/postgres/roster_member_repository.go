@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -34,10 +35,15 @@ func (repository *RosterMemberRepository) FindByID(ctx context.Context, id share
 	if err != nil {
 		return nil, notFound(err, "roster member")
 	}
-	return repository.factory.Reconstruct(id, shared.TeamID(row.TeamID.String()), row.Name, timeOrNil(row.LeftAt)), nil
+	average, err := shared.PaceFromSeconds(int(row.AverageSeconds))
+	if err != nil {
+		return nil, fmt.Errorf("roster member %s has an invalid stored average: %w", id, err)
+	}
+	return repository.factory.Reconstruct(id, shared.TeamID(row.TeamID.String()), row.Name, timeOrNil(row.LeftAt), average, int(row.LapCount)), nil
 }
 
-// Save inserts a new member, or stores whether a stored member has left.
+// Save inserts a new member, or stores whether a stored member has left and their average
+// time and lap count.
 func (repository *RosterMemberRepository) Save(ctx context.Context, member *roster.Member) error {
 	memberID, err := parseID(member.ID())
 	if err != nil {
@@ -47,14 +53,24 @@ func (repository *RosterMemberRepository) Save(ctx context.Context, member *rost
 	if err != nil {
 		return err
 	}
+	averageSeconds, err := toInt32(member.Average().Seconds(), "average seconds")
+	if err != nil {
+		return err
+	}
+	lapCount, err := toInt32(member.LapCount(), "lap count")
+	if err != nil {
+		return err
+	}
 	var leftAt pgtype.Timestamptz
 	if at, ok := member.LeftAt(); ok {
 		leftAt = timestamptz(at)
 	}
 	return queriesFor(ctx, repository.queries).SaveRosterMember(ctx, sqlcgen.SaveRosterMemberParams{
-		ID:     memberID,
-		TeamID: teamID,
-		Name:   member.Name(),
-		LeftAt: leftAt,
+		ID:             memberID,
+		TeamID:         teamID,
+		Name:           member.Name(),
+		LeftAt:         leftAt,
+		AverageSeconds: averageSeconds,
+		LapCount:       lapCount,
 	})
 }

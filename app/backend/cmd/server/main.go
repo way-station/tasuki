@@ -13,16 +13,20 @@ import (
 
 	"github.com/way-station/tasuki/app/backend/internal/application/auth"
 	"github.com/way-station/tasuki/app/backend/internal/application/health"
+	"github.com/way-station/tasuki/app/backend/internal/application/laps"
+	"github.com/way-station/tasuki/app/backend/internal/application/outbox"
 	"github.com/way-station/tasuki/app/backend/internal/application/participations"
 	"github.com/way-station/tasuki/app/backend/internal/application/races"
 	"github.com/way-station/tasuki/app/backend/internal/config"
 	"github.com/way-station/tasuki/app/backend/internal/domain/identity"
+	"github.com/way-station/tasuki/app/backend/internal/domain/lap"
 	"github.com/way-station/tasuki/app/backend/internal/domain/participation"
 	"github.com/way-station/tasuki/app/backend/internal/domain/race"
 	"github.com/way-station/tasuki/app/backend/internal/domain/roster"
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/mongodb"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres"
+	"github.com/way-station/tasuki/app/backend/internal/infrastructure/query"
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/random"
 	"github.com/way-station/tasuki/app/backend/internal/presentation"
 	"github.com/way-station/tasuki/app/backend/internal/presentation/controller"
@@ -62,6 +66,19 @@ func run(logger *slog.Logger) error {
 		_ = mongoClient.Close(connectCtx)
 		return err
 	}
+	if err := mongodb.EnsureIndexes(connectCtx, mongoClient); err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
+
+	// The outbox runs the steps of the writes across PostgreSQL and MongoDB (ADR-0016).
+	lapSteps := newLapStepRunner(postgresClient, mongoClient)
+	outboxStore, err := postgres.NewOutbox(postgresClient, random.IDGenerator{}, time.Now, logger, postgres.LapOutboxSteps(lapSteps)...)
+	if err != nil {
+		_ = mongoClient.Close(connectCtx)
+		return err
+	}
+	go outboxStore.RunWorker(ctx)
 
 	check := health.NewCheckUseCase(mongodb.NewHealthQueryService(mongoClient), postgres.NewHealthQueryService(postgresClient), health.StatusDTOFactory{}, logger)
 	authenticate, getMe, authController := newAuth(cfg, postgresClient)
@@ -77,6 +94,7 @@ func run(logger *slog.Logger) error {
 		Auth:          authController,
 		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
+		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 	}, presentation.Options{
 		Authenticate:   middleware.Authenticate(authenticate, logger),
 		ResolveCaller:  middleware.ResolveCaller(getMe, logger),
@@ -128,6 +146,36 @@ func newAuth(cfg config.Config, postgresClient *postgres.Client) (*auth.Authenti
 	getMe := auth.NewGetMeUseCase(postgres.NewMeQueryService(postgresClient), userFactory, identity.NewMemberLinkFactory(ids),
 		identity.LinkStatusService{}, identity.NewOrganizerPolicy(cfg.OrganizerLineUserIDs), auth.MeDTOFactory{})
 	return authenticate, getMe, controller.NewAuthController(login, logout, getMe, auth.LoginCommandFactory{})
+}
+
+// newLapStepRunner wires what runs the outbox steps of the laps: the lap records in MongoDB
+// and the average times in PostgreSQL.
+func newLapStepRunner(postgresClient *postgres.Client, mongoClient *mongodb.Client) *laps.LapStepRunner {
+	ids := random.IDGenerator{}
+	lapFactory := lap.NewFactory(ids)
+	records := mongodb.NewLapRecordRepository(mongoClient, lapFactory, lap.RecordFactory{}, time.Now)
+	members := postgres.NewRosterMemberRepository(postgresClient, roster.NewMemberFactory(ids))
+	return laps.NewLapStepRunner(records, members, lapFactory, lap.RecordFactory{}, roster.AverageService{})
+}
+
+// newLaps wires the use cases of the lap times and the profile for the team. The writes add
+// their steps to outboxStore.
+func newLaps(postgresClient *postgres.Client, mongoClient *mongodb.Client, outboxStore outbox.Outbox, teamID shared.TeamID) *controller.LapController {
+	ids := random.IDGenerator{}
+	unitOfWork := postgres.NewUnitOfWork(postgresClient)
+	records := mongodb.NewLapRecordRepository(mongoClient, lap.NewFactory(ids), lap.RecordFactory{}, time.Now)
+	profiles := postgres.NewProfileQueryService(postgresClient)
+	queries := query.NewLapQueryService(postgres.NewLapReader(postgresClient), mongodb.NewLapRecordReader(mongoClient), profiles)
+	dtoFactory := laps.LapDTOFactory{}
+	return controller.NewLapController(
+		laps.NewGetMyLapsUseCase(queries, dtoFactory, teamID),
+		laps.NewSubmitLapsUseCase(unitOfWork, queries, outboxStore, lap.SubmissionPolicy{}, lap.NewFactory(ids), outbox.EntryFactory{}, time.Now, teamID),
+		laps.NewEditLapUseCase(unitOfWork, queries, records, outboxStore, lap.SubmissionPolicy{}, outbox.EntryFactory{}, teamID),
+		laps.NewDeleteLapUseCase(unitOfWork, queries, records, outboxStore, lap.SubmissionPolicy{}, outbox.EntryFactory{}, teamID),
+		laps.NewListRaceLapsUseCase(queries, lap.VisibilityPolicy{}, dtoFactory, teamID),
+		laps.NewGetProfileUseCase(profiles, dtoFactory),
+		laps.LapCommandFactory{},
+	)
 }
 
 // newParticipation wires the use cases of invitations, attendance, and entries for the team.

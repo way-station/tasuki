@@ -17,6 +17,7 @@ type Server struct {
 	*controller.ParticipationController
 	*controller.RunningOrderController
 	*controller.RaceController
+	*controller.LapController
 	fallback
 }
 
