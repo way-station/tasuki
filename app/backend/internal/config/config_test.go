@@ -141,3 +141,40 @@ func TestLoad(t *testing.T) {
 		}
 	})
 }
+
+func TestLineLogin(t *testing.T) {
+	t.Run("reads the LINE Login channel", func(t *testing.T) {
+		setRequired(t)
+		t.Setenv("LINE_CHANNEL_ID", "1234567890")
+		t.Setenv("LINE_CHANNEL_SECRET", "secret")
+		t.Setenv("LINE_REDIRECT_URI", "https://tasuki.example/api/v1/auth/line/callback")
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if cfg.LineChannelID != "1234567890" || cfg.LineChannelSecret != "secret" || cfg.LineRedirectURI != "https://tasuki.example/api/v1/auth/line/callback" {
+			t.Errorf("LINE settings = %q, %q, %q", cfg.LineChannelID, cfg.LineChannelSecret, cfg.LineRedirectURI)
+		}
+		if !cfg.LineLoginEnabled() {
+			t.Error("LineLoginEnabled() = false, want true")
+		}
+	})
+
+	// The backend starts without LINE Login, as in development; its routes are then missing.
+	for _, missing := range []string{"LINE_CHANNEL_ID", "LINE_CHANNEL_SECRET", "LINE_REDIRECT_URI"} {
+		t.Run("is off without "+missing, func(t *testing.T) {
+			setRequired(t)
+			t.Setenv("LINE_CHANNEL_ID", "1234567890")
+			t.Setenv("LINE_CHANNEL_SECRET", "secret")
+			t.Setenv("LINE_REDIRECT_URI", "https://tasuki.example/api/v1/auth/line/callback")
+			t.Setenv(missing, "")
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if cfg.LineLoginEnabled() {
+				t.Error("LineLoginEnabled() = true, want false")
+			}
+		})
+	}
+}
