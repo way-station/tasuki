@@ -8,7 +8,8 @@ import (
 	"github.com/way-station/tasuki/app/backend/internal/infrastructure/postgres/sqlcgen"
 )
 
-// UserRepository implements identity.UserRepository with PostgreSQL.
+// UserRepository implements identity.UserRepository with PostgreSQL. It runs in
+// the transaction of a unit of work when there is one.
 type UserRepository struct {
 	queries *sqlcgen.Queries
 	factory identity.UserFactory
@@ -27,7 +28,7 @@ func (repository *UserRepository) FindByID(ctx context.Context, id shared.UserID
 	if err != nil {
 		return nil, err
 	}
-	row, err := repository.queries.GetUserByID(ctx, userID)
+	row, err := queriesFor(ctx, repository.queries).GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, notFound(err, "user")
 	}
@@ -36,7 +37,7 @@ func (repository *UserRepository) FindByID(ctx context.Context, id shared.UserID
 
 // FindByLineUserID returns the user of a LINE user.
 func (repository *UserRepository) FindByLineUserID(ctx context.Context, lineUserID string) (*identity.User, error) {
-	row, err := repository.queries.GetUserByLineUserID(ctx, lineUserID)
+	row, err := queriesFor(ctx, repository.queries).GetUserByLineUserID(ctx, lineUserID)
 	if err != nil {
 		return nil, notFound(err, "user")
 	}
@@ -49,7 +50,7 @@ func (repository *UserRepository) Save(ctx context.Context, user *identity.User)
 	if err != nil {
 		return err
 	}
-	return repository.queries.SaveUser(ctx, sqlcgen.SaveUserParams{
+	return queriesFor(ctx, repository.queries).SaveUser(ctx, sqlcgen.SaveUserParams{
 		ID:          userID,
 		LineUserID:  user.LineUserID(),
 		DisplayName: user.DisplayName(),

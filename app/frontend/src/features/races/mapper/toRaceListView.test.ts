@@ -68,4 +68,17 @@ describe("toRaceListView", () => {
     expect(view.races[0].myAttendance).toBeUndefined();
     expect(view.invitations.map((race) => race.id)).toEqual(["2"]);
   });
+
+  it("puts a linked organizer's not attending race in Invitations", () => {
+    const view = toRaceListView(
+      { races: [summary("1", { my_attendance: "not_attending" })] },
+      true,
+    );
+
+    expect(view.role).toBe("organizer");
+    if (view.role !== "organizer") return;
+    expect(view.invitations.map((race) => [race.id, race.myAttendance])).toEqual([
+      ["1", "not_attending"],
+    ]);
+  });
 });

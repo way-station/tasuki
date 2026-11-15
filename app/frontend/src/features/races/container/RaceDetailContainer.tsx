@@ -44,7 +44,9 @@ export function RaceDetailContainer() {
       isOrganizer={isOrganizer}
       onOpen={open}
       attendance={
-        myAttendance === undefined ? undefined : (
+        // "Not attending" cannot be changed (docs/design/api.md), so there is
+        // nothing to answer.
+        myAttendance === undefined || myAttendance === "not_attending" ? undefined : (
           <AttendanceAnswerContainer raceId={raceId} current={myAttendance} />
         )
       }

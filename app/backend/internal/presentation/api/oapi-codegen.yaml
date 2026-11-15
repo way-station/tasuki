@@ -7,3 +7,7 @@ generate:
   # Controllers take typed requests and return typed responses, so a response that the
   # document does not define fails to compile.
   strict-server: true
+output-options:
+  # A nullable field is nullable.Nullable, so null and an omitted field are different
+  # values (for example my_attendance, docs/design/api.md).
+  nullable-type: true

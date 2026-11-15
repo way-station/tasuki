@@ -60,3 +60,12 @@ func (dto SessionDTO) Token() string { return dto.token }
 
 // ExpiresAt returns when the session ends.
 func (dto SessionDTO) ExpiresAt() time.Time { return dto.expiresAt }
+
+// InviteLinkDTO is a usable invite link as GET /invite-links/{token} returns it. The roster
+// member's name is not in it (docs/design/api.md). It is created by InviteLinkDTOFactory.
+type InviteLinkDTO struct {
+	teamName string
+}
+
+// TeamName returns the name of the team the invite link joins.
+func (dto InviteLinkDTO) TeamName() string { return dto.teamName }

@@ -11,6 +11,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const createTeamIfMissing = `-- name: CreateTeamIfMissing :exec
+INSERT INTO teams (id, name)
+VALUES ($1, $2)
+ON CONFLICT (id) DO NOTHING
+`
+
+type CreateTeamIfMissingParams struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) CreateTeamIfMissing(ctx context.Context, arg CreateTeamIfMissingParams) error {
+	_, err := q.db.Exec(ctx, createTeamIfMissing, arg.ID, arg.Name)
+	return err
+}
+
 const getTeam = `-- name: GetTeam :one
 SELECT id, name, created_at
 FROM teams

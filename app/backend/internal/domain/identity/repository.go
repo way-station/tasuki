@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"time"
 
 	"github.com/way-station/tasuki/app/backend/internal/domain/shared"
 )
@@ -34,6 +35,14 @@ type MemberLinkRepository interface {
 type SessionRepository interface {
 	FindByTokenHash(ctx context.Context, hash []byte) (*Session, error)
 	Save(ctx context.Context, session *Session) error
+}
+
+// UserSessionRepository lists the sessions of a user, so that they can all be revoked when
+// the user's roster member leaves (ADR-0014). The revoked sessions are saved with
+// SessionRepository.
+type UserSessionRepository interface {
+	// ListActiveByUser returns the user's sessions that are active at now.
+	ListActiveByUser(ctx context.Context, userID shared.UserID, now time.Time) ([]*Session, error)
 }
 
 // LoginAttemptRepository stores LINE Logins in progress. Errors for missing attempts wrap

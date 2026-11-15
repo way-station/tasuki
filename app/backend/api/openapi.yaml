@@ -662,7 +662,7 @@ paths:
       tags: [laps]
       operationId: submitLaps
       summary: Submit laps (L1)
-      description: The average time uses the submission formula.
+      description: The average time is recalculated from all of the member's laps.
       x-callers: [member]
       requestBody:
         required: true
@@ -1286,9 +1286,9 @@ components:
           $ref: "#/components/schemas/RaceDescription"
     MyAttendance:
       type: string
-      description: "`null` = invited, not answered yet. Omitted when the caller is not invited (organizers)."
+      description: "`null` = invited, not answered yet. Omitted when the caller is not invited (organizers). `not_attending` reaches linked organizers only."
       nullable: true
-      enum: [attending, undecided, null]
+      enum: [attending, undecided, not_attending, null]
     RaceSummary:
       type: object
       required: [id, name, race_date]

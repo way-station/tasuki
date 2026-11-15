@@ -140,6 +140,15 @@ describe("R2 race detail", () => {
     expect(router.state.location.pathname).toBe("/races/race-1/edit");
   });
 
+  it("shows a linked organizer who is not attending no answer to change", async () => {
+    renderAt("/races/race-1", organizer, {
+      getRace: () => Promise.resolve({ ...distanceRace, my_attendance: "not_attending" }),
+    });
+
+    expect(await screen.findByText("Deadline")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "My attendance" })).not.toBeInTheDocument();
+  });
+
   it("says a race is not found when the user may not see it", async () => {
     renderAt("/races/hidden", member, {
       getRace: () => Promise.reject(problem(404, "not_found")),

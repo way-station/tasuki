@@ -43,6 +43,7 @@ Inside the Dev Container:
 
 ```sh
 make db-migrate   # create the PostgreSQL tables (once, and after new migrations)
+make db-seed      # create the development team, which the backend needs to start (once, and after db-reset)
 make run          # http://localhost:8080/health
 ```
 
@@ -77,6 +78,7 @@ CI runs the tests, golangci-lint, and `make generate` on every pull request, and
 | `make lint` / `make fmt` | Dev Container | golangci-lint |
 | `make generate` | Dev Container | Regenerates the committed code after `api/openapi.yaml` or the queries change |
 | `make db-migrate` / `db-rollback` / `db-reset` | Dev Container | Applies / undoes the last / reapplies every migration |
+| `make db-seed` | Dev Container | Creates the development team the backend needs to start |
 | `make db-new NAME=create_users` | Dev Container | Creates the next pair of migration files |
 | `make dev-up` / `dev-shell` / `dev-down` | Your machine | Starts / enters / stops the Dev Container without VS Code |
 | `make up` / `down` | Your machine | Builds and runs the production image |
@@ -137,6 +139,7 @@ Dev Container の中で：
 
 ```sh
 make db-migrate   # PostgreSQL のテーブルを作る（最初に 1 回と、新しいマイグレーションの後）
+make db-seed      # backend の起動に要る開発用のチームを作る（最初に 1 回と、db-reset の後）
 make run          # http://localhost:8080/health
 ```
 
@@ -171,6 +174,7 @@ CI は、PR ごとにテスト、golangci-lint、`make generate` を動かし、
 | `make lint` / `make fmt` | Dev Container | golangci-lint |
 | `make generate` | Dev Container | `api/openapi.yaml` やクエリを変えた後、コミットしているコードを作り直す |
 | `make db-migrate` / `db-rollback` / `db-reset` | Dev Container | マイグレーションを適用する／最後の 1 つを戻す／すべて適用し直す |
+| `make db-seed` | Dev Container | backend の起動に要る開発用のチームを作る |
 | `make db-new NAME=create_users` | Dev Container | 次のマイグレーションのファイルの組を作る |
 | `make dev-up` / `dev-shell` / `dev-down` | 手元のマシン | VS Code を使わずに Dev Container を起動する／入る／止める |
 | `make up` / `down` | 手元のマシン | 本番用のイメージを作って動かす |

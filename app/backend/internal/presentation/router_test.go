@@ -110,6 +110,7 @@ func TestRouterWithoutFrontend(t *testing.T) {
 func testOptions() Options {
 	return Options{
 		Authenticate:   func(next http.Handler) http.Handler { return next },
+		ResolveCaller:  func(next http.Handler) http.Handler { return next },
 		FrontendOrigin: testOrigin,
 		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}

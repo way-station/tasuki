@@ -10,10 +10,12 @@ import (
 
 // Member is a person on the team roster. It is created by MemberFactory.
 type Member struct {
-	id     shared.MemberID
-	teamID shared.TeamID
-	name   string
-	leftAt *time.Time
+	id       shared.MemberID
+	teamID   shared.TeamID
+	name     string
+	leftAt   *time.Time
+	average  shared.Pace // per km; DefaultAverage until the first lap
+	lapCount int         // laps counted in the average
 }
 
 // ID returns the member's ID.
@@ -24,6 +26,13 @@ func (member *Member) TeamID() shared.TeamID { return member.teamID }
 
 // Name returns the member's name. Names cannot be changed.
 func (member *Member) Name() string { return member.name }
+
+// Average returns the average time per km. AverageService keeps it up to date.
+func (member *Member) Average() shared.Pace { return member.average }
+
+// LapCount returns the number of laps counted in the average. The default average is not
+// counted.
+func (member *Member) LapCount() int { return member.lapCount }
 
 // Left reports whether the member has left.
 func (member *Member) Left() bool { return member.leftAt != nil }

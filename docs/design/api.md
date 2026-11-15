@@ -18,6 +18,7 @@ This document lists the endpoints the MVP screens need. The OpenAPI document (`a
 | Times | Lap times and average times: `"MM:SS"` (e.g. `"3:28"`). Total times: `"H:MM:SS"` (e.g. `"2:45:30"`) |
 | Dates | Race date: `YYYY-MM-DD`. Deadline and other timestamps: RFC 3339 with offset (e.g. `2026-11-01T18:00:00+09:00`) |
 | Distances | km as numbers (e.g. `30.5`) |
+| Today | Japan time (`Asia/Tokyo`), for example for the races whose invitations are cancelled when a member leaves. The MVP has one team, in Japan |
 | Concurrent edits | Races and running orders carry a `version`. Updates send the version they read; if it changed, `409` with `code: version_conflict` |
 | Lists | No pagination in the MVP |
 | IDs | Opaque strings (the type is decided in #68) |
@@ -46,6 +47,17 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 | 409 | `version_conflict` | Someone else changed it since it was read |
 | 409 | `state_conflict` | The action is not allowed in the current state (details per endpoint) |
 | 422 | `validation_failed` | The body breaks a business rule (details per endpoint), with `errors` listing the fields |
+
+### Backend notes
+
+| Topic | Rule |
+| --- | --- |
+| Caller | A middleware in Presentation resolves the caller once per request (organizer or not, link status, the approved roster member) and returns `403 forbidden` when the caller's role does not allow the endpoint ("Who can call"). Use cases receive the resolved caller |
+| Team | The MVP's one team is set by configuration (`TEAM_ID`), like the organizers, and passed to the use cases at startup. Changing the team is a configuration change. When tasuki becomes a SaaS, it becomes the caller's team (ADR-0005). The `teams` row is created by hand, before the first start; the backend checks at startup that `TEAM_ID` is in `teams` and refuses to start otherwise. In development, `make db-seed` creates it |
+| Unit of work | The unit of work of ADR-0015 is an interface in `internal/application/transaction`, shared by every feature |
+| Race edits and running orders | `PUT /races/{race_id}` adjusts the running orders (see Running order: legs) through an interface of the races Application layer, in the same unit of work as the race. It is implemented by the running order Application layer (#95) |
+| Leaving an entry and running orders | Cancelling an invitation, changing away from "attending", and removing an entry member take the member off the running orders (and delete their laps if the order is confirmed) through an interface of the participation Application layer, in the same unit of work. It is implemented by the running order (#95) and lap (#99) Application layers |
+| Running orders and laps | When runners lose their laps (see `PUT .../running-order`), the running order Application layer deletes them and recalculates the averages through an interface, in the same unit of work. It is implemented by the lap Application layer (#99) |
 
 ## Authentication and joining
 
@@ -153,7 +165,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
     "id": "...",
     "name": "...",
     "race_date": "2026-11-23",
-    "my_attendance": "attending" | "undecided" | null,   // null = invited, not answered; field omitted if not invited (organizers)
+    "my_attendance": "attending" | "undecided" | "not_attending" | null,   // null = invited, not answered; field omitted if not invited (organizers). "not_attending" reaches linked organizers only
     "running_order_confirmed": true                     // organizers, and members who answered attending
   }
 ] }
@@ -175,7 +187,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   "name": "...",
   "version": 3,                     // organizers only
   "description": { ... },           // deadline only for organizers
-  "my_attendance": "attending" | "undecided" | null,   // omitted if not invited
+  "my_attendance": "attending" | "undecided" | "not_attending" | null,   // omitted if not invited; "not_attending" reaches linked organizers only
   "running_order_confirmed": true,  // organizers, and members who answered attending
   "can_submit_laps": true           // true when the caller is a runner in a confirmed running order
 }
@@ -208,8 +220,9 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 
 ### `DELETE .../invitations/{roster_member_id}`
 
-- Cancels the invitation. `204`.
+- Cancels the invitation. `204`. Cancelling the invitation of a member who is not invited does nothing.
 - Side effects: removes the attendance answer and the entry membership; removes the member from every leg of the running order. If the running order is confirmed, the member's laps for this race are deleted and their average time is recalculated from all remaining laps.
+- The laps are deleted through the outbox (ADR-0016): one entry per member, whose steps delete the member's laps for the race and then recalculate their average time.
 
 ### `PUT /races/{race_id}/attendance`
 
@@ -230,7 +243,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
 - `POST`: body `{ name }` → `201` entry. `409 state_conflict` when the race already has an entry (MVP limit: one).
 - Entries cannot be renamed or deleted.
 - `PUT .../members/...`: `204`. `422 validation_failed` when the member's attendance is not "attending".
-- `DELETE .../members/...`: `204`. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
+- `DELETE .../members/...`: `204`. Removing a member who is not in the entry does nothing. Removes the member from every leg of the running order. If the running order is confirmed, their laps for this race are deleted and their average time is recalculated.
 
 ## Running order
 
@@ -275,7 +288,7 @@ An organizer who is linked is also a member. "Member" endpoints below are open t
   - Distance races: exactly one leg per leg distance. Time races: one or more legs, numbered from 1 without gaps.
   - Runners must be members of the entry.
 - A confirmed running order stays confirmed and the change is visible right away.
-- Every save is kept as one history entry (`running_order_history`).
+- Every save is kept as one history entry (`running_order_history`). So is every confirm. Changes made by the backend (legs when the race changes, a runner leaving the entry) are not kept.
 - If a runner's number of legs goes down in a confirmed running order, all their laps for this race are deleted and their average time is recalculated. Moving a runner to another leg without reducing their number of legs keeps the laps.
 
 ### `POST .../running-order/confirm`
@@ -303,10 +316,22 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 | `GET /races/{race_id}/laps` | Organizer | R2 |
 
 - `GET my-laps`: `{ "laps": [ { "id", "time": "3:25" } ], "average_time": "3:28", "lap_count": 8 }`. Laps are in the order they were submitted.
-- `POST my-laps`: body `{ times: ["3:20", "3:25"] }` → `201` with the same shape. The average uses the submission formula.
-- `PATCH`: body `{ time }` → `200` same shape. `DELETE` → `200` same shape. The average is recalculated from all of the member's laps.
-- `404`: not a runner in a confirmed running order of this race (also for organizers who are not runners).
-- `GET /races/{race_id}/laps` (organizers): `{ "runners": [ { "roster_member_id", "name", "laps": [ { "id", "time" } ] } ] }`. View only.
+- `POST my-laps`: body `{ times: ["3:20", "3:25"] }` → `201` with the same shape.
+- `PATCH`: body `{ time }` → `200` same shape. `DELETE` → `200` same shape.
+- After a submission, an edit, or a deletion, the average is recalculated from all of the member's laps (`docs/design/database.md`).
+- `404`: not a runner in a confirmed running order of this race (also for organizers who are not runners), or, for `PATCH` and `DELETE`, the member has no such lap in this race.
+- `GET /races/{race_id}/laps` (organizers): `{ "runners": [ { "roster_member_id", "name", "laps": [ { "id", "time" } ] } ] }`. Every runner of the confirmed running orders of the race, by name; a runner with no laps yet has an empty `laps`. View only.
+
+### How laps are written
+
+Lap records are in MongoDB and the average time in PostgreSQL, so the writes go through the outbox (ADR-0016):
+
+1. In one unit of work, the use case checks that the caller is a runner in a confirmed running order (and, for `PATCH` and `DELETE`, that the lap exists) and adds an outbox entry. Nothing else is written to PostgreSQL. A new lap gets its ID here.
+2. After the commit, the MongoDB step changes the lap record: add the laps whose IDs are not in the record yet, set the time of the lap, or delete the lap. A lap that is already gone is left as it is, so running a step twice does nothing more.
+3. The final PostgreSQL step recalculates the average and lap count from all of the member's laps, in the transaction that deletes the outbox entry.
+
+- The steps are defined in the lap Application layer, which also runs them; the Infrastructure layer registers each kind with the outbox.
+- The response is read after the steps ran. If a step failed, it shows the state before the change until the retry worker completes it.
 
 ## Profile
 
@@ -340,15 +365,16 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 ] }
 ```
 
-- A rejected link shows as `none`.
+- By name. A rejected link shows as `none`. `invite_link_expires_at` is set only while the member has an invite link that can still be used.
 
 ### `POST /roster-members`
 
 - Body: `{ name }` → `201` roster member.
+- `400 invalid_request`: the name is empty.
 
 ### `GET /roster-members/{roster_member_id}`
 
-- `200`: `{ "id", "name", "left", "average_time", "lap_count", "laps_by_race": [ { "race_id", "race_name", "laps": [ { "id", "time" } ] } ] }`.
+- `200`: `{ "id", "name", "left", "average_time", "lap_count", "laps_by_race": [ { "race_id", "race_name", "laps": [ { "id", "time" } ] } ] }`. `laps_by_race` has the races where the member has laps, newest race date first; the laps are in the order they were submitted.
 
 ### `PATCH /roster-members/{roster_member_id}`
 
@@ -363,7 +389,7 @@ When `PUT /races/{race_id}` changes the type or the number of legs:
 
 ### `POST /roster-members/{roster_member_id}/invite-links`
 
-- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The previous link becomes unusable.
+- `201`: `{ "url": "https://.../invite/<token>", "expires_at": "..." }`. The URL is the frontend origin (`FRONTEND_ORIGIN`) followed by `/invite/<token>`. The previous link becomes unusable.
 - `409 state_conflict`: the member has left, has an approved link, or has a pending link.
 
 ### `GET /member-links`
@@ -417,6 +443,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | タイム | ラップと平均タイム：`"MM:SS"`（例：`"3:28"`）。合計タイム：`"H:MM:SS"`（例：`"2:45:30"`） |
 | 日付 | 開催日：`YYYY-MM-DD`。締め切りなどの日時：オフセット付きの RFC 3339（例：`2026-11-01T18:00:00+09:00`） |
 | 距離 | km の数値（例：`30.5`） |
+| 今日 | 日本時間（`Asia/Tokyo`）で決める。例えば、退会のときに招待を取り消す大会。MVP のチームは日本の 1 チームだけ |
 | 同時編集 | 大会と走順は `version` を持つ。更新では読んだときの版を送り、変わっていたら `409`（`code: version_conflict`） |
 | 一覧 | MVP ではページ分けしない |
 | ID | 中身を意味を持たない文字列として扱う（型は #68 で決める） |
@@ -445,6 +472,17 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | 409 | `version_conflict` | 読んだ後にほかの人が変えた |
 | 409 | `state_conflict` | 今の状態ではその操作ができない（内容はエンドポイントごと） |
 | 422 | `validation_failed` | 本文が業務のルールに反する（内容はエンドポイントごと）。`errors` に項目を並べる |
+
+### backend の決まり
+
+| 項目 | 決まり |
+| --- | --- |
+| 呼ぶ人 | Presentation の middleware が、リクエストごとに一度、呼ぶ人を調べる（幹事かどうか、紐付けの状態、承認された名簿のメンバー）。役割がエンドポイントを許さないとき（「呼べる人」）は、そこで `403 forbidden` を返す。ユースケースは調べた結果を受け取る |
+| チーム | MVP のただ一つのチームは、幹事と同じく設定（`TEAM_ID`）で決め、起動のときにユースケースへ渡す。チームを変えるのは設定の変更で済む。SaaS にするときは、呼ぶ人のチームに変える（ADR-0005）。`teams` の行は、初めて起動する前に手で作る。backend は起動のときに `TEAM_ID` が `teams` にあるかを確かめ、なければ起動しない。開発では `make db-seed` で作る |
+| 作業単位 | ADR-0015 の作業単位（unit of work）は `internal/application/transaction` の interface にし、すべての機能で使う |
+| 大会の編集と走順 | `PUT /races/{race_id}` は、大会の Application 層の interface を通して、大会と同じ作業単位の中で走順を合わせる（「走順：大会が変わったときの区」）。実装は走順の Application 層（#95）に置く |
+| エントリーから外すことと走順 | 招待の取り消し、「参加」からの回答の変更、エントリーから外すことは、参加の Application 層の interface を通して、同じ作業単位の中で走順から外す（走順が確定していればラップも消す）。実装は走順（#95）とラップ（#99）の Application 層に置く |
+| 走順とラップ | 走者がラップを失うとき（`PUT .../running-order`）、走順の Application 層は interface を通して、同じ作業単位の中でラップを消し、平均を計算し直す。実装はラップの Application 層（#99）に置く |
 
 ## 認証と参加
 
@@ -525,7 +563,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - 幹事：チームのすべての大会。メンバー：誘われた大会のうち、「不参加」と答えたものを除いたもの
 - 新しく登録した順
-- `my_attendance`：`attending`／`undecided`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）
+- `my_attendance`：`attending`／`undecided`／`not_attending`／`null`（誘われていて未回答）。誘われていなければ項目を出さない（幹事）。`not_attending` を受け取るのは、名簿に紐付いた幹事だけ
 - `running_order_confirmed`：幹事と、参加と答えたメンバーにだけ出す
 - frontend は `my_attendance = attending` の大会を「参加する大会」に、それ以外を「招待」に出す
 
@@ -550,7 +588,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 
 - `GET invitations`：退会していない名簿のメンバー全員と、誘われているか、その回答
 - `PUT invitations/...`：誘う。`204`。誘い済みなら何もしない。`422 validation_failed`：退会している
-- `DELETE invitations/...`：招待を取り消す。`204`。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す
+- `DELETE invitations/...`：招待を取り消す。`204`。誘っていないメンバーなら何もしない。出欠の回答とエントリーから外し、走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、残りの全ラップから平均タイムを計算し直す。ラップは outbox で消す（ADR-0016）。メンバーごとに 1 つのエントリーを作り、その手順で、この大会のラップを消してから平均タイムを計算し直す
 - `PUT attendance`：本文 `{ status }`。`200`。`404`：誘われていない、またはもう「不参加」と答えた。「参加」から変えると、エントリーから外したときと同じことが起きる
 
 ## エントリー
@@ -565,7 +603,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `POST`：本文 `{ name }` → `201`。大会にもうエントリーがあれば `409 state_conflict`（MVP では1つまで）
 - エントリーは名前の変更も削除もできない
 - `PUT .../members/...`：`204`。出欠が「参加」でなければ `422 validation_failed`
-- `DELETE .../members/...`：`204`。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
+- `DELETE .../members/...`：`204`。エントリーにいないメンバーなら何もしない。走順のすべての区から外す。走順が確定していれば、この大会のラップを消し、平均タイムを計算し直す
 
 ## 走順
 
@@ -581,7 +619,7 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 - `PUT`：本文 `{ version?, legs: [ { leg_number, roster_member_id | null } ] }`。最初の下書きを作るときは `version` を付けない。`200`
   - ルール（`422 validation_failed`）：距離制は区の距離と同じ数の区。時間制は1区以上で、1から欠けずに番号を振る。走者はエントリーのメンバー
   - 確定した走順は確定のまま、すぐに見える
-  - 保存のたびに履歴を1件残す（`running_order_history`）
+  - 保存のたびに履歴を1件残す（`running_order_history`）。確定でも残す。backend が自動で変えたとき（大会が変わったときの区、走者がエントリーから外れたとき）は残さない
   - 確定した走順で、ある走者の区の数が減ったら、その人のこの大会のラップはすべて消え、平均タイムは計算し直される。区の数を減らさずに別の区に移すだけなら、ラップは残る
 - `POST confirm`：本文 `{ version }`。`200`。空きの区があれば `422 validation_failed`。確定済みなら `409 state_conflict`
 
@@ -604,10 +642,22 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `GET /races/{race_id}/laps` | 幹事 | R2 |
 
 - `GET my-laps`：自分のラップ（提出した順）、平均タイム、ラップ数
-- `POST my-laps`：本文 `{ times: ["3:20", "3:25"] }` → `201`。平均は提出の式で計算する
-- `PATCH`：本文 `{ time }` → `200`。`DELETE` → `200`。平均はその人の全ラップから計算し直す
-- `404`：この大会の確定した走順の走者ではない（走者でない幹事も同じ）
-- `GET laps`（幹事）：走者ごとのラップ。見るだけ
+- `POST my-laps`：本文 `{ times: ["3:20", "3:25"] }` → `201`
+- `PATCH`：本文 `{ time }` → `200`。`DELETE` → `200`
+- 提出、修正、削除のあとは、その人の全ラップから平均を計算し直す（`docs/design/database.md`）
+- `404`：この大会の確定した走順の走者ではない（走者でない幹事も同じ）。`PATCH` と `DELETE` では、この大会にその人のそのラップがないときも
+- `GET laps`（幹事）：その大会の確定した走順の走者全員のラップを、名前の順に返す。まだラップがない走者は `laps` が空。見るだけ
+
+### ラップの書き方
+
+ラップの記録は MongoDB、平均タイムは PostgreSQL にあるので、outbox を通して書く（ADR-0016）：
+
+1. ユースケースは 1 つの作業単位で、呼ぶ人が確定した走順の走者であること（`PATCH` と `DELETE` ではそのラップがあること）を確かめ、outbox の entry を足す。PostgreSQL にはほかに何も書かない。新しいラップの ID はここで決める
+2. コミットのあと、MongoDB の手順がラップの記録を変える：記録にまだない ID のラップを足す、ラップのタイムを変える、ラップを消す。もうないラップはそのままにするので、手順を 2 回実行してもそれ以上は何も起きない
+3. 最後の PostgreSQL の手順が、outbox の entry を消すのと同じトランザクションで、その人の全ラップから平均タイムとラップ数を計算し直す
+
+- 手順はラップの Application 層で決め、実行もそこで行う。Infrastructure 層は種類ごとに手順を outbox に登録する
+- レスポンスは手順を実行したあとに読む。手順が失敗したときは、再試行の仕組みが終わらせるまで、変更の前の状態が見える
 
 ## プロフィール
 
@@ -631,12 +681,12 @@ MVP の画面が必要とするエンドポイントを一覧にする。OpenAPI
 | `POST /member-links/{link_id}/approve` | 幹事 | M3 |
 | `POST /member-links/{link_id}/reject` | 幹事 | M3 |
 
-- `GET /roster-members`：名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
-- `POST /roster-members`：本文 `{ name }` → `201`
-- `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ
+- `GET /roster-members`：名前の順。名前、退会したか、紐付けの状態（`none`／`pending`／`approved`。却下は `none`）、有効な招待リンクの期限
+- `POST /roster-members`：本文 `{ name }` → `201`。名前が空なら `400 invalid_request`
+- `GET /roster-members/{id}`：名前、退会したか、平均タイム、ラップ数、大会ごとのラップ。大会は、その人のラップがある大会を開催日の新しい順に並べる。ラップは提出した順
 - `PATCH /roster-members/{id}`：本文 `{ left: true | false }`。名前は変えられない。`left: true` で、開催日が今日以降の大会への招待を取り消し（招待の取り消しと同じことが起きる）、ログインできなくなり、そのユーザーのセッションはすべて無効になる。`left: false` でまたログインできる。取り消された招待は戻らない
 - `DELETE .../link`：承認済みの紐付けを外す。`204`。ユーザーはメンバーとして使えなくなる（セッションはそのまま）。承認済みの紐付けがなければ `409 state_conflict`
-- `POST .../invite-links`：`201`：`{ url, expires_at }`。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
+- `POST .../invite-links`：`201`：`{ url, expires_at }`。URL は frontend のオリジン（`FRONTEND_ORIGIN`）のあとに `/invite/<token>` を続けたもの。前のリンクは使えなくなる。退会している、承認済みの紐付けがある、承認待ちの紐付けがあるときは `409 state_conflict`
 - `GET /member-links`：承認待ちの紐付け（LINE の表示名、名簿のメンバー、日時）
 - `POST .../approve`、`.../reject`：`204`。承認待ちでなければ `409 state_conflict`
 
