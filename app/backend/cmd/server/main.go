@@ -104,7 +104,7 @@ func run(logger *slog.Logger) error {
 	router := presentation.NewRouter(presentation.Controllers{
 		Health:        controller.NewHealthController(check),
 		Auth:          authController,
-		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
+		Races:         newRaces(postgresClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		RunningOrders: newRunningOrders(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
@@ -260,26 +260,25 @@ func newParticipation(postgresClient *postgres.Client, outboxStore outbox.Outbox
 	}, participations.ParticipationCommandFactory{})
 }
 
-// newRaces wires the use cases of races for the team.
-func newRaces(postgresClient *postgres.Client, teamID shared.TeamID) *controller.RaceController {
-	raceRepository := postgres.NewRaceRepository(postgresClient, race.NewFactory(random.IDGenerator{}))
+// newRaces wires the use cases of races for the team. A race whose legs change adjusts its
+// running orders, and runners who lose legs of a confirmed one lose their laps through
+// outboxStore.
+func newRaces(postgresClient *postgres.Client, outboxStore outbox.Outbox, teamID shared.TeamID) *controller.RaceController {
+	ids := random.IDGenerator{}
+	raceRepository := postgres.NewRaceRepository(postgresClient, race.NewFactory(ids))
+	adjust := runningorders.NewAdjustRunningOrdersUseCase(
+		postgres.NewEntryRepository(postgresClient, participation.NewEntryFactory(ids)),
+		postgres.NewRunningOrderRepository(postgresClient, runningorder.NewFactory(ids)),
+		laps.NewRemoveLapsUseCase(outboxStore, outbox.EntryFactory{}),
+	)
 	query := postgres.NewRaceQueryService(postgresClient)
 	return controller.NewRaceController(
 		races.NewListRacesUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
 		races.NewGetRaceUseCase(query, race.VisibilityPolicy{}, races.RaceDTOFactory{}, teamID),
 		races.NewCreateRaceUseCase(raceRepository, race.NewFactory(random.IDGenerator{}), teamID),
-		races.NewUpdateRaceUseCase(postgres.NewUnitOfWork(postgresClient), raceRepository, noRunningOrders{}, teamID),
+		races.NewUpdateRaceUseCase(postgres.NewUnitOfWork(postgresClient), raceRepository, adjust, teamID),
 		races.RaceCommandFactory{},
 	)
-}
-
-// noRunningOrders stands in for the running order Application layer (#95), which adjusts
-// the running orders when a race changes. No running order can be saved before it, so
-// there is nothing to adjust.
-type noRunningOrders struct{}
-
-func (noRunningOrders) AdjustRunningOrders(context.Context, shared.RaceID, race.Description) error {
-	return nil
 }
 
 // newRunningOrders wires the use cases of running orders and predictions for the team.
