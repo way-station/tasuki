@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R6 エントリー</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>R6 エントリー（幹事） / Entry</h1>
+    <p>MVP では大会ごとに1つ。候補は出欠が「参加」のメンバーだけ。参考：TeamSnap のラインナップ（「行く」と答えた人から選ぶ）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>R6 エントリーがまだないとき</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 市民駅伝</a></nav>
+        <main class="content">
+          <h1 class="title1">エントリー</h1>
+          <form class="group" style="gap: 16px">
+            <label class="field"><span class="field-label">エントリーの名前</span><input class="input" placeholder="例：A チーム"></label>
+            <button class="button button-primary button-block" type="submit">エントリーを作る</button>
+          </form>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R6 エントリー</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 冬季ロードリレー</a></nav>
+        <main class="content">
+          <header class="group">
+            <h1 class="title1">エントリー</h1>
+            <p class="subheadline">A チーム</p>
+          </header>
+          <section class="group">
+            <h2 class="group-heading">エントリーのメンバー（3）</h2>
+            <ul class="cards">
+              <li class="card"><span class="card-main"><span class="headline">佐藤 健</span></span><button class="button button-danger button-small" type="button">外す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">鈴木 花子</span></span><button class="button button-danger button-small" type="button">外す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">高橋 翔</span></span><button class="button button-danger button-small" type="button">外す</button></li>
+            </ul>
+            <p class="note note-warning">外したメンバーは走順からも外れます。走順が確定していれば、その人のこの大会のラップタイムは消え、平均タイムは計算し直されます。</p>
+          </section>
+          <section class="group">
+            <h2 class="group-heading">入れられるメンバー（出欠が「参加」）</h2>
+            <ul class="cards">
+              <li class="card"><span class="card-main"><span class="headline">小林 拓也</span></span><button class="button button-primary button-small" type="button">入れる</button></li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>「入れる」「外す」はすぐ保存する。screens.md は「外す」の確認を求めていないので、確認は出さず、注意の文を置く。</li>
+          <li>「参加」から回答を変えたメンバーは、自動でここから消える。</li>
+        </ul>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

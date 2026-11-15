@@ -28,6 +28,7 @@ Screen text is Japanese for now. The MVP has no language switching.
 | Page background | `slate-50` | `#F8FAFC` | — |
 | Card and header background | `white` | `#FFFFFF` | — |
 | Lines and card borders | `slate-200` | `#E2E8F0` | — |
+| Borders of inputs, choices, and secondary buttons | `slate-500` | `#64748B` | 4.8:1 on white (WCAG 2.2 asks 3:1 for the edges of controls) |
 | Text | `slate-900` | `#0F172A` | 17.1:1 on `slate-50` |
 | Secondary text | `slate-600` | `#475569` | 7.6:1 on white, 7.2:1 on `slate-50` |
 | Accent: links, the selected choice, main buttons | `blue-700` | `#1D4ED8` | 6.7:1 on white; white text on it 6.7:1 |
@@ -39,7 +40,7 @@ States are shown as labels. Each pair differs in lightness as well as hue, so th
 | --- | --- | --- | --- |
 | Running order confirmed | `green-800` `#166534` | `green-100` `#DCFCE7` | 6.5:1 |
 | Not answered, waiting for approval, warnings | `amber-800` `#92400E` | `amber-100` `#FEF3C7` | 6.4:1 |
-| Undecided | `slate-700` `#334155` | `slate-100` `#F1F5F9` | 9.5:1 |
+| Undecided (保留), draft, empty leg (未定), left, no user | `slate-700` `#334155` | `slate-100` `#F1F5F9` | 9.5:1 |
 | Error | `red-700` `#B91C1C` | `white` with a `red-700` border | 6.5:1 |
 
 - The LINE Login button keeps the colors, shape, and wording the LINE Login button guidelines require (ADR-0007). LINE green is used for that button only, so it is never mistaken for one of tasuki's own buttons.
@@ -77,6 +78,10 @@ Sizes and line heights are the Human Interface Guidelines' text styles at the de
 - Inside a card: the title (Headline) and a second line (Subheadline, secondary text) on the left; a state label, if any, on the right.
 - Lists are grouped under headings in Footnote and secondary text (for example "参加する大会" and "招待" on R1).
 
+## Wireframes
+
+The wireframes of every MVP screen (#148) are in [`docs/design/wireframes/`](wireframes/index.html). Open `index.html` in a browser. They use the values of this document through `wireframes.css`.
+
 ## Putting it in the frontend
 
 The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when the screens are built, in the UI issues of each feature. This document does not change the code.
@@ -84,12 +89,12 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 ## Not decided here
 
 - Dark mode.
-- Common components (#147) and wireframes (#148).
+- Common components (#147).
 
 ## Sources
 
 - Tailwind CSS: [Colors](https://tailwindcss.com/docs/colors), [Font family](https://tailwindcss.com/docs/font-family), [Spacing](https://tailwindcss.com/docs/theme)
-- WCAG 2.2: [Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
+- WCAG 2.2: [Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 - Apple Human Interface Guidelines: [Typography](https://developer.apple.com/design/human-interface-guidelines/typography), [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility)
 - Material Design 3: [Cards](https://m3.material.io/components/cards/overview), [Lists](https://m3.material.io/components/lists/overview)
 - LINE Developers: [LINE Login button design guidelines](https://developers.line.biz/en/docs/line-login/login-button/)
@@ -129,6 +134,7 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 | 画面の背景 | `slate-50` | `#F8FAFC` | — |
 | カードとヘッダーの背景 | `white` | `#FFFFFF` | — |
 | 線とカードの枠 | `slate-200` | `#E2E8F0` | — |
+| 入力、選択肢、2 番目のボタンの枠 | `slate-500` | `#64748B` | 白の上で 4.8:1（WCAG 2.2 は操作できる部品の縁に 3:1 を求める） |
 | 文字 | `slate-900` | `#0F172A` | `slate-50` の上で 17.1:1 |
 | 補足の文字 | `slate-600` | `#475569` | 白の上で 7.6:1、`slate-50` の上で 7.2:1 |
 | 強調：リンク、選んでいる選択肢、主なボタン | `blue-700` | `#1D4ED8` | 白の上で 6.7:1。その上の白い文字も 6.7:1 |
@@ -140,7 +146,7 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 | --- | --- | --- | --- |
 | 走順確定 | `green-800` `#166534` | `green-100` `#DCFCE7` | 6.5:1 |
 | 未回答、承認待ち、注意 | `amber-800` `#92400E` | `amber-100` `#FEF3C7` | 6.4:1 |
-| 未定 | `slate-700` `#334155` | `slate-100` `#F1F5F9` | 9.5:1 |
+| 保留、下書き、空きの区（未定）、退会、ユーザーなし | `slate-700` `#334155` | `slate-100` `#F1F5F9` | 9.5:1 |
 | エラー | `red-700` `#B91C1C` | `white`、`red-700` の枠 | 6.5:1 |
 
 - LINE ログインのボタンは、LINE ログインボタンのデザインガイドラインが決める色、形、文言のままにする（ADR-0007）。LINE の緑はそのボタンだけに使い、tasuki のボタンと取り違えないようにする
@@ -178,6 +184,10 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 - カードの中：左に題（Headline）と 2 行目（Subheadline、補足の文字）、右に状態のラベル（あるとき）
 - 一覧は、Footnote・補足の文字の見出しでまとめる（たとえば R1 の「参加する大会」と「招待」）
 
+## ワイヤーフレーム
+
+MVP のすべての画面のワイヤーフレーム（#148）は [`docs/design/wireframes/`](wireframes/index.html) にある。`index.html` をブラウザで開いて見る。この文書の値を `wireframes.css` を通して使っている。
+
 ## frontend への入れ方
 
 値は、画面を作るとき（各機能の UI の issue）に `app/frontend/src/index.css` の `@theme` に入れる（#33）。この文書ではコードを変えない。
@@ -185,12 +195,12 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 ## ここでは決めないこと
 
 - ダークモード
-- 共通の部品（#147）とワイヤーフレーム（#148）
+- 共通の部品（#147）
 
 ## 出典
 
 - Tailwind CSS：[Colors](https://tailwindcss.com/docs/colors)、[Font family](https://tailwindcss.com/docs/font-family)、[Spacing](https://tailwindcss.com/docs/theme)
-- WCAG 2.2：[Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)
+- WCAG 2.2：[Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)、[Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 - Apple Human Interface Guidelines：[Typography](https://developer.apple.com/design/human-interface-guidelines/typography)、[Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility)
 - Material Design 3：[Cards](https://m3.material.io/components/cards/overview)、[Lists](https://m3.material.io/components/lists/overview)
 - LINE Developers：[LINE ログインボタン デザインガイドライン](https://developers.line.biz/ja/docs/line-login/login-button/)
