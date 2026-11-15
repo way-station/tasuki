@@ -80,7 +80,7 @@ Sizes and line heights are the Human Interface Guidelines' text styles at the de
 
 ## Wireframes
 
-The wireframes of every MVP screen (#148) are in [`docs/design/wireframes/`](wireframes/index.html). Open `index.html` in a browser. They use the values of this document through `wireframes.css`.
+The wireframes of every MVP screen (#148) are in [`docs/design/wireframes/`](wireframes/index.html). Open `index.html` in a browser. They use the values of this document through `wireframes.css`. The common components (#147) are in [`docs/design/components.md`](components.md).
 
 ## Putting it in the frontend
 
@@ -89,7 +89,6 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 ## Not decided here
 
 - Dark mode.
-- Common components (#147).
 
 ## Sources
 
@@ -186,7 +185,7 @@ The values go into the `@theme` block of `app/frontend/src/index.css` (#33) when
 
 ## ワイヤーフレーム
 
-MVP のすべての画面のワイヤーフレーム（#148）は [`docs/design/wireframes/`](wireframes/index.html) にある。`index.html` をブラウザで開いて見る。この文書の値を `wireframes.css` を通して使っている。
+MVP のすべての画面のワイヤーフレーム（#148）は [`docs/design/wireframes/`](wireframes/index.html) にある。`index.html` をブラウザで開いて見る。この文書の値を `wireframes.css` を通して使っている。共通の部品（#147）は [`docs/design/components.md`](components.md) にある。
 
 ## frontend への入れ方
 
@@ -195,7 +194,6 @@ MVP のすべての画面のワイヤーフレーム（#148）は [`docs/design/
 ## ここでは決めないこと
 
 - ダークモード
-- 共通の部品（#147）
 
 ## 出典
 
