@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L1 自分のラップタイム</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>L1 自分のラップタイム / My lap times</h1>
+    <p>R2 から開く。自分が確定した走順の走者になっている大会だけ。参考：Strava のラップとスプリット（1km ごとの表）、Apple ヘルスケアの「データを追加」（数字のキーボードで値を打つ入力画面）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>L1 ラップタイム（足している途中、1つを直している途中）</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#member-attending">‹ 冬季ロードリレー</a></nav>
+        <main class="content">
+          <header class="group">
+            <h1 class="title1">自分のラップタイム</h1>
+            <p class="subheadline">2区・3.2 km</p>
+          </header>
+          <section class="group">
+            <h2 class="group-heading">送ったラップタイム（1km あたり）</h2>
+            <ul class="cards">
+              <li class="card"><span class="card-main"><span class="subheadline">1 km</span><span class="headline numbers">4:02</span></span><div class="card-actions"><button class="button button-secondary button-small" type="button">直す</button><button class="button button-danger button-small" type="button">消す</button></div></li>
+              <li class="card card-stack">
+                <span class="subheadline">2 km</span>
+                <div class="input-row"><input class="input numbers" inputmode="numeric" value="4:10" aria-label="2 km のラップタイム（分:秒）"><button class="button button-primary button-small" type="button">保存</button><button class="button button-secondary button-small" type="button">やめる</button></div>
+              </li>
+              <li class="card"><span class="card-main"><span class="subheadline">3 km</span><span class="headline numbers">4:15</span></span><div class="card-actions"><button class="button button-secondary button-small" type="button">直す</button><button class="button button-danger button-small" type="button">消す</button></div></li>
+            </ul>
+          </section>
+          <section class="group">
+            <h2 class="group-heading">ラップタイムを足す</h2>
+            <div class="panel">
+              <label class="input-row"><span class="unit" style="width: 48px">4 km</span><input class="input numbers" inputmode="numeric" value="4:08" aria-label="4 km のラップタイム（分:秒）"></label>
+              <label class="input-row"><span class="unit" style="width: 48px">5 km</span><input class="input numbers" inputmode="numeric" placeholder="分:秒" aria-label="5 km のラップタイム（分:秒）"></label>
+              <button class="button button-secondary button-block" type="button">行を足す</button>
+            </div>
+            <button class="button button-primary button-block" type="button">送る</button>
+            <p class="footnote">送るまでは、この端末に下書きとして残ります。送るたびに平均タイムを計算し直します。</p>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>形式は <code>MM:SS</code>。数字のキーボードで打つ（Apple ヘルスケアの「データを追加」と同じく、1行に1つの値）。</li>
+          <li>下書きにするのは「足す」の入力中の分だけ。「直す」はその場で保存し、下書きには残さない。</li>
+          <li>変えられるのは本人だけ。幹事は R2 で見られるが変えられない。</li>
+          <li>まだ1つもないときは、「送ったラップタイム」の欄を出さず、「足す」に1行だけ出す。</li>
+        </ul>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

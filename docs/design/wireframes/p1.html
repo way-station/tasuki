@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P1 自分のプロフィール</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>P1 自分のプロフィール / My profile</h1>
+    <p>名前、平均タイム、ラップ数。入力するものはない。参考：Strava の「Workout Stats」（少しの数字を大きく出す）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>P1 自分</figcaption>
+      <div class="frame">
+        <header class="large-title"><h1>鈴木 花子</h1></header>
+        <main class="content">
+          <ul class="cards" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+            <li class="card card-stack"><span class="subheadline">平均タイム（1km）</span><span class="title2 numbers">4:09</span></li>
+            <li class="card card-stack"><span class="subheadline">ラップ数</span><span class="title2 numbers">24</span></li>
+          </ul>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab tab-current" href="p1.html" aria-current="page"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>ラップがまだないときは、平均タイムは決まりの値（3:40、<code>roster.DefaultAverage</code>）、ラップ数は 0。</li>
+          <li>名簿のメンバーに紐付いた幹事も、「自分」のタブからここを開く。</li>
+        </ul>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>
