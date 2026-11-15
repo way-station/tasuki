@@ -211,3 +211,23 @@ textarea.input { padding: 10px 12px; min-height: 88px; resize: vertical; }
 .scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .dialog { width: 100%; max-width: 320px; background: var(--white); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; text-align: left; }
 .dialog-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* Focus (WCAG 2.2 Focus Visible) */
+.button:focus-visible, .input:focus-visible, .segment:focus-within, .tab:focus-visible, a:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 2px; }
+.focused { outline: 2px solid var(--blue-700); outline-offset: 2px; }
+
+/* Input states */
+.input-invalid { border-color: var(--red-700); }
+.field-error { margin: 0; font-size: 13px; line-height: 18px; color: var(--red-700); }
+.field-help { margin: 0; font-size: 13px; line-height: 18px; color: var(--slate-600); }
+.input:disabled, .input-disabled { background: var(--slate-100); color: var(--slate-600); }
+
+/* Notifications (Material 3 Snackbar), 16 px above the tab bar */
+.notifications { position: absolute; left: 16px; right: 16px; bottom: 65px; display: flex; flex-direction: column; gap: 8px; }
+.notification { margin: 0; padding: 12px 16px; background: var(--white); border: 1px solid var(--slate-200); border-radius: 8px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
+.notification-error { color: var(--red-700); border-color: var(--red-700); }
+
+/* A sample on the component sheet, not a screen */
+.specimen { background: var(--white); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; width: 390px; }
+.specimen h2 { margin: 0; font-size: 22px; line-height: 28px; }
+.specimen-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
