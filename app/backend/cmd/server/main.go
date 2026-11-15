@@ -105,7 +105,7 @@ func run(logger *slog.Logger) error {
 		Health:        controller.NewHealthController(check),
 		Auth:          authController,
 		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
-		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
+		Participation: newParticipation(postgresClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		RunningOrders: newRunningOrders(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Roster:        newRoster(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID), cfg.FrontendOrigin, tokyo),
@@ -234,7 +234,9 @@ func newLaps(postgresClient *postgres.Client, mongoClient *mongodb.Client, outbo
 }
 
 // newParticipation wires the use cases of invitations, attendance, and entries for the team.
-func newParticipation(postgresClient *postgres.Client, teamID shared.TeamID) *controller.ParticipationController {
+// A member who leaves an entry also leaves its running orders, and loses their laps of a
+// confirmed running order through outboxStore.
+func newParticipation(postgresClient *postgres.Client, outboxStore outbox.Outbox, teamID shared.TeamID) *controller.ParticipationController {
 	ids := random.IDGenerator{}
 	unitOfWork := postgres.NewUnitOfWork(postgresClient)
 	races := postgres.NewRaceRepository(postgresClient, race.NewFactory(ids))
@@ -244,25 +246,18 @@ func newParticipation(postgresClient *postgres.Client, teamID shared.TeamID) *co
 	entryFactory := participation.NewEntryFactory(ids)
 	entries := postgres.NewEntryRepository(postgresClient, entryFactory)
 	dtoFactory := participations.ParticipationDTOFactory{}
+	runningOrders := postgres.NewRunningOrderRepository(postgresClient, runningorder.NewFactory(ids))
+	runners := runningorders.NewRemoveRunnerUseCase(entries, runningOrders, laps.NewRemoveLapsUseCase(outboxStore, outbox.EntryFactory{}))
 	return controller.NewParticipationController(controller.ParticipationUseCases{
 		ListInvitations:   participations.NewListInvitationsUseCase(postgres.NewInvitationQueryService(postgresClient), participation.AttendancePolicy{}, dtoFactory, teamID),
 		Invite:            participations.NewInviteUseCase(races, members, invitations, participation.InvitationFactory{}, teamID),
-		CancelInvitation:  participations.NewCancelInvitationUseCase(unitOfWork, races, invitations, entries, noRunners{}, teamID),
-		AnswerAttendance:  participations.NewAnswerAttendanceUseCase(unitOfWork, invitations, attendances, entries, noRunners{}, participation.AttendanceFactory{}, dtoFactory),
+		CancelInvitation:  participations.NewCancelInvitationUseCase(unitOfWork, races, invitations, entries, runners, teamID),
+		AnswerAttendance:  participations.NewAnswerAttendanceUseCase(unitOfWork, invitations, attendances, entries, runners, participation.AttendanceFactory{}, dtoFactory),
 		ListEntries:       participations.NewListEntriesUseCase(postgres.NewEntryQueryService(postgresClient), dtoFactory, teamID),
 		CreateEntry:       participations.NewCreateEntryUseCase(races, entries, entryFactory, dtoFactory, teamID),
 		AddEntryMember:    participations.NewAddEntryMemberUseCase(races, entries, attendances, teamID),
-		RemoveEntryMember: participations.NewRemoveEntryMemberUseCase(unitOfWork, races, entries, noRunners{}, teamID),
+		RemoveEntryMember: participations.NewRemoveEntryMemberUseCase(unitOfWork, races, entries, runners, teamID),
 	}, participations.ParticipationCommandFactory{})
-}
-
-// noRunners stands in for the running order (#95) and lap (#99) Application layers, which
-// take a member off the running orders when they leave an entry. No running order can be
-// saved before them, so there is no runner to take off.
-type noRunners struct{}
-
-func (noRunners) RemoveRunner(context.Context, shared.RaceID, shared.MemberID) error {
-	return nil
 }
 
 // newRaces wires the use cases of races for the team.
