@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R4 大会への招待</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>R4 大会への招待（幹事） / Race invitations</h1>
+    <p>退会していない名簿のメンバーと、それぞれが誘われているかを出す。参考：Spond の予定への招待（予定ごとに誘う人を選ぶ）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>R4 招待</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 冬季ロードリレー</a></nav>
+        <main class="content">
+          <h1 class="title1">招待</h1>
+          <section class="group">
+            <h2 class="group-heading">名簿のメンバー（退会した人は出さない）</h2>
+            <ul class="cards">
+              <li class="card"><span class="card-main"><span class="headline">佐藤 健</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">鈴木 花子</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">高橋 翔</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">小林 拓也</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">田中 美咲</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">伊藤 大輝</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">渡辺 葵</span><span class="subheadline">招待済み</span></span><button class="button button-danger button-small" type="button">取り消す</button></li>
+              <li class="card"><span class="card-main"><span class="headline">山本 蓮</span><span class="subheadline">まだ誘っていません</span></span><button class="button button-primary button-small" type="button">誘う</button></li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation"><p>「誘う」はすぐ保存する。「取り消す」は先に確認する。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R4 確認：招待を取り消す</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="cancel-title">
+            <h2 class="headline" id="cancel-title">佐藤 健 さんの招待を取り消しますか？</h2>
+            <p class="body">出欠、エントリー、走順からも外れます。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直されます。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">取り消す</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

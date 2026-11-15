@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M1 名簿</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>M1 名簿（幹事） / Roster</h1>
+    <p>名簿のメンバーごとに、名前、退会したかどうか、紐付けの状態、有効な招待リンクの期限を出す。参考：Spond の「リンクでグループに招待」、Mobbin の「Invite Teammates」（リンクを作り、コピーして送る）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>M1 名簿</figcaption>
+      <div class="frame">
+        <header class="large-title"><h1>名簿</h1></header>
+        <main class="content">
+          <form class="group">
+            <label class="field"><span class="field-label">メンバーを追加（名前だけ）</span>
+              <span class="input-row"><input class="input" placeholder="例：山本 蓮"><button class="button button-primary" type="submit">追加</button></span>
+            </label>
+          </form>
+          <section class="group">
+            <h2 class="group-heading">メンバー</h2>
+            <ul class="cards">
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">佐藤 健</span></span><span class="label label-confirmed">承認済み</span><span class="chevron">›</span></a>
+                <div class="card-actions"><button class="button button-secondary button-small" type="button">紐付けを解除</button><button class="button button-danger button-small" type="button">退会にする</button></div>
+              </li>
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">山本 蓮</span><span class="subheadline">招待リンク：11月22日（日）18:00 まで</span></span><span class="label label-undecided">ユーザーなし</span><span class="chevron">›</span></a>
+                <div class="group" style="gap: 8px">
+                  <div class="input-row"><input class="input" readonly value="https://tasuki.example/invite/3f9c…" aria-label="招待リンク"><button class="button button-primary button-small" type="button">コピー</button></div>
+                  <div class="card-actions"><button class="button button-secondary button-small" type="button">リンクを作り直す</button><button class="button button-danger button-small" type="button">退会にする</button></div>
+                </div>
+              </li>
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">加藤 優</span></span><span class="label label-undecided">ユーザーなし</span><span class="chevron">›</span></a>
+                <div class="card-actions"><button class="button button-primary button-small" type="button">招待リンクを作る</button><button class="button button-danger button-small" type="button">退会にする</button></div>
+              </li>
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">中村 結衣</span></span><span class="label label-waiting">承認待ち</span><span class="chevron">›</span></a>
+                <div class="card-actions"><button class="button button-secondary button-small" type="button">招待リンクを作る</button><button class="button button-danger button-small" type="button">退会にする</button></div>
+              </li>
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">森 さくら</span></span><span class="label label-waiting">承認待ち</span><span class="chevron">›</span></a>
+                <div class="card-actions"><button class="button button-secondary button-small" type="button">招待リンクを作る</button><button class="button button-danger button-small" type="button">退会にする</button></div>
+              </li>
+              <li class="card card-stack">
+                <a class="card-row" href="m2.html" style="color: inherit; text-decoration: none"><span class="card-main"><span class="headline">木村 陸</span></span><span class="label label-undecided">退会</span><span class="chevron">›</span></a>
+                <div class="card-actions"><button class="button button-secondary button-small" type="button">退会を取り消す</button></div>
+              </li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab tab-current" href="m1.html" aria-current="page"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>名前を押すと M2。名前は変えられない。</li>
+          <li>招待リンクは、承認済みのユーザーがある人と退会した人には作れない（ボタンを出さない）。</li>
+          <li>リンクを作ると、その場に URL と「コピー」を出す。作り直すと古いリンクは使えなくなる。</li>
+          <li>承認待ちの人の承認と却下は M3 で行う。</li>
+          <li>「退会にする」と「紐付けを解除」は先に確認する。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>M1 確認：退会にする</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="leave-title">
+            <h2 class="headline" id="leave-title">佐藤 健 さんを退会にしますか？</h2>
+            <p class="body">開催日が今日以降の大会への招待は取り消され、出欠、エントリー、走順からも外れます。走順が確定していれば、その大会のラップタイムは消えます。過去の大会は変わりません。</p>
+            <p class="footnote">退会を取り消しても、取り消された招待は戻りません。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">退会にする</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>M1 確認：紐付けを解除する</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="unlink-title">
+            <h2 class="headline" id="unlink-title">佐藤 健 さんの紐付けを解除しますか？</h2>
+            <p class="body">いまの LINE のアカウントでは tasuki を使えなくなります。つなぎ直すには、新しい招待リンクと承認が要ります。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">解除する</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

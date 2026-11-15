@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A1–A5 参加とアクセス</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>A1–A5 参加とアクセス / Joining and access</h1>
+    <p>ログインしていない人、承認を待っている人、使えない人の画面。チームのデータは出さず、下のタブバーもない。参考：Spond のグループへの参加の申請（A1）、Strava の承認制クラブの待ち状態（A2）、LINE ログインのボタンのガイドライン（A1・A5）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>A1 招待リンクの入口</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <div class="group">
+            <p class="subheadline">チームに招待されています</p>
+            <h1 class="title1">多摩川ランニングクラブ</h1>
+          </div>
+          <a class="button button-line button-block" href="#a2"><span class="line-logo">LINE</span>LINEでログイン</a>
+          <p class="footnote">ログインすると、幹事が承認するまで待ちます。</p>
+        </main>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>名簿のメンバーの名前は出さない。</li>
+          <li>ログインに成功すると A2 へ。リンクが期限切れ、使用済み、置き換え済みなら A4 へ。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap" id="a2">
+      <figcaption>A2 承認待ち</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <p><span class="label label-waiting">承認待ち</span></p>
+          <h1 class="title2">幹事の承認を待っています</h1>
+          <p class="body">承認されると、この画面を開き直したときに大会の一覧が出ます。</p>
+        </main>
+      </div>
+      <div class="annotation"><p>チームのデータは出さない。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>A3 却下</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <h1 class="title2">却下されました</h1>
+          <p class="body">くわしくは幹事に聞いてください。</p>
+        </main>
+      </div>
+      <div class="annotation"><p>理由はアプリの外で伝える。チームのデータは出さない。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>A4 利用できない</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <h1 class="title2">tasuki を利用できません</h1>
+          <p class="body">幹事に連絡してください。</p>
+        </main>
+      </div>
+      <div class="annotation"><p>退会したメンバーがログインしたとき、使えない招待リンクを開いたとき。どちらも同じ文。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>A5 ログイン</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <h1 class="title2">ログイン</h1>
+          <a class="button button-line button-block" href="r1.html"><span class="line-logo">LINE</span>LINEでログイン</a>
+        </main>
+      </div>
+      <div class="annotation"><p>ログインすると、開こうとしていた画面に戻る。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>A5 ログイン：失敗・取り消し</figcaption>
+      <div class="frame">
+        <main class="content-center">
+          <p class="footnote">tasuki</p>
+          <h1 class="title2">ログイン</h1>
+          <p class="note note-error" role="alert">ログインできませんでした。もう一度お試しください。</p>
+          <a class="button button-line button-block" href="r1.html"><span class="line-logo">LINE</span>LINEでログイン</a>
+        </main>
+      </div>
+      <div class="annotation"><p>LINE ログインが失敗したか取り消されたとき。エラーとボタンをもう一度出す。</p></div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

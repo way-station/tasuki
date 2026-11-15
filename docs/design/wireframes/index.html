@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MVP ワイヤーフレーム</title>
+<link rel="stylesheet" href="wireframes.css">
+<style>
+  .doc { max-width: 840px; background: var(--white); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .doc h2 { margin: 8px 0 0; font-size: 22px; line-height: 28px; }
+  .doc p, .doc li { font-size: 15px; line-height: 20px; }
+  .doc ul { margin: 0; padding-left: 20px; }
+  .doc a { color: var(--blue-700); }
+  .doc table { border-collapse: collapse; font-size: 15px; line-height: 20px; }
+  .doc th, .doc td { text-align: left; vertical-align: top; padding: 8px 12px 8px 0; border-top: 1px solid var(--slate-200); }
+  .doc th { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="doc">
+    <h1 class="title1">MVP ワイヤーフレーム / MVP wireframes</h1>
+    <p>Issue #148. Each page draws the screens of <code>docs/design/screens.md</code> at phone width (390 px), with the values of <code>docs/design/ui.md</code> and the references of <code>docs/design/ui-references.md</code>. Open the files in a browser. The screen text is Japanese; the notes under each screen say what differs by role and what is not drawn.</p>
+    <p><code>docs/design/screens.md</code> の画面を、スマートフォンの幅（390 px）で描いた。値は <code>docs/design/ui.md</code>、構成は <code>docs/design/ui-references.md</code> に従う。ブラウザで開いて見る。各画面の下の注に、幹事とメンバーで違うところと、絵にしていないことを書いた。</p>
+
+    <h2>画面 / Screens</h2>
+    <table>
+      <thead><tr><th>ページ</th><th>画面</th><th>描いた状態</th></tr></thead>
+      <tbody>
+        <tr><td><a href="components.html">components.html</a></td><td>共通の部品（#147）</td><td>ボタン、入力、状態のラベル、一覧、読み込み中、エラー、先に保存されたとき、通知、確認ダイアログの実行中</td></tr>
+        <tr><td><a href="access.html">access.html</a></td><td>A1–A5 参加とアクセス</td><td>A1、A2、A3、A4、A5、A5 の失敗</td></tr>
+        <tr><td><a href="r1.html">r1.html</a></td><td>R1 大会一覧（ホーム）</td><td>幹事、メンバー</td></tr>
+        <tr><td><a href="r2.html">r2.html</a></td><td>R2 大会の詳細</td><td>幹事、メンバー（未回答・保留）、メンバー（参加・走順確定）、不参加の確認、「参加」から変えるときの確認</td></tr>
+        <tr><td><a href="r3.html">r3.html</a></td><td>R3 大会の登録・編集</td><td>距離制、時間制</td></tr>
+        <tr><td><a href="r4.html">r4.html</a></td><td>R4 大会への招待</td><td>一覧、取り消しの確認</td></tr>
+        <tr><td><a href="r5.html">r5.html</a></td><td>R5 出欠の一覧</td><td>一覧</td></tr>
+        <tr><td><a href="r6.html">r6.html</a></td><td>R6 エントリー</td><td>まだないとき、エントリー、外すときの確認</td></tr>
+        <tr><td><a href="r7.html">r7.html</a></td><td>R7 走順の編集</td><td>距離制の下書き、時間制の下書き、確定した後に保存するときの確認</td></tr>
+        <tr><td><a href="l1.html">l1.html</a></td><td>L1 自分のラップタイム</td><td>足している途中、1つを直している途中</td></tr>
+        <tr><td><a href="p1.html">p1.html</a></td><td>P1 自分のプロフィール</td><td>プロフィール</td></tr>
+        <tr><td><a href="m1.html">m1.html</a></td><td>M1 名簿</td><td>一覧、退会の確認、紐付けの解除の確認</td></tr>
+        <tr><td><a href="m2.html">m2.html</a></td><td>M2 メンバーのプロフィール</td><td>プロフィール</td></tr>
+        <tr><td><a href="m3.html">m3.html</a></td><td>M3 承認</td><td>一覧、却下の確認</td></tr>
+      </tbody>
+    </table>
+
+    <h2>画面の間の移動 / Navigation</h2>
+    <p>チームの画面の下に、タブバーを置く（Human Interface Guidelines の Tab bars、Material 3 の Navigation bar）。参考にした Spond と Strava も、下のタブで画面を切り替える。A1〜A5 にはタブバーがない。</p>
+    <table>
+      <thead><tr><th>人</th><th>タブ</th></tr></thead>
+      <tbody>
+        <tr><td>幹事（名簿に紐付いている）</td><td>大会（R1）・名簿（M1）・承認（M3、承認待ちの数）・自分（P1）</td></tr>
+        <tr><td>幹事（紐付いていない）</td><td>大会・名簿・承認</td></tr>
+        <tr><td>メンバー</td><td>大会・自分</td></tr>
+      </tbody>
+    </table>
+    <p>タブの先から開いた画面は、上の左の「‹」で戻る。タブバーはそのまま出し、元のタブを選んだ状態にする。</p>
+    <table>
+      <thead><tr><th>から</th><th>へ</th><th>どうやって</th></tr></thead>
+      <tbody>
+        <tr><td>R1</td><td>R2</td><td>大会のカード</td></tr>
+        <tr><td>R1（幹事）</td><td>R3</td><td>「大会を登録」</td></tr>
+        <tr><td>R2（幹事）</td><td>R3、R4、R5、R6、R7</td><td>「大会の管理」のカード</td></tr>
+        <tr><td>R2（走者）</td><td>L1</td><td>「自分のラップタイム」</td></tr>
+        <tr><td>R3</td><td>R2</td><td>保存したとき</td></tr>
+        <tr><td>M1</td><td>M2</td><td>メンバーの名前</td></tr>
+        <tr><td>A1</td><td>A2 または A4</td><td>ログインした後。使えないリンクなら A4</td></tr>
+        <tr><td>A5</td><td>開こうとしていた画面</td><td>ログインした後</td></tr>
+      </tbody>
+    </table>
+    <p>開けない画面を開いたときは、エラーを出さずに送る（screens.md のとおり）：未ログイン → A5、承認待ち → A2、却下 → A3、紐付けなし（幹事以外）→ A4、幹事の画面を開いたメンバーと、L1・P1 を開いた紐付けのない幹事 → R1。</p>
+
+    <h2>絵にしていないこと / Not drawn</h2>
+    <ul>
+      <li>各画面の読み込み中、エラー、入力の誤り。どの画面も <a href="components.html">components.html</a> の形で出す。欄ごとの誤りの文は画面を作るときに決める。</li>
+      <li>ダークモード（ui.md で決めていない）。</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

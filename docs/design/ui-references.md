@@ -33,6 +33,7 @@ Preferences about how tasuki looks are expected to change. This document keeps t
 | R2 Attendance answer | Member | Spond: answering an event; Chouseisan (調整さん): ○△× | Answering from the event; Spond has only going and not going, so the three answers (attending, undecided, not attending) follow Chouseisan's ○△×, with the meaning of each answer written on the screen |
 | R2 Confirmed running order | Member | TeamSnap: a published lineup | The order shared with the whole team once it is published |
 | L1 My lap times | Member | Strava: laps and splits; Mobbin: Strava "Pace Analysis" | The table of times per lap. Strava takes times from devices, so the input itself needs another reference |
+| L1 Entering lap times | Member | Apple Health: "Add Data" | Typing a value with the number keyboard, one value per line, for data that no device recorded |
 | P1 My profile | Member | Mobbin: Strava "Workout Stats" | Showing a few numbers large |
 | A1 Invite landing | Before joining | Spond: requesting access with a group link or code | Requesting to join from a received link |
 | A2 Waiting | Before joining | Strava: the waiting state of an invite-only club; Mobbin: Strava "Pending Invites" | What is shown while the request waits |
@@ -53,13 +54,13 @@ Preferences about how tasuki looks are expected to change. This document keeps t
 ## Changing a reference
 
 - Change the row in the table above, and add a line to the change log below with the date, the screen, and why.
-- Entering lap times on L1 has no reference yet. It is chosen in #148.
 
 ## Change log
 
 | Date | Change |
 | --- | --- |
 | 2026-11-08 | First references for every MVP screen |
+| 2026-11-15 | L1: entering lap times follows Apple Health's "Add Data" (#148). Entering many laps in a row is faster by typing than by choosing each lap on a wheel picker |
 
 ## Sources
 
@@ -68,6 +69,7 @@ Preferences about how tasuki looks are expected to change. This document keeps t
 - Strava: [Run Activity Pages](https://support.strava.com/en-us/articles/15401883-run-activity-pages), [Clubs on the mobile app](https://support.strava.com/en-us/articles/15401837-clubs-on-the-mobile-app)
 - Mobbin: [Strava Pace Analysis](https://mobbin.com/explore/screens/5025d944-beec-433b-ac29-5a52b6743624), [Strava Workout Stats](https://mobbin.com/explore/screens/9827c10a-8c85-4fa3-af72-f65bbbfd50cc), [Strava Pending Invites](https://mobbin.com/explore/screens/32e66bac-fd30-4f18-a13e-832e2202cadd), [Invite Teammates](https://mobbin.com/explore/mobile/screens/invite-teammates)
 - Chouseisan (調整さん): [how to use (Appllio)](https://appllio.com/how-to-use-schedule-service-chouseisan), [making a survey (atsoho)](https://atsoho.com/blog/chouseisan-survey-how-to-make)
+- Apple Health: [Manage Health data on your iPhone, iPad, or Apple Watch](https://support.apple.com/en-us/108779)
 
 ---
 
@@ -109,6 +111,7 @@ tasuki の見た目の好みは変わると見込んでいる。この文書に�
 | R2 出欠の答え | メンバー | Spond：イベントへの答え、調整さん：○△× | イベントから答える。Spond は「行く」と「行かない」の 2 つだけなので、3 つの答え（参加、未定、不参加）は調整さんの ○△× にならい、それぞれの意味を画面に書く |
 | R2 確定した走順 | メンバー | TeamSnap：公開された Lineup | 公開されたら、チーム全員に共有される順番 |
 | L1 自分のラップタイム | メンバー | Strava：Laps と Splits、Mobbin：Strava「Pace Analysis」 | 周回ごとのタイムの表。Strava はタイムを機器から取るので、入力そのものには別の参考が要る |
+| L1 ラップタイムの入力 | メンバー | Apple ヘルスケア：「データを追加」 | 機器が記録していない値を、数字のキーボードで 1 行に 1 つずつ打つ |
 | P1 自分のプロフィール | メンバー | Mobbin：Strava「Workout Stats」 | いくつかの数字を大きく出す |
 | A1 招待リンクから入る | 参加前の人 | Spond：グループのリンクやコードで申し込む | 受け取ったリンクから参加を申し込む |
 | A2 承認待ち | 参加前の人 | Strava：招待制のクラブの承認待ち、Mobbin：Strava「Pending Invites」 | 申し込みが待っている間に出すもの |
@@ -129,13 +132,13 @@ tasuki の見た目の好みは変わると見込んでいる。この文書に�
 ## 参考を変えるとき
 
 - 上の表の行を変え、下の変更履歴に、日付、画面、理由を 1 行足す
-- L1 でラップタイムを入力する部分には、まだ参考がない。#148 で選ぶ
 
 ## 変更履歴
 
 | 日付 | 変更 |
 | --- | --- |
 | 2026-11-08 | MVP のすべての画面に、最初の参考を決めた |
+| 2026-11-15 | L1：ラップタイムの入力は Apple ヘルスケアの「データを追加」に従う（#148）。何周も続けて入れるには、1 周ずつホイールで選ぶより打つほうが速い |
 
 ## 参考資料
 

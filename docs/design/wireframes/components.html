@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>共通の部品</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>共通の部品 / Common components</h1>
+    <p>#147。各部品の種類と状態。決まりは <code>docs/design/components.md</code>、値は <code>docs/design/ui.md</code>。</p>
+  </header>
+  <div class="frames">
+
+    <section class="specimen">
+      <h2>ボタン</h2>
+      <p class="footnote">主・副・危険。主な操作は横いっぱい。</p>
+      <button class="button button-primary button-block" type="button">保存</button>
+      <button class="button button-secondary button-block" type="button">区を足す</button>
+      <button class="button button-danger button-block" type="button">退会にする</button>
+      <p class="footnote">カードの中（小さいボタン、高さは 44 px のまま）</p>
+      <div class="specimen-row">
+        <button class="button button-primary button-small" type="button">誘う</button>
+        <button class="button button-secondary button-small" type="button">直す</button>
+        <button class="button button-danger button-small" type="button">消す</button>
+      </div>
+      <p class="footnote">状態</p>
+      <div class="group">
+        <button class="button button-primary button-block focused" type="button">保存（フォーカス）</button>
+        <button class="button button-disabled button-block" type="button" aria-disabled="true">確定する</button>
+        <p class="footnote">確定するには、すべての区に走者を入れて、保存してください。</p>
+        <button class="button button-disabled button-block" type="button" aria-disabled="true">保存中…</button>
+      </div>
+      <p class="footnote">LINE ログイン（LINE のガイドラインのまま）</p>
+      <a class="button button-line button-block" href="access.html"><span class="line-logo">LINE</span>LINEでログイン</a>
+    </section>
+
+    <section class="specimen">
+      <h2>入力</h2>
+      <label class="field"><span class="field-label">大会名</span><input class="input" value="冬季ロードリレー"></label>
+      <label class="field"><span class="field-label">名前</span><span class="field-help">名前はあとで変えられません</span><input class="input focused" value="山本 蓮"></label>
+      <label class="field"><span class="field-label">4 km のラップタイム</span><span class="field-help">1km あたりのタイムを 分:秒 で入れてください（例：3:25）</span><input class="input input-invalid numbers" inputmode="numeric" value="4:75" aria-invalid="true" aria-describedby="lap-error"><span class="field-error" id="lap-error">秒は 0〜59 で入れてください</span></label>
+      <label class="field"><span class="field-label">1周の距離</span><span class="input-row"><input class="input numbers" inputmode="decimal" value="2"><span class="unit">km</span></span></label>
+      <label class="field"><span class="field-label">送っている間</span><input class="input" value="冬季ロードリレー" disabled></label>
+      <label class="field"><span class="field-label">1区の走者</span><select class="input"><option>佐藤 健</option><option>選ばない</option></select></label>
+      <fieldset class="field" style="border: 0; margin: 0; padding: 0; min-width: 0">
+        <legend class="field-label" style="padding: 0; margin-bottom: 4px">選択肢（選んでいるのは △）</legend>
+        <div class="segments">
+          <label class="segment"><input type="radio" name="sample"><span class="segment-mark">○</span><span class="headline">参加</span></label>
+          <label class="segment segment-selected"><input type="radio" name="sample" checked><span class="segment-mark">△</span><span class="headline">保留</span></label>
+          <label class="segment"><input type="radio" name="sample"><span class="segment-mark">×</span><span class="headline">不参加</span></label>
+        </div>
+      </fieldset>
+      <label class="field"><span class="field-label">招待リンク</span><span class="input-row"><input class="input" readonly value="https://tasuki.example/invite/3f9c…"><button class="button button-primary button-small" type="button">コピー</button></span></label>
+    </section>
+
+    <section class="specimen">
+      <h2>状態のラベル</h2>
+      <div class="specimen-row">
+        <span class="label label-confirmed">走順確定</span>
+        <span class="label label-undecided">下書き</span>
+        <span class="label label-undecided">未定</span>
+      </div>
+      <div class="specimen-row">
+        <span class="label label-confirmed">○ 参加</span>
+        <span class="label label-undecided">△ 保留</span>
+        <span class="label label-undecided">× 不参加</span>
+        <span class="label label-waiting">未回答</span>
+      </div>
+      <div class="specimen-row">
+        <span class="label label-undecided">ユーザーなし</span>
+        <span class="label label-waiting">承認待ち</span>
+        <span class="label label-confirmed">承認済み</span>
+        <span class="label label-undecided">退会</span>
+      </div>
+      <h2>一覧</h2>
+      <ul class="cards">
+        <li><a class="card" href="r2.html"><span class="card-main"><span class="headline">冬季ロードリレー</span><span class="subheadline">2026年12月20日（日）</span></span><span class="label label-confirmed">走順確定</span></a></li>
+        <li class="card"><span class="card-main"><span class="headline">田中 美咲</span></span><button class="button button-primary button-small" type="button" aria-label="田中 美咲 さんを誘う">誘う</button></li>
+      </ul>
+      <p class="footnote">空のとき</p>
+      <p class="subheadline">まだラップタイムはありません</p>
+      <h2>時間の表</h2>
+      <div class="panel">
+        <table class="times">
+          <thead><tr><th>km</th><th class="right">ラップ</th></tr></thead>
+          <tbody><tr><td>1</td><td class="right">3:55</td></tr><tr><td>2</td><td class="right">3:58</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <figure class="frame-wrap">
+      <figcaption>読み込み中</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r1.html">‹ 大会</a></nav>
+        <main class="content"><p class="subheadline" role="status">読み込み中…</p></main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation"><p>上のバーとタブバーはそのまま。LINE ログインの後は「ログイン中…」。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>見つからない・うまくいかなかった</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r1.html">‹ 大会</a></nav>
+        <main class="content-center">
+          <h1 class="title2">うまくいきませんでした</h1>
+          <p class="body">ページを読み込み直してください。</p>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>同じ形：「大会が見つかりません」「名簿のメンバーが見つかりません」。</li>
+          <li>L1 を走者でない人が開いたとき：「ラップタイムはまだ入れられません」「確定した走順でこの大会を走ると、入れられるようになります。」</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>ほかの人が先に保存した（R3・R7）</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 冬季ロードリレー</a></nav>
+        <main class="content">
+          <h1 class="title1">大会を編集</h1>
+          <div class="note note-warning group" role="alert">
+            <p style="margin: 0">ほかの人が先に保存しました。入れた値は残っています。</p>
+            <button class="button button-secondary button-block" type="button">最新を読み込む（自分の変更を捨てる）</button>
+          </div>
+          <label class="field"><span class="field-label">大会名</span><input class="input" value="冬季ロードリレー 2026"></label>
+          <button class="button button-primary button-block" type="button">保存</button>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation"><p><code>409 version_conflict</code>（ADR-0013）。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>通知</figcaption>
+      <div class="frame">
+        <header class="large-title"><h1>名簿</h1></header>
+        <main class="content"><p class="subheadline">（画面の内容）</p></main>
+        <div class="notifications" aria-live="polite">
+          <p class="notification">招待リンクをコピーしました</p>
+          <p class="notification notification-error" role="alert">保存できませんでした。もう一度お試しください。</p>
+        </div>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab tab-current" href="m1.html" aria-current="page"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation"><p>タブバーの上に出し、4 秒で消える。成功は手が空いたときに、エラーはすぐ読み上げる。</p></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>確認ダイアログ（実行中）</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="busy-title">
+            <h2 class="headline" id="busy-title">佐藤 健 さんの招待を取り消しますか？</h2>
+            <p class="body">出欠、エントリー、走順からも外れます。</p>
+            <div class="dialog-actions">
+              <button class="button button-disabled" type="button" aria-disabled="true">取り消し中…</button>
+              <button class="button button-disabled" type="button" aria-disabled="true">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation"><p>使う場所と題は components.md の表にある。開くとフォーカスがダイアログに移る。</p></div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>
