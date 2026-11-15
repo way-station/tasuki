@@ -106,6 +106,7 @@ func run(logger *slog.Logger) error {
 		Auth:          authController,
 		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
 		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
+		RunningOrders: newRunningOrders(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Roster:        newRoster(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID), cfg.FrontendOrigin, tokyo),
 	}, presentation.Options{
@@ -284,4 +285,24 @@ type noRunningOrders struct{}
 
 func (noRunningOrders) AdjustRunningOrders(context.Context, shared.RaceID, race.Description) error {
 	return nil
+}
+
+// newRunningOrders wires the use cases of running orders and predictions for the team.
+// Saving keeps the history in MongoDB, and runners who lose legs of a confirmed running
+// order lose their laps through outboxStore.
+func newRunningOrders(postgresClient *postgres.Client, mongoClient *mongodb.Client, outboxStore outbox.Outbox, teamID shared.TeamID) *controller.RunningOrderController {
+	ids := random.IDGenerator{}
+	unitOfWork := postgres.NewUnitOfWork(postgresClient)
+	races := postgres.NewRaceRepository(postgresClient, race.NewFactory(ids))
+	entries := postgres.NewEntryRepository(postgresClient, participation.NewEntryFactory(ids))
+	runningOrders := postgres.NewRunningOrderRepository(postgresClient, runningorder.NewFactory(ids))
+	history := mongodb.NewRunningOrderHistoryRepository(mongoClient)
+	list := runningorders.NewListRunningOrdersUseCase(postgres.NewRunningOrderQueryService(postgresClient), race.VisibilityPolicy{}, runningorder.VisibilityPolicy{}, runningorders.Predictor{}, runningorders.RunningOrderDTOFactory{}, teamID)
+	return controller.NewRunningOrderController(
+		list,
+		runningorders.NewGetRunningOrderUseCase(list),
+		runningorders.NewSaveRunningOrderUseCase(unitOfWork, races, entries, runningOrders, history, laps.NewRemoveLapsUseCase(outboxStore, outbox.EntryFactory{}), runningorder.NewFactory(ids), runningorder.HistoryFactory{}, time.Now, teamID),
+		runningorders.NewConfirmRunningOrderUseCase(unitOfWork, races, entries, runningOrders, history, runningorder.HistoryFactory{}, time.Now, teamID),
+		runningorders.RunningOrderCommandFactory{},
+	)
 }
