@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R1 大会一覧</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>R1 大会一覧（ホーム） / Race list</h1>
+    <p>ログイン後に最初に開く画面。どの一覧も新しく登録した順。参考：Spond のホーム（招待された予定を一覧にする）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>R1 幹事</figcaption>
+      <div class="frame">
+        <header class="large-title">
+          <h1>大会</h1>
+          <a class="button button-primary button-small" href="r3.html">大会を登録</a>
+        </header>
+        <main class="content">
+          <section class="group">
+            <h2 class="group-heading">すべての大会</h2>
+            <ul class="cards">
+              <li><a class="card" href="r2.html#organizer">
+                <span class="card-main"><span class="headline">湖畔リレーマラソン</span><span class="subheadline">2027年4月11日（日）</span></span>
+              </a></li>
+              <li><a class="card" href="r2.html#organizer">
+                <span class="card-main"><span class="headline">春のタイムトライアル</span><span class="subheadline">2027年3月7日（日）</span></span>
+              </a></li>
+              <li><a class="card" href="r2.html#organizer">
+                <span class="card-main"><span class="headline">市民駅伝</span><span class="subheadline">2027年1月17日（日）</span></span>
+              </a></li>
+              <li><a class="card" href="r2.html#organizer">
+                <span class="card-main"><span class="headline">冬季ロードリレー</span><span class="subheadline">2026年12月20日（日）</span></span>
+                <span class="label label-confirmed">走順確定</span>
+              </a></li>
+            </ul>
+          </section>
+          <section class="group">
+            <h2 class="group-heading">招待</h2>
+            <ul class="cards">
+              <li><a class="card" href="r2.html#member-invited">
+                <span class="card-main"><span class="headline">春のタイムトライアル</span><span class="subheadline">2027年3月7日（日）</span></span>
+                <span class="label label-waiting">未回答</span>
+              </a></li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html" aria-current="page"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>「すべての大会」はチームのすべての大会。走順が確定した大会に「走順確定」。</li>
+          <li>「招待」の欄は、名簿のメンバーに紐付いた幹事だけに出る（自分への招待）。</li>
+          <li>紐付いていない幹事のタブは「大会・名簿・承認」の3つ（「自分」は P1 を開けないので出さない）。</li>
+          <li>「承認」の数字は承認待ちの数。0 のときは出さない。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R1 メンバー</figcaption>
+      <div class="frame">
+        <header class="large-title"><h1>大会</h1></header>
+        <main class="content">
+          <section class="group">
+            <h2 class="group-heading">参加する大会</h2>
+            <ul class="cards">
+              <li><a class="card" href="r2.html#member-attending">
+                <span class="card-main"><span class="headline">市民駅伝</span><span class="subheadline">2027年1月17日（日）</span></span>
+              </a></li>
+              <li><a class="card" href="r2.html#member-attending">
+                <span class="card-main"><span class="headline">冬季ロードリレー</span><span class="subheadline">2026年12月20日（日）</span></span>
+                <span class="label label-confirmed">走順確定</span>
+              </a></li>
+            </ul>
+          </section>
+          <section class="group">
+            <h2 class="group-heading">招待</h2>
+            <ul class="cards">
+              <li><a class="card" href="r2.html#member-invited">
+                <span class="card-main"><span class="headline">湖畔リレーマラソン</span><span class="subheadline">2027年4月11日（日）</span></span>
+                <span class="label label-undecided">△ 保留</span>
+              </a></li>
+              <li><a class="card" href="r2.html#member-invited">
+                <span class="card-main"><span class="headline">春のタイムトライアル</span><span class="subheadline">2027年3月7日（日）</span></span>
+                <span class="label label-waiting">未回答</span>
+              </a></li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html" aria-current="page"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>「参加する大会」：「参加」と答えた大会。過去の大会も含む。</li>
+          <li>「招待」：未回答か「保留」の大会と、自分の回答。</li>
+          <li>誘われていない大会と「不参加」と答えた大会は出ない。</li>
+          <li>どちらの欄も空のときは、欄の見出しの下に「まだありません」と出す。</li>
+        </ul>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>
