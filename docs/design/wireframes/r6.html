@@ -51,7 +51,6 @@
               <li class="card"><span class="card-main"><span class="headline">鈴木 花子</span></span><button class="button button-danger button-small" type="button">外す</button></li>
               <li class="card"><span class="card-main"><span class="headline">高橋 翔</span></span><button class="button button-danger button-small" type="button">外す</button></li>
             </ul>
-            <p class="note note-warning">外したメンバーは走順からも外れます。走順が確定していれば、その人のこの大会のラップタイムは消え、平均タイムは計算し直されます。</p>
           </section>
           <section class="group">
             <h2 class="group-heading">入れられるメンバー（出欠が「参加」）</h2>
@@ -69,9 +68,25 @@
       </div>
       <div class="annotation">
         <ul>
-          <li>「入れる」「外す」はすぐ保存する。screens.md は「外す」の確認を求めていないので、確認は出さず、注意の文を置く。</li>
+          <li>「入れる」はすぐ保存する。「外す」は先に<a href="#confirm-remove">確認</a>する（今の frontend のコードと同じ）。</li>
           <li>「参加」から回答を変えたメンバーは、自動でここから消える。</li>
         </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap" id="confirm-remove">
+      <figcaption>R6 確認：エントリーから外す</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="remove-title">
+            <h2 class="headline" id="remove-title">佐藤 健 さんをエントリーから外しますか？</h2>
+            <p class="body">走順からも外れます。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直されます。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">外す</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
       </div>
     </figure>
 
