@@ -67,7 +67,7 @@ describe("createAppRouter", () => {
     ["/waiting", "Waiting for approval"],
     ["/rejected", "You were rejected"],
     ["/unavailable", "tasuki cannot be used"],
-    ["/", "Races"],
+    ["/", "大会"],
     ["/races/new", "Register race"],
     ["/races/123", "Hakone"],
     ["/races/123/edit", "Edit race"],
