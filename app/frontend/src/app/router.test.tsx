@@ -77,9 +77,9 @@ describe("createAppRouter", () => {
     ["/races/123/running-order", "Running order"],
     ["/races/123/laps", "自分のラップタイム"],
     ["/me", "Taro Yamada"],
-    ["/roster", "Roster"],
+    ["/roster", "名簿"],
     ["/roster/123", "Jiro"],
-    ["/approvals", "Approvals"],
+    ["/approvals", "承認"],
   ])("shows %s as %s", async (path, heading) => {
     renderAt(path);
 
