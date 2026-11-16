@@ -1,2 +1,40 @@
-/* Tailwind CSS (#33). The design tokens from the UI design (#146) go in an @theme block here. */
+/* Tailwind CSS (#33) with the design tokens of docs/design/ui.md (#146). */
 @import "tailwindcss";
+
+/*
+ * Colors and spacing are Tailwind's defaults (slate, blue, green, amber, red,
+ * and the 4 px scale), so only the font and the text styles are set here.
+ * Text styles: the Human Interface Guidelines' sizes at the default size, as
+ * `text-large-title`, `text-title1`, and so on.
+ */
+@theme {
+  --font-sans:
+    "Hiragino Sans", "Hiragino Kaku Gothic ProN", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --text-large-title: 34px;
+  --text-large-title--line-height: 41px;
+  --text-title1: 28px;
+  --text-title1--line-height: 34px;
+  --text-title2: 22px;
+  --text-title2--line-height: 28px;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-body: 17px;
+  --text-body--line-height: 22px;
+  --text-subheadline: 15px;
+  --text-subheadline--line-height: 20px;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 18px;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 font-sans text-body text-slate-900;
+  }
+
+  /* Focus is a 2 px blue-700 outline, 2 px away (WCAG 2.2 Focus Visible). */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-700;
+  }
+}
