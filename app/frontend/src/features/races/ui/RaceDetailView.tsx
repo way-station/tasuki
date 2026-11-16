@@ -1,6 +1,19 @@
 import type { ReactNode } from "react";
+import {
+  blockButton,
+  card,
+  cards,
+  confirmedLabel,
+  content,
+  group,
+  groupHeading,
+  label,
+  numbers,
+  panel,
+  primaryButton,
+} from "../../../shared/ui/classes.ts";
 import type { RaceDetail } from "../types/race.ts";
-import { attendanceLabels, raceTypeLabels } from "./labels.ts";
+import { attendanceLabels, formatDate, formatDateTime, raceTypeLabels } from "./labels.ts";
 
 // The screens R2 links to (docs/design/screens.md).
 export type RaceSection =
@@ -12,11 +25,11 @@ export type RaceSection =
   | "laps";
 
 const organizerSections: { section: RaceSection; label: string }[] = [
-  { section: "edit", label: "Edit race" },
-  { section: "invitations", label: "Invitations" },
-  { section: "attendance", label: "Attendance" },
-  { section: "entry", label: "Entry" },
-  { section: "running-order", label: "Running order" },
+  { section: "edit", label: "大会を編集" },
+  { section: "invitations", label: "招待" },
+  { section: "attendance", label: "出欠" },
+  { section: "entry", label: "エントリー" },
+  { section: "running-order", label: "走順" },
 ];
 
 type RaceDetailViewProps = {
@@ -32,8 +45,10 @@ type RaceDetailViewProps = {
   laps?: ReactNode;
 };
 
-// R2 (docs/design/screens.md): the race and its description. Attendance, the
-// running order, and lap times come with their features.
+// R2 (docs/design/screens.md, wireframes/r2.html): the race and its
+// description. Attendance, the running order, and lap times come with their
+// features. Organizers answer attendance under the description; members after
+// the running order.
 export function RaceDetailView({
   race,
   isOrganizer,
@@ -42,103 +57,120 @@ export function RaceDetailView({
   runningOrder,
   laps,
 }: RaceDetailViewProps) {
-  const detail = race.detail;
+  const myLaps = race.canSubmitLaps && (
+    <button
+      type="button"
+      onClick={() => onOpen("laps")}
+      className={`${primaryButton} ${blockButton}`}
+    >
+      自分のラップタイム
+    </button>
+  );
   return (
-    <section>
-      <h1>{race.name}</h1>
-      <dl>
-        <dt>Type</dt>
-        <dd>{raceTypeLabels[detail.type]}</dd>
-        <dt>Race date</dt>
-        <dd>
-          <time dateTime={race.raceDate}>{race.raceDate}</time>
-        </dd>
-        {race.deadline !== undefined && (
-          <>
-            <dt>Deadline</dt>
-            <dd>
-              <time dateTime={race.deadline}>{formatDateTime(race.deadline)}</time>
-            </dd>
-          </>
+    <section className={content}>
+      <div className={group}>
+        <h1 className="text-title1 font-bold">{race.name}</h1>
+        {race.runningOrderConfirmed === true && (
+          <p>
+            <span className={`${label} ${confirmedLabel}`}>走順確定</span>
+          </p>
         )}
-        {detail.type === "distance" ? (
-          <>
-            <dt>Legs</dt>
-            <dd>
-              <ol>
-                {detail.legDistancesKm.map((km, index) => (
-                  <li key={index}>{km} km</li>
-                ))}
-              </ol>
-            </dd>
-            {detail.targetTotalTime !== undefined && (
-              <>
-                <dt>Target time</dt>
-                <dd>{detail.targetTotalTime}</dd>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            <dt>Time limit</dt>
-            <dd>{detail.timeLimitMinutes} minutes</dd>
-            <dt>Lap distance</dt>
-            <dd>{detail.lapDistanceKm} km</dd>
-            {detail.targetLaps !== undefined && (
-              <>
-                <dt>Target laps</dt>
-                <dd>{detail.targetLaps}</dd>
-              </>
-            )}
-          </>
-        )}
-        {race.text !== "" && (
-          <>
-            <dt>Notes</dt>
-            <dd>{race.text}</dd>
-          </>
-        )}
-        {race.myAttendance !== undefined && attendance === undefined && (
-          <>
-            <dt>My attendance</dt>
-            <dd>{attendanceLabels[race.myAttendance]}</dd>
-          </>
-        )}
-        {race.runningOrderConfirmed !== undefined && (
-          <>
-            <dt>Running order</dt>
-            <dd>{race.runningOrderConfirmed ? "Confirmed" : "Not confirmed yet"}</dd>
-          </>
-        )}
-      </dl>
-      {attendance}
-      {runningOrder}
-      {laps}
-      {(isOrganizer || race.canSubmitLaps) && (
-        <nav aria-label="Race">
-          <ul>
-            {isOrganizer &&
-              organizerSections.map(({ section, label }) => (
+      </div>
+      <RaceFacts race={race} showAnswer={attendance === undefined} />
+      {isOrganizer ? (
+        <>
+          {attendance}
+          <nav aria-label="大会の管理" className={group}>
+            <h2 className={groupHeading}>大会の管理</h2>
+            <ul className={cards}>
+              {organizerSections.map(({ section, label: sectionLabel }) => (
                 <li key={section}>
-                  <button type="button" onClick={() => onOpen(section)}>
-                    {label}
+                  <button
+                    type="button"
+                    onClick={() => onOpen(section)}
+                    className={`${card} w-full text-left`}
+                  >
+                    <span className="grow text-headline font-semibold">{sectionLabel}</span>
+                    <span aria-hidden="true" className="text-slate-600">
+                      ›
+                    </span>
                   </button>
                 </li>
               ))}
-            {race.canSubmitLaps && (
-              <li>
-                <button type="button" onClick={() => onOpen("laps")}>
-                  My lap times
-                </button>
-              </li>
-            )}
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+          {runningOrder}
+          {myLaps}
+          {laps}
+        </>
+      ) : (
+        <>
+          {runningOrder}
+          {myLaps}
+          {attendance}
+        </>
       )}
     </section>
   );
 }
 
-function formatDateTime(rfc3339: string): string {
-  return new Date(rfc3339).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+type RaceFactsProps = {
+  race: RaceDetail;
+  // The answer alone, when the attendance feature does not show its form.
+  showAnswer: boolean;
+};
+
+// The description in a panel, in the order of the wireframe.
+function RaceFacts({ race, showAnswer }: RaceFactsProps) {
+  const detail = race.detail;
+  const facts: { term: string; value: ReactNode }[] = [
+    {
+      term: "種別",
+      value:
+        detail.type === "distance"
+          ? `${raceTypeLabels.distance}・${detail.legDistancesKm.length} 区`
+          : raceTypeLabels.time,
+    },
+    { term: "開催日", value: <time dateTime={race.raceDate}>{formatDate(race.raceDate)}</time> },
+  ];
+  if (detail.type === "distance") {
+    facts.push({
+      term: "区の距離",
+      value: detail.legDistancesKm.map((km) => `${km} km`).join("・"),
+    });
+    if (detail.targetTotalTime !== undefined) {
+      facts.push({ term: "目標タイム", value: detail.targetTotalTime });
+    }
+  } else {
+    facts.push(
+      { term: "制限時間", value: `${detail.timeLimitMinutes} 分` },
+      { term: "1周の距離", value: `${detail.lapDistanceKm} km` },
+    );
+    if (detail.targetLaps !== undefined) {
+      facts.push({ term: "目標周回数", value: `${detail.targetLaps} 周` });
+    }
+  }
+  if (race.deadline !== undefined) {
+    facts.push({
+      term: "締め切り",
+      value: <time dateTime={race.deadline}>{formatDateTime(race.deadline)}</time>,
+    });
+  }
+  if (showAnswer && race.myAttendance !== undefined) {
+    facts.push({ term: "あなたの出欠", value: attendanceLabels[race.myAttendance] });
+  }
+
+  return (
+    <section aria-label="説明" className={panel}>
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-2">
+        {facts.map(({ term, value }) => (
+          <div key={term} className="contents">
+            <dt className="text-subheadline text-slate-600">{term}</dt>
+            <dd className={numbers}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {race.text !== "" && <p className="text-body whitespace-pre-wrap">{race.text}</p>}
+    </section>
+  );
 }
