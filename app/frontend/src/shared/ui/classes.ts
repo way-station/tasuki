@@ -32,3 +32,12 @@ export const cardStack = "flex-col items-stretch";
 export const panel = "flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4";
 // Numbers with equal widths, so times line up.
 export const numbers = "tabular-nums";
+
+// State labels: always text, Footnote, fully round (docs/design/components.md).
+export const label = "shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-footnote";
+export const confirmedLabel = "bg-green-100 text-green-800";
+export const waitingLabel = "bg-amber-100 text-amber-800";
+export const neutralLabel = "bg-slate-100 text-slate-700";
+
+// Messages above a form or in a panel.
+export const warningNote = "rounded-lg bg-amber-100 px-4 py-3 text-subheadline text-amber-800";
