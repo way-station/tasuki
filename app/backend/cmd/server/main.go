@@ -109,8 +109,9 @@ func run(logger *slog.Logger) error {
 		Health:        controller.NewHealthController(check),
 		Auth:          authController,
 		LineLogin:     newLineLogin(cfg, postgresClient, logger),
-		Races:         newRaces(postgresClient, shared.TeamID(cfg.TeamID)),
-		Participation: newParticipation(postgresClient, shared.TeamID(cfg.TeamID)),
+		Races:         newRaces(postgresClient, outboxStore, shared.TeamID(cfg.TeamID)),
+		Participation: newParticipation(postgresClient, outboxStore, shared.TeamID(cfg.TeamID)),
+		RunningOrders: newRunningOrders(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Laps:          newLaps(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID)),
 		Roster:        newRoster(postgresClient, mongoClient, outboxStore, shared.TeamID(cfg.TeamID), cfg.FrontendOrigin, tokyo),
 	}, presentation.Options{
