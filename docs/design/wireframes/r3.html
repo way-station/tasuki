@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R3 大会の登録・編集</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>R3 大会の登録・編集（幹事） / Register or edit a race</h1>
+    <p>登録と編集は同じ画面。編集のときは今の値が入っている。参考：Spond の予定の作成（時刻、締め切りなどを1つの入力画面に）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>R3 距離制</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r1.html">‹ 大会</a></nav>
+        <main class="content">
+          <h1 class="title1">大会を登録</h1>
+          <form class="group" style="gap: 16px">
+            <label class="field"><span class="field-label">大会名</span><input class="input" value="冬季ロードリレー"></label>
+            <fieldset class="field" style="border: 0; margin: 0; padding: 0; min-width: 0">
+              <legend class="field-label" style="padding: 0; margin-bottom: 4px">種別</legend>
+              <div class="segments">
+                <label class="segment segment-selected"><input type="radio" name="kind-distance" checked><span class="headline">距離制</span></label>
+                <label class="segment"><input type="radio" name="kind-distance"><span class="headline">時間制</span></label>
+              </div>
+            </fieldset>
+            <label class="field"><span class="field-label">開催日</span><input class="input" type="date" value="2026-12-20"></label>
+            <label class="field"><span class="field-label">締め切り</span><input class="input" type="datetime-local" value="2026-12-06T23:59"></label>
+            <label class="field"><span class="field-label">目標タイム（時:分:秒）</span><input class="input numbers" inputmode="numeric" value="1:08:00"></label>
+            <fieldset class="field" style="border: 0; margin: 0; padding: 0; min-width: 0">
+              <legend class="field-label" style="padding: 0; margin-bottom: 4px">区の距離</legend>
+              <div class="group">
+                <div class="input-row"><span class="unit" style="width: 40px">1区</span><input class="input numbers" inputmode="decimal" value="5"><span class="unit">km</span><button class="button button-danger button-small" type="button">消す</button></div>
+                <div class="input-row"><span class="unit" style="width: 40px">2区</span><input class="input numbers" inputmode="decimal" value="3.2"><span class="unit">km</span><button class="button button-danger button-small" type="button">消す</button></div>
+                <div class="input-row"><span class="unit" style="width: 40px">3区</span><input class="input numbers" inputmode="decimal" value="3.2"><span class="unit">km</span><button class="button button-danger button-small" type="button">消す</button></div>
+                <div class="input-row"><span class="unit" style="width: 40px">4区</span><input class="input numbers" inputmode="decimal" value="5"><span class="unit">km</span><button class="button button-danger button-small" type="button">消す</button></div>
+                <button class="button button-secondary" type="button">区を足す</button>
+              </div>
+            </fieldset>
+            <label class="field"><span class="field-label">メモ</span><textarea class="input">7:00 に正門前に集合。ゼッケンは当日配ります。</textarea></label>
+            <button class="button button-primary button-block" type="submit">保存</button>
+          </form>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>編集のときは見出しが「大会を編集」、戻る先は R2。</li>
+          <li>保存すると R2 へ。入力の誤りは、その欄の下に赤い枠のエラーで出す。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R3 時間制</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r1.html">‹ 大会</a></nav>
+        <main class="content">
+          <h1 class="title1">大会を登録</h1>
+          <form class="group" style="gap: 16px">
+            <label class="field"><span class="field-label">大会名</span><input class="input" value="湖畔リレーマラソン"></label>
+            <fieldset class="field" style="border: 0; margin: 0; padding: 0; min-width: 0">
+              <legend class="field-label" style="padding: 0; margin-bottom: 4px">種別</legend>
+              <div class="segments">
+                <label class="segment"><input type="radio" name="kind-time"><span class="headline">距離制</span></label>
+                <label class="segment segment-selected"><input type="radio" name="kind-time" checked><span class="headline">時間制</span></label>
+              </div>
+            </fieldset>
+            <label class="field"><span class="field-label">開催日</span><input class="input" type="date" value="2027-04-11"></label>
+            <label class="field"><span class="field-label">締め切り</span><input class="input" type="datetime-local" value="2027-03-28T23:59"></label>
+            <label class="field"><span class="field-label">目標周回数</span><span class="input-row"><input class="input numbers" inputmode="numeric" value="75"><span class="unit">周</span></span></label>
+            <label class="field"><span class="field-label">制限時間</span><span class="input-row"><input class="input numbers" inputmode="numeric" value="360"><span class="unit">分</span></span></label>
+            <label class="field"><span class="field-label">1周の距離</span><span class="input-row"><input class="input numbers" inputmode="decimal" value="2"><span class="unit">km</span></span></label>
+            <label class="field"><span class="field-label">メモ</span><textarea class="input"></textarea></label>
+            <button class="button button-primary button-block" type="submit">保存</button>
+          </form>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation"><p>時間制を選ぶと、区の距離の代わりに「制限時間」と「1周の距離」が出て、目標はタイムではなく周回数になる。区は R7 で足したり消したりする。</p></div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

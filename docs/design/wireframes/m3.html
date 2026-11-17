@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M3 承認</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>M3 承認（幹事） / Approvals</h1>
+    <p>承認待ちの紐付けを出す。参考：Strava の承認制クラブの「Pending Requests」（申請を1件ずつ承認・却下する）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>M3 承認</figcaption>
+      <div class="frame">
+        <header class="large-title"><h1>承認</h1></header>
+        <main class="content">
+          <section class="group">
+            <h2 class="group-heading">承認待ち（2）</h2>
+            <ul class="cards">
+              <li class="card card-stack">
+                <div class="card-main">
+                  <span class="headline">中村 結衣</span>
+                  <span class="subheadline">LINE の名前：ゆい</span>
+                  <span class="subheadline">11月15日（日）9:12 にログイン</span>
+                </div>
+                <div class="button-row"><button class="button button-primary" type="button">承認</button><button class="button button-danger" type="button">却下</button></div>
+              </li>
+              <li class="card card-stack">
+                <div class="card-main">
+                  <span class="headline">森 さくら</span>
+                  <span class="subheadline">LINE の名前：Sakura M</span>
+                  <span class="subheadline">11月14日（土）21:40 にログイン</span>
+                </div>
+                <div class="button-row"><button class="button button-primary" type="button">承認</button><button class="button button-danger" type="button">却下</button></div>
+              </li>
+            </ul>
+          </section>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab tab-current" href="m3.html" aria-current="page"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>名簿の名前と LINE の名前を並べ、本人か見比べられるようにする。</li>
+          <li>承認は確認しない。却下は先に確認する。理由はアプリの外で伝える。</li>
+          <li>承認待ちがないときは「承認待ちはありません」と出す。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>M3 確認：却下する</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="reject-title">
+            <h2 class="headline" id="reject-title">中村 結衣（ゆい）を却下しますか？</h2>
+            <p class="body">この人は tasuki を使えません。理由はアプリの外で伝えてください。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">却下する</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,233 @@
+/*
+ * Shared styles for the wireframes (#148).
+ * Every value comes from docs/design/ui.md (#146): Tailwind's default palette,
+ * the Human Interface Guidelines' text styles, Tailwind's 4 px scale, and
+ * Material 3 card lists. Classes are named after what they are on the screen.
+ */
+
+:root {
+  --slate-50: #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-300: #CBD5E1;
+  --slate-500: #64748B;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-900: #0F172A;
+  --white: #FFFFFF;
+  --blue-100: #DBEAFE;
+  --blue-700: #1D4ED8;
+  --green-100: #DCFCE7;
+  --green-800: #166534;
+  --amber-100: #FEF3C7;
+  --amber-800: #92400E;
+  --red-700: #B91C1C;
+  --line-green: #06C755;
+  --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+* { box-sizing: border-box; }
+
+/* The page that holds the phone frames. Not part of any screen. */
+body {
+  margin: 0;
+  background: var(--slate-300);
+  color: var(--slate-900);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.sheet { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+.sheet-header { max-width: 840px; display: flex; flex-direction: column; gap: 8px; }
+.sheet-header h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; }
+.sheet-header p { margin: 0; font-size: 15px; line-height: 20px; }
+.sheet-header a, .annotation a { color: var(--blue-700); }
+.frames { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+.frame-wrap { margin: 0; display: flex; flex-direction: column; gap: 8px; width: 390px; }
+.frame-wrap > figcaption { font-size: 15px; line-height: 20px; font-weight: 600; }
+.annotation { background: var(--white); border-radius: 8px; padding: 12px 16px; font-size: 15px; line-height: 20px; }
+.annotation ul { margin: 0; padding-left: 20px; }
+.annotation p { margin: 0; }
+
+/* One phone screen, 390 px wide (iPhone 12 to 16). It grows when the screen scrolls. */
+.frame {
+  width: 390px;
+  min-height: 844px;
+  background: var(--slate-50);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Top of a screen */
+.topbar {
+  min-height: 44px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border-bottom: 1px solid var(--slate-200);
+}
+.back { color: var(--blue-700); text-decoration: none; font-weight: 600; }
+.large-title { background: var(--white); border-bottom: 1px solid var(--slate-200); padding: 16px; display: flex; align-items: flex-end; gap: 12px; }
+.large-title h1 { margin: 0; font-size: 34px; line-height: 41px; font-weight: 700; flex-grow: 1; }
+
+.content { flex-grow: 1; padding: 16px; display: flex; flex-direction: column; gap: 24px; }
+.content-center { flex-grow: 1; padding: 16px; display: flex; flex-direction: column; justify-content: center; gap: 24px; text-align: center; }
+
+/* Text styles (Human Interface Guidelines) */
+.title1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; }
+.title2 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 700; }
+.headline { margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; }
+.body { margin: 0; font-size: 17px; line-height: 22px; }
+.subheadline { margin: 0; font-size: 15px; line-height: 20px; color: var(--slate-600); }
+.footnote { margin: 0; font-size: 13px; line-height: 18px; color: var(--slate-600); }
+.numbers { font-variant-numeric: tabular-nums; }
+
+/* Groups and card lists (Material 3 cards) */
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group-heading { margin: 0; font-size: 13px; line-height: 18px; color: var(--slate-600); }
+.cards { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.card {
+  min-height: 72px;
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.card-stack { flex-direction: column; align-items: stretch; }
+.card-row { display: flex; align-items: center; gap: 12px; }
+.card-main { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.chevron { color: var(--slate-600); }
+.panel { background: var(--white); border: 1px solid var(--slate-200); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; }
+.facts dt { font-size: 15px; line-height: 20px; color: var(--slate-600); }
+.facts dd { margin: 0; }
+
+/* State labels */
+.label { flex-shrink: 0; font-size: 13px; line-height: 18px; padding: 3px 8px; border-radius: 9999px; white-space: nowrap; }
+.label-confirmed { color: var(--green-800); background: var(--green-100); }
+.label-waiting { color: var(--amber-800); background: var(--amber-100); }
+.label-undecided { color: var(--slate-700); background: var(--slate-100); }
+.label-error { color: var(--red-700); background: var(--white); border: 1px solid var(--red-700); padding: 2px 7px; }
+
+/* Buttons */
+.button {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button-block { display: flex; width: 100%; }
+.button-primary { background: var(--blue-700); color: var(--white); border: 0; }
+.button-secondary { background: var(--white); color: var(--blue-700); border: 1px solid var(--slate-500); }
+.button-danger { background: var(--white); color: var(--red-700); border: 1px solid var(--red-700); }
+.button-disabled { background: var(--slate-100); color: var(--slate-600); border: 0; cursor: default; }
+.button-small { min-height: 44px; padding: 0 12px; font-size: 15px; }
+.button-row { display: flex; gap: 8px; }
+.button-row > .button { flex: 1 1 0; }
+/* LINE Login button: LINE's colors and wording (LINE Login button design guidelines) */
+.button-line { background: var(--line-green); color: var(--white); border: 0; gap: 12px; }
+.line-logo { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--white); font-size: 11px; line-height: 24px; text-align: center; }
+
+/* Form fields */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-label { font-size: 15px; line-height: 20px; color: var(--slate-600); }
+.input {
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--white);
+  border: 1px solid var(--slate-500);
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+textarea.input { padding: 10px 12px; min-height: 88px; resize: vertical; }
+.input-row { display: flex; gap: 8px; align-items: center; }
+.unit { color: var(--slate-600); flex-shrink: 0; }
+
+/* A row of choices that works like radio buttons */
+.segments { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 8px; }
+.segment {
+  min-height: 44px;
+  border: 1px solid var(--slate-500);
+  border-radius: 8px;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  cursor: pointer;
+}
+.segment input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.segment-selected { background: var(--blue-100); border: 2px solid var(--blue-700); color: var(--blue-700); }
+.segment-mark { font-size: 22px; line-height: 28px; }
+
+/* Messages */
+.note { margin: 0; padding: 12px 16px; border-radius: 8px; font-size: 15px; line-height: 20px; }
+.note-warning { color: var(--amber-800); background: var(--amber-100); }
+.note-info { color: var(--slate-700); background: var(--slate-100); }
+.note-error { color: var(--red-700); background: var(--white); border: 1px solid var(--red-700); }
+
+/* Tables of times (Strava's splits) */
+.times { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.times th { text-align: left; font-size: 13px; line-height: 18px; font-weight: 400; color: var(--slate-600); padding: 0 0 4px; }
+.times td { padding: 8px 0; border-top: 1px solid var(--slate-200); }
+.times .right { text-align: right; }
+
+/* The bar at the bottom (HIG tab bar, Material 3 navigation bar) */
+.tabbar {
+  min-height: 49px;
+  background: var(--white);
+  border-top: 1px solid var(--slate-200);
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+.tab { min-height: 49px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; line-height: 18px; color: var(--slate-600); text-decoration: none; position: relative; }
+.tab-icon { width: 24px; height: 24px; border-radius: 6px; border: 2px solid currentColor; }
+.tab-current { color: var(--blue-700); font-weight: 600; }
+.tab-current .tab-icon { background: var(--blue-100); }
+.badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; background: var(--red-700); color: var(--white); font-size: 13px; line-height: 18px; text-align: center; }
+
+/* A confirmation over a dimmed screen (HIG alerts) */
+.scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dialog { width: 100%; max-width: 320px; background: var(--white); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; text-align: left; }
+.dialog-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* Focus (WCAG 2.2 Focus Visible) */
+.button:focus-visible, .input:focus-visible, .segment:focus-within, .tab:focus-visible, a:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 2px; }
+.focused { outline: 2px solid var(--blue-700); outline-offset: 2px; }
+
+/* Input states */
+.input-invalid { border-color: var(--red-700); }
+.field-error { margin: 0; font-size: 13px; line-height: 18px; color: var(--red-700); }
+.field-help { margin: 0; font-size: 13px; line-height: 18px; color: var(--slate-600); }
+.input:disabled, .input-disabled { background: var(--slate-100); color: var(--slate-600); }
+
+/* Notifications (Material 3 Snackbar), 16 px above the tab bar */
+.notifications { position: absolute; left: 16px; right: 16px; bottom: 65px; display: flex; flex-direction: column; gap: 8px; }
+.notification { margin: 0; padding: 12px 16px; background: var(--white); border: 1px solid var(--slate-200); border-radius: 8px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
+.notification-error { color: var(--red-700); border-color: var(--red-700); }
+
+/* A sample on the component sheet, not a screen */
+.specimen { background: var(--white); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; width: 390px; }
+.specimen h2 { margin: 0; font-size: 22px; line-height: 28px; }
+.specimen-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

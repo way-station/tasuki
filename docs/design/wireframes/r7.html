@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R7 走順の編集</title>
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="sheet">
+  <header class="sheet-header">
+    <p><a href="index.html">‹ 画面の一覧 / All screens</a></p>
+    <h1>R7 走順の編集（幹事） / Running order editor</h1>
+    <p>区を順に並べ、区ごとの走者、状態（下書き／確定）、予想を出す。走者はエントリーのメンバーから選び、1人が何区でも走れる。参考：TeamSnap のラインナップ（選んだ人に順番を付け、公開するまで管理者だけに見せる）。</p>
+  </header>
+  <div class="frames">
+
+    <figure class="frame-wrap">
+      <figcaption>R7 距離制・下書き（保存していない変更あり）</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 市民駅伝</a></nav>
+        <main class="content">
+          <header class="group">
+            <h1 class="title1">走順</h1>
+            <p><span class="label label-undecided">下書き</span></p>
+          </header>
+          <ol class="cards">
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">1区</span><span class="subheadline numbers">5 km</span></span></div>
+              <div class="input-row">
+                <select class="input" aria-label="1区の走者"><option>佐藤 健</option><option>鈴木 花子</option><option>高橋 翔</option><option>選ばない</option></select>
+              </div>
+            </li>
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">2区</span><span class="subheadline numbers">3.2 km</span></span></div>
+              <div class="input-row">
+                <select class="input" aria-label="2区の走者"><option>鈴木 花子</option><option>佐藤 健</option><option>高橋 翔</option><option>選ばない</option></select>
+              </div>
+            </li>
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">3区</span><span class="subheadline numbers">3.2 km</span></span><span class="label label-undecided">未定</span></div>
+              <div class="input-row">
+                <select class="input" aria-label="3区の走者"><option>選ばない</option><option>佐藤 健</option><option>鈴木 花子</option><option>高橋 翔</option></select>
+              </div>
+            </li>
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">4区</span><span class="subheadline numbers">5 km</span></span></div>
+              <div class="input-row">
+                <select class="input" aria-label="4区の走者"><option>佐藤 健</option><option>鈴木 花子</option><option>高橋 翔</option><option>選ばない</option></select>
+              </div>
+            </li>
+          </ol>
+          <section class="panel">
+            <div class="card-row"><span class="card-main"><span class="subheadline">予想タイム（保存した走順から）</span></span><span class="title2 numbers">52:55</span></div>
+            <p class="note note-info">保存していない変更があります。保存すると予想が更新されます。空きの区（3区）は除いています。</p>
+          </section>
+          <div class="group">
+            <button class="button button-primary button-block" type="button">保存</button>
+            <button class="button button-disabled button-block" type="button" aria-disabled="true">確定する</button>
+            <p class="footnote">確定するには、すべての区に走者を入れて、保存してください。</p>
+          </div>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>距離制の区は、説明欄の区の距離と同じ数。最初に保存するまでは、すべて「未定」で始まる。</li>
+          <li>走者の選択肢はエントリーのメンバーと「選ばない」（区を空ける）。</li>
+          <li>「確定する」は、すべての区に走者が入り、変更をすべて保存したときだけ押せる。押せないときは、その理由を下に出す。</li>
+          <li>確定するとメンバーに見え、状態は <span class="label label-confirmed">走順確定</span> になる。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R7 時間制・下書き</figcaption>
+      <div class="frame">
+        <nav class="topbar"><a class="back" href="r2.html#organizer">‹ 湖畔リレーマラソン</a></nav>
+        <main class="content">
+          <header class="group">
+            <h1 class="title1">走順</h1>
+            <p><span class="label label-undecided">下書き</span></p>
+          </header>
+          <ol class="cards">
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">1区</span></span><button class="button button-danger button-small" type="button">区を消す</button></div>
+              <select class="input" aria-label="1区の走者"><option>佐藤 健</option></select>
+            </li>
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">2区</span></span><button class="button button-danger button-small" type="button">区を消す</button></div>
+              <select class="input" aria-label="2区の走者"><option>鈴木 花子</option></select>
+            </li>
+            <li class="card card-stack">
+              <div class="card-row"><span class="card-main"><span class="headline">3区</span></span><button class="button button-danger button-small" type="button">区を消す</button></div>
+              <select class="input" aria-label="3区の走者"><option>高橋 翔</option></select>
+            </li>
+          </ol>
+          <button class="button button-secondary button-block" type="button">区を足す</button>
+          <section class="panel">
+            <div class="card-row"><span class="card-main"><span class="subheadline">予想周回数</span></span><span class="title2 numbers">72 周</span></div>
+            <p class="footnote">目標 75 周・制限時間 360 分・1周 2 km</p>
+          </section>
+          <div class="group">
+            <button class="button button-primary button-block" type="button">保存</button>
+            <button class="button button-primary button-block" type="button">確定する</button>
+          </div>
+        </main>
+        <nav class="tabbar" aria-label="メイン">
+          <a class="tab tab-current" href="r1.html"><span class="tab-icon"></span>大会</a>
+          <a class="tab" href="m1.html"><span class="tab-icon"></span>名簿</a>
+          <a class="tab" href="m3.html"><span class="tab-icon"></span>承認<span class="badge">2</span></a>
+          <a class="tab" href="p1.html"><span class="tab-icon"></span>自分</a>
+        </nav>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>時間制は区を自由に足したり消したりする。最初に保存するまでは1区だけ。</li>
+          <li>区に距離はない。予想は周回数。</li>
+        </ul>
+      </div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <figcaption>R7 確認：確定した後に保存する</figcaption>
+      <div class="frame">
+        <div class="scrim">
+          <div class="dialog" role="alertdialog" aria-labelledby="edit-confirmed-title">
+            <h2 class="headline" id="edit-confirmed-title">確定した走順を変えますか？</h2>
+            <p class="body">保存すると、すぐメンバーに見えます。走順は確定のままです。</p>
+            <p class="note note-warning">走る区が減るため、この大会のラップタイムが消える人：佐藤 健。平均タイムは計算し直されます。</p>
+            <div class="dialog-actions">
+              <button class="button button-danger" type="button">保存する</button>
+              <button class="button button-secondary" type="button">やめる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">
+        <ul>
+          <li>確定した後の保存のときだけ出す。区が減る走者がいなければ、注意の文は出さない。</li>
+          <li>変更はすべて履歴に残るが、MVP には履歴を見る画面はない。</li>
+        </ul>
+      </div>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>
