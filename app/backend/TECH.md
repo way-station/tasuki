@@ -92,6 +92,9 @@ The application reads **only environment variables**; it never loads `.env` itse
 | `FRONTEND_DIR` | no | — | The built frontend to serve; set to `/frontend` in the production image (ADR-0018) |
 | `ORGANIZER_LINE_USER_IDS` | no | — | Organizers, as comma-separated LINE user IDs (ADR-0006). The Dev Container sets `dev-organizer` |
 | `DEV_LOGIN_ENABLED` | no | — | Only `true` turns on `POST /api/v1/dev/login` (ADR-0009). Set only in `infra/compose.dev.yaml`; never in production |
+| `LINE_CHANNEL_ID` | no | — | The channel ID of the LINE Login channel (ADR-0007) |
+| `LINE_CHANNEL_SECRET` | no | — | The channel secret of the LINE Login channel; it also verifies the ID tokens (ADR-0020). Keep it in the secrets |
+| `LINE_REDIRECT_URI` | no | — | The callback URL registered on the channel: `<backend origin>/api/v1/auth/line/callback`. Only when all three LINE variables are set are `POST /api/v1/auth/line/authorize` and `GET /api/v1/auth/line/callback` registered; otherwise the backend starts without LINE Login and logs a warning |
 | `BACKEND_PORT` | no | `8080` | Host port of the backend container (`infra/.env`, compose only) |
 | `MONGO_PORT` | no | `27017` | Host port of the MongoDB container (`infra/.env`, compose only) |
 | `POSTGRES_PORT` | no | `5432` | Host port of the PostgreSQL container (`infra/.env`, compose only) |
@@ -248,6 +251,10 @@ Names are descriptive, including method receivers (`func (client *Client) Ping`)
 | --- | --- | --- |
 | GET | `/health` | Pings MongoDB and PostgreSQL at the same time. `200` only when both are reachable, otherwise `503`; the body says which store is unreachable (`{"status":"error","mongo":"ok","postgres":"unreachable"}`) |
 | POST | `/api/v1/dev/login` | Dev-only login as any LINE user (ADR-0009). Exists only with `DEV_LOGIN_ENABLED=true` |
+| GET | `/api/v1/invite-links/{token}` | Checks an invite link before login: the team name, or `404 invite_unusable` |
+| POST | `/api/v1/auth/line/authorize` | Starts LINE Login and returns LINE's login page. Exists only while LINE Login is configured |
+| GET | `/api/v1/auth/line/callback` | LINE's callback: redirects to the frontend's `/auth/complete` with a one-time code or an error. Exists only while LINE Login is configured |
+| POST | `/api/v1/session` | Exchanges the one-time code for the session cookie |
 | GET | `/api/v1/me` | The caller: display name, organizer or not, link status, roster member (`docs/design/api.md`) |
 | DELETE | `/api/v1/session` | Logs out: revokes the session and clears the cookie |
 
@@ -373,6 +380,9 @@ app/backend/
 | `FRONTEND_DIR` | — | — | 配信するビルド済みの frontend。本番用イメージでは `/frontend`（ADR-0018） |
 | `ORGANIZER_LINE_USER_IDS` | — | — | 幹事。LINE のユーザー ID をカンマ区切りで（ADR-0006）。Dev Container では `dev-organizer` |
 | `DEV_LOGIN_ENABLED` | — | — | `true` のときだけ `POST /api/v1/dev/login` を有効にする（ADR-0009）。設定するのは `infra/compose.dev.yaml` だけで、本番には書かない |
+| `LINE_CHANNEL_ID` | — | — | LINE ログインのチャネルのチャネル ID（ADR-0007） |
+| `LINE_CHANNEL_SECRET` | — | — | LINE ログインのチャネルのチャネルシークレット。ID トークンの確認にも使う（ADR-0020）。シークレットとして管理する |
+| `LINE_REDIRECT_URI` | — | — | チャネルに登録した callback の URL：`<backend の origin>/api/v1/auth/line/callback`。LINE の 3 つの変数がすべてあるときだけ、`POST /api/v1/auth/line/authorize` と `GET /api/v1/auth/line/callback` を登録する。ないときは LINE ログインなしで起動し、警告をログに出す |
 | `BACKEND_PORT` | — | `8080` | backend コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `MONGO_PORT` | — | `27017` | MongoDB コンテナのホスト側ポート（`infra/.env`、compose のみ） |
 | `POSTGRES_PORT` | — | `5432` | PostgreSQL コンテナのホスト側ポート（`infra/.env`、compose のみ） |
@@ -529,6 +539,10 @@ make down
 | --- | --- | --- |
 | GET | `/health` | MongoDB と PostgreSQL に同時に ping します。両方に届くときだけ `200`、それ以外は `503`。どちらに届かないかを本文で返します（`{"status":"error","mongo":"ok","postgres":"unreachable"}`） |
 | POST | `/api/v1/dev/login` | 開発専用。任意の LINE ユーザーとしてログインする（ADR-0009）。`DEV_LOGIN_ENABLED=true` のときだけある |
+| GET | `/api/v1/invite-links/{token}` | ログインの前に招待リンクを確かめる。チーム名、または `404 invite_unusable` |
+| POST | `/api/v1/auth/line/authorize` | LINE ログインを始め、LINE のログイン画面を返す。LINE ログインが設定されているときだけある |
+| GET | `/api/v1/auth/line/callback` | LINE の callback。ワンタイムコードかエラーをつけて、frontend の `/auth/complete` へリダイレクトする。LINE ログインが設定されているときだけある |
+| POST | `/api/v1/session` | ワンタイムコードをセッションの cookie に交換する |
 | GET | `/api/v1/me` | 呼んだ人：表示名、幹事かどうか、紐付けの状態、名簿のメンバー（`docs/design/api.md`） |
 | DELETE | `/api/v1/session` | ログアウト。セッションを無効にし、cookie を消す |
 
