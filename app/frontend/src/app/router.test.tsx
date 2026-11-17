@@ -74,7 +74,7 @@ describe("createAppRouter", () => {
     ["/races/123/invitations", "Invitations"],
     ["/races/123/attendance", "Attendance"],
     ["/races/123/entry", "Entry"],
-    ["/races/123/running-order", "Running order"],
+    ["/races/123/running-order", "走順"],
     ["/races/123/laps", "自分のラップタイム"],
     ["/me", "Taro Yamada"],
     ["/roster", "名簿"],
