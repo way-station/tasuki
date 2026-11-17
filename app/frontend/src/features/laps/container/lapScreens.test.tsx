@@ -46,7 +46,7 @@ function myLaps(times: string[], averageTime = "3:28"): MyLaps {
 }
 
 function newLap(number: number) {
-  return screen.getByLabelText(`New lap ${number}`);
+  return screen.getByLabelText(`${number} km`);
 }
 
 describe("R2 lap times", () => {
@@ -69,12 +69,14 @@ describe("R2 lap times", () => {
         }),
     });
 
-    const section = await screen.findByRole("region", { name: "Lap times" });
+    const section = await screen.findByRole("region", { name: "走者のラップタイム" });
+    const [taro, jiro] = within(section).getAllByRole("listitem");
     expect(
-      within(section)
+      within(taro)
         .getAllByRole("row")
         .map((row) => row.textContent),
-    ).toEqual(["RunnerLaps (per km)", "Taro3:20, 3:25", "JiroNone yet"]);
+    ).toEqual(["kmラップ", "13:20", "23:25"]);
+    expect(jiro).toHaveTextContent("Jiroまだ入力されていません");
   });
 
   it("asks nothing for a member", async () => {
@@ -87,18 +89,17 @@ describe("R2 lap times", () => {
 });
 
 describe("L1 my lap times", () => {
-  it("shows the laps in the order they were submitted, with the average", async () => {
+  it("shows the laps in the order they were submitted, one per km", async () => {
     renderAt("/races/race-1/laps", member, {
       getMyLaps: () => Promise.resolve(myLaps(["3:20", "3:25"], "3:23")),
     });
 
-    const list = await screen.findByRole("list", { name: "Submitted lap times" });
+    const list = await screen.findByRole("list", { name: "送ったラップタイム" });
     expect(
       within(list)
         .getAllByRole("listitem")
         .map((item) => item.firstChild?.textContent),
-    ).toEqual(["Lap 1: 3:20", "Lap 2: 3:25"]);
-    expect(screen.getByText("3:23 /km")).toBeInTheDocument();
+    ).toEqual(["1 km3:20", "2 km3:25"]);
   });
 
   it("tells a member who does not run in a confirmed order", async () => {
@@ -122,16 +123,17 @@ describe("L1 my lap times", () => {
       submitLaps,
     });
 
-    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "3:20" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add another lap" }));
+    fireEvent.change(await screen.findByLabelText("1 km"), { target: { value: "3:20" } });
+    fireEvent.click(screen.getByRole("button", { name: "行を足す" }));
     fireEvent.change(newLap(2), { target: { value: " 3:25 " } });
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: "送る" }));
 
     expect(await screen.findByText("Lap times added.")).toBeInTheDocument();
     expect(submitLaps).toHaveBeenCalledWith("race-1", ["3:20", "3:25"]);
-    await waitFor(() => expect(newLap(1)).toHaveValue(""));
-    expect(screen.queryByLabelText("New lap 2")).not.toBeInTheDocument();
-    expect(await screen.findByText("Lap 2: 3:25")).toBeInTheDocument();
+    // The two laps are in the list now, so the empty form starts at 3 km.
+    await waitFor(() => expect(newLap(3)).toHaveValue(""));
+    expect(screen.queryByLabelText("4 km")).not.toBeInTheDocument();
+    expect(await screen.findByText("3:25")).toBeInTheDocument();
   });
 
   it("shows the error of each invalid time and sends nothing", async () => {
@@ -141,8 +143,8 @@ describe("L1 my lap times", () => {
       submitLaps,
     });
 
-    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "325" } });
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.change(await screen.findByLabelText("1 km"), { target: { value: "325" } });
+    fireEvent.click(screen.getByRole("button", { name: "送る" }));
 
     expect(
       await screen.findByText("Enter the time per km as M:SS, for example 3:25.", {
@@ -160,9 +162,9 @@ describe("L1 my lap times", () => {
       editLap,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Edit lap 1" }));
-    fireEvent.change(screen.getByLabelText("Lap 1"), { target: { value: "3:18" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save lap 1" }));
+    fireEvent.click(await screen.findByRole("button", { name: "1 km のラップタイムを直す" }));
+    fireEvent.change(screen.getByLabelText("1 km"), { target: { value: "3:18" } });
+    fireEvent.click(screen.getByRole("button", { name: "1 km のラップタイムを保存" }));
 
     expect(await screen.findByText("Lap time saved.")).toBeInTheDocument();
     expect(editLap).toHaveBeenCalledWith("race-1", "lap-1", "3:18");
@@ -175,7 +177,7 @@ describe("L1 my lap times", () => {
       deleteLap,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Delete lap 1" }));
+    fireEvent.click(await screen.findByRole("button", { name: "1 km のラップタイムを消す" }));
 
     expect(await screen.findByText("Lap time deleted.")).toBeInTheDocument();
     expect(deleteLap).toHaveBeenCalledWith("race-1", "lap-1");
@@ -187,7 +189,7 @@ describe("L1 my lap times", () => {
       deleteLap: () => Promise.reject(problem(404, "not_found")),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Delete lap 1" }));
+    fireEvent.click(await screen.findByRole("button", { name: "1 km のラップタイムを消す" }));
 
     expect(
       await screen.findByText("Your lap times changed in the meantime. The latest are shown."),
@@ -197,7 +199,7 @@ describe("L1 my lap times", () => {
   it("keeps the lap times being added as a draft after reloading", async () => {
     const stubs = { getMyLaps: () => Promise.resolve(myLaps([])) };
     renderAt("/races/race-1/laps", member, stubs);
-    fireEvent.change(await screen.findByLabelText("New lap 1"), { target: { value: "3:20" } });
+    fireEvent.change(await screen.findByLabelText("1 km"), { target: { value: "3:20" } });
 
     document.body.innerHTML = "";
     renderAt("/races/race-1/laps", member, stubs);
@@ -213,7 +215,7 @@ describe("P1 my profile", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Taro" })).toBeInTheDocument();
-    expect(screen.getByText("3:28 /km")).toBeInTheDocument();
+    expect(screen.getByText("3:28")).toBeInTheDocument();
     expect(screen.getByText("8")).toBeInTheDocument();
   });
 });
