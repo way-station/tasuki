@@ -102,7 +102,7 @@ describe("R2 attendance answer", () => {
     expect(dialog).not.toHaveTextContent("If you are in the entry");
     fireEvent.click(within(dialog).getByRole("button", { name: "Answer not attending" }));
 
-    expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
     expect(answerAttendance).toHaveBeenCalledWith("race-1", "not_attending");
   });

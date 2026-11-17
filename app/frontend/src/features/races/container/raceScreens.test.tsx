@@ -70,13 +70,13 @@ describe("R1 race list", () => {
   it("shows a member My races and Invitations", async () => {
     renderAt("/", member, { listRaces: () => Promise.resolve(races) });
 
-    const myRaces = await screen.findByRole("region", { name: "My races" });
-    expect(within(myRaces).getByRole("button", { name: "Hakone" })).toBeInTheDocument();
-    expect(myRaces).toHaveTextContent("Running order confirmed");
-    const invitations = screen.getByRole("region", { name: "Invitations" });
-    expect(within(invitations).getByRole("button", { name: "Ekiden" })).toBeInTheDocument();
-    expect(invitations).toHaveTextContent("Not answered");
-    expect(screen.queryByRole("button", { name: "Register race" })).not.toBeInTheDocument();
+    const myRaces = await screen.findByRole("region", { name: "参加する大会" });
+    expect(within(myRaces).getByRole("button", { name: /^Hakone/ })).toBeInTheDocument();
+    expect(myRaces).toHaveTextContent("走順確定");
+    const invitations = screen.getByRole("region", { name: "招待" });
+    expect(within(invitations).getByRole("button", { name: /^Ekiden/ })).toBeInTheDocument();
+    expect(invitations).toHaveTextContent("未回答");
+    expect(screen.queryByRole("button", { name: "大会を登録" })).not.toBeInTheDocument();
   });
 
   it("shows an organizer every race and the register button", async () => {
@@ -85,10 +85,10 @@ describe("R1 race list", () => {
         Promise.resolve({ races: [{ id: "race-1", name: "Hakone", race_date: "2026-11-23" }] }),
     });
 
-    const all = await screen.findByRole("region", { name: "All races" });
-    expect(within(all).getByRole("button", { name: "Hakone" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Register race" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Invitations" })).not.toBeInTheDocument();
+    const all = await screen.findByRole("region", { name: "すべての大会" });
+    expect(within(all).getByRole("button", { name: /^Hakone/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "大会を登録" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "招待" })).not.toBeInTheDocument();
   });
 
   it("opens a race", async () => {
@@ -97,7 +97,7 @@ describe("R1 race list", () => {
       getRace: () => Promise.resolve(memberRace),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Hakone" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Hakone/ }));
 
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/race-1");
@@ -110,14 +110,14 @@ describe("R2 race detail", () => {
 
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(screen.getByText("Meet at 7:00")).toBeInTheDocument();
-    expect(screen.getByText("3.2 km")).toBeInTheDocument();
+    expect(screen.getByText("5 km・3.2 km")).toBeInTheDocument();
     const attendance = screen.getByRole("group", { name: "My attendance" });
     expect(within(attendance).getByRole("button", { name: "Attending" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.queryByText("Deadline")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Edit race" })).not.toBeInTheDocument();
+    expect(screen.queryByText("締め切り")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "大会を編集" })).not.toBeInTheDocument();
   });
 
   it("shows a runner the way to their lap times", async () => {
@@ -125,7 +125,7 @@ describe("R2 race detail", () => {
       getRace: () => Promise.resolve({ ...memberRace, can_submit_laps: true }),
     });
 
-    expect(await screen.findByRole("button", { name: "My lap times" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "自分のラップタイム" })).toBeInTheDocument();
   });
 
   it("shows an organizer the deadline and the organizer screens", async () => {
@@ -133,8 +133,8 @@ describe("R2 race detail", () => {
       getRace: () => Promise.resolve(distanceRace),
     });
 
-    expect(await screen.findByText("Deadline")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Edit race" }));
+    expect(await screen.findByText("締め切り")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "大会を編集" }));
 
     expect(await screen.findByRole("heading", { name: "Edit race" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/race-1/edit");
@@ -145,7 +145,7 @@ describe("R2 race detail", () => {
       getRace: () => Promise.resolve({ ...distanceRace, my_attendance: "not_attending" }),
     });
 
-    expect(await screen.findByText("Deadline")).toBeInTheDocument();
+    expect(await screen.findByText("締め切り")).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "My attendance" })).not.toBeInTheDocument();
   });
 
@@ -160,10 +160,10 @@ describe("R2 race detail", () => {
 
 describe("R3 register race", () => {
   function fillRequired() {
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Hakone" } });
-    fireEvent.change(screen.getByLabelText("Race date"), { target: { value: "2026-11-23" } });
-    fireEvent.change(screen.getByLabelText("Deadline"), { target: { value: "2026-11-01T18:00" } });
-    fireEvent.change(screen.getByLabelText("Leg 1"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("大会名"), { target: { value: "Hakone" } });
+    fireEvent.change(screen.getByLabelText("開催日"), { target: { value: "2026-11-23" } });
+    fireEvent.change(screen.getByLabelText("締め切り"), { target: { value: "2026-11-01T18:00" } });
+    fireEvent.change(screen.getByLabelText("1区の距離"), { target: { value: "5" } });
   }
 
   it("registers the race and opens it", async () => {
@@ -175,7 +175,7 @@ describe("R3 register race", () => {
     await screen.findByRole("heading", { name: "Register race" });
 
     fillRequired();
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/race-1");
@@ -193,46 +193,46 @@ describe("R3 register race", () => {
     renderAt("/races/new", organizer, { createRace });
     await screen.findByRole("heading", { name: "Register race" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Name")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("大会名")).toHaveAttribute("aria-invalid", "true");
     expect(createRace).not.toHaveBeenCalled();
   });
 
   it("shows the time race fields and keeps the distance input when switching back", async () => {
     renderAt("/races/new", organizer, {});
     await screen.findByRole("heading", { name: "Register race" });
-    fireEvent.change(screen.getByLabelText("Leg 1"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("1区の距離"), { target: { value: "5" } });
 
-    fireEvent.click(screen.getByLabelText("Time"));
-    expect(screen.getByLabelText("Time limit (minutes)")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Leg 1")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("時間制"));
+    expect(screen.getByLabelText("制限時間")).toBeInTheDocument();
+    expect(screen.queryByLabelText("1区の距離")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("Distance"));
-    expect(screen.getByLabelText("Leg 1")).toHaveValue("5");
+    fireEvent.click(screen.getByLabelText("距離制"));
+    expect(screen.getByLabelText("1区の距離")).toHaveValue("5");
   });
 
   it("adds and removes legs", async () => {
     renderAt("/races/new", organizer, {});
     await screen.findByRole("heading", { name: "Register race" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Add leg" }));
-    expect(screen.getByLabelText("Leg 2")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "区を足す" }));
+    expect(screen.getByLabelText("2区の距離")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Remove leg 1" }));
-    expect(screen.queryByLabelText("Leg 2")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "1区を消す" }));
+    expect(screen.queryByLabelText("2区の距離")).not.toBeInTheDocument();
   });
 
   it("keeps the input as a draft after reloading", async () => {
     renderAt("/races/new", organizer, {});
     await screen.findByRole("heading", { name: "Register race" });
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Hakone" } });
+    fireEvent.change(screen.getByLabelText("大会名"), { target: { value: "Hakone" } });
 
     document.body.innerHTML = "";
     renderAt("/races/new", organizer, {});
 
-    expect(await screen.findByLabelText("Name")).toHaveValue("Hakone");
+    expect(await screen.findByLabelText("大会名")).toHaveValue("Hakone");
   });
 });
 
@@ -244,10 +244,10 @@ describe("R3 edit race", () => {
       updateRace,
     });
 
-    expect(await screen.findByLabelText("Name")).toHaveValue("Hakone");
-    expect(screen.getByLabelText("Leg 2")).toHaveValue("3.2");
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Hakone 2026" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByLabelText("大会名")).toHaveValue("Hakone");
+    expect(screen.getByLabelText("2区の距離")).toHaveValue("3.2");
+    fireEvent.change(screen.getByLabelText("大会名"), { target: { value: "Hakone 2026" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     expect(await screen.findByText("Race saved.")).toBeInTheDocument();
     expect(updateRace).toHaveBeenCalledWith(
@@ -265,18 +265,18 @@ describe("R3 edit race", () => {
         return Promise.reject(problem(409, "version_conflict"));
       },
     });
-    fireEvent.change(await screen.findByLabelText("Name"), { target: { value: "Mine" } });
+    fireEvent.change(await screen.findByLabelText("大会名"), { target: { value: "Mine" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    const alert = await screen.findByText(/Someone else saved this race first\. Your changes/);
+    const alert = await screen.findByText("ほかの人が先に保存しました。");
     expect(alert).toBeInTheDocument();
-    expect(screen.getByLabelText("Name")).toHaveValue("Mine");
+    expect(screen.getByLabelText("大会名")).toHaveValue("Mine");
 
-    fireEvent.click(screen.getByRole("button", { name: "Load the latest (discard my changes)" }));
+    fireEvent.click(screen.getByRole("button", { name: "最新を読み込む（自分の変更を捨てる）" }));
 
     await waitFor(() =>
-      expect(screen.getByLabelText("Name")).toHaveValue("Hakone (by someone else)"),
+      expect(screen.getByLabelText("大会名")).toHaveValue("Hakone (by someone else)"),
     );
   });
 });

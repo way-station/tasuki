@@ -110,7 +110,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({}));
 
-        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
@@ -131,7 +131,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({ is_organizer: true, ...unlinked }));
 
-        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
