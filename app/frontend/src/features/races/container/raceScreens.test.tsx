@@ -111,11 +111,8 @@ describe("R2 race detail", () => {
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(screen.getByText("Meet at 7:00")).toBeInTheDocument();
     expect(screen.getByText("5 km・3.2 km")).toBeInTheDocument();
-    const attendance = screen.getByRole("group", { name: "My attendance" });
-    expect(within(attendance).getByRole("button", { name: "Attending" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const attendance = screen.getByRole("group", { name: "あなたの出欠" });
+    expect(within(attendance).getByRole("radio", { name: "参加" })).toBeChecked();
     expect(screen.queryByText("締め切り")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "大会を編集" })).not.toBeInTheDocument();
   });
@@ -146,7 +143,7 @@ describe("R2 race detail", () => {
     });
 
     expect(await screen.findByText("締め切り")).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "My attendance" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "あなたの出欠" })).not.toBeInTheDocument();
   });
 
   it("says a race is not found when the user may not see it", async () => {
