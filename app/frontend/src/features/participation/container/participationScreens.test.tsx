@@ -41,7 +41,7 @@ function raceWith(myAttendance: Race["my_attendance"]): Race {
 }
 
 async function attendanceGroup() {
-  return within(await screen.findByRole("group", { name: "My attendance" }));
+  return within(await screen.findByRole("group", { name: "あなたの出欠" }));
 }
 
 describe("R2 attendance answer", () => {
@@ -52,7 +52,7 @@ describe("R2 attendance answer", () => {
       answerAttendance,
     });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Attending" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "参加" }));
 
     expect(await screen.findByText("Your answer was saved.")).toBeInTheDocument();
     expect(answerAttendance).toHaveBeenCalledWith("race-1", "attending");
@@ -66,7 +66,7 @@ describe("R2 attendance answer", () => {
       answerAttendance,
     });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Undecided" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "保留" }));
 
     const dialog = screen.getByRole("alertdialog", { name: "Change your answer?" });
     expect(dialog).toHaveTextContent("If you are in the entry, you are removed from it");
@@ -82,7 +82,7 @@ describe("R2 attendance answer", () => {
       answerAttendance,
     });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Undecided" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "保留" }));
     fireEvent.click(screen.getByRole("button", { name: "Change answer" }));
 
     await waitFor(() => expect(answerAttendance).toHaveBeenCalledWith("race-1", "undecided"));
@@ -95,7 +95,7 @@ describe("R2 attendance answer", () => {
       answerAttendance,
     });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Not attending" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "不参加" }));
 
     const dialog = screen.getByRole("alertdialog", { name: "Answer not attending?" });
     expect(dialog).toHaveTextContent("Not attending is final");
@@ -110,7 +110,7 @@ describe("R2 attendance answer", () => {
   it("gives both warnings when leaving attending for not attending", async () => {
     renderAt("/races/race-1", member, { getRace: () => Promise.resolve(raceWith("attending")) });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Not attending" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "不参加" }));
 
     const dialog = screen.getByRole("alertdialog");
     expect(dialog).toHaveTextContent("Not attending is final");
@@ -123,7 +123,7 @@ describe("R2 attendance answer", () => {
       answerAttendance: () => Promise.reject(problem(404, "not_found")),
     });
 
-    fireEvent.click((await attendanceGroup()).getByRole("button", { name: "Attending" }));
+    fireEvent.click((await attendanceGroup()).getByRole("radio", { name: "参加" }));
 
     expect(await screen.findByText("You can no longer answer for this race.")).toBeInTheDocument();
   });
@@ -134,7 +134,7 @@ describe("R2 attendance answer", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "My attendance" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "あなたの出欠" })).not.toBeInTheDocument();
   });
 });
 
@@ -154,7 +154,7 @@ describe("R4 invitations", () => {
       invite,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Invite Jiro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Jiro さんを誘う" }));
 
     expect(await screen.findByText("Jiro was invited.")).toBeInTheDocument();
     expect(invite).toHaveBeenCalledWith("race-1", "m2");
@@ -166,7 +166,7 @@ describe("R4 invitations", () => {
       invite: () => Promise.reject(problem(422, "validation_failed")),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Invite Jiro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Jiro さんを誘う" }));
 
     expect(await screen.findByText("Jiro has left the team.")).toBeInTheDocument();
   });
@@ -178,7 +178,7 @@ describe("R4 invitations", () => {
       cancelInvitation,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Cancel Taro's invitation" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの招待を取り消す" }));
 
     const dialog = screen.getByRole("alertdialog", { name: "Cancel Taro's invitation?" });
     expect(dialog).toHaveTextContent(
@@ -193,17 +193,17 @@ describe("R4 invitations", () => {
 });
 
 describe("R5 attendance list", () => {
-  it("shows each invited member's answer", async () => {
+  it("groups the invited members by their answer", async () => {
     renderAt("/races/race-1/attendance", organizer, {
       listInvitations: () => Promise.resolve(invitations),
     });
 
-    const rows = await screen.findAllByRole("row");
-    expect(rows.map((row) => row.textContent)).toEqual([
-      "MemberAnswer",
-      "TaroAttending",
-      "HanakoNot answered",
-    ]);
+    const attending = await screen.findByRole("region", { name: "○ 参加" });
+    expect(within(attending).getByRole("heading")).toHaveTextContent("○ 参加（1）");
+    expect(within(attending).getByText("Taro")).toBeInTheDocument();
+    const notAnswered = screen.getByRole("region", { name: "未回答" });
+    expect(within(notAnswered).getByText("Hanako")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "△ 保留" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });
@@ -223,12 +223,12 @@ describe("R6 entry", () => {
       createEntry,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Create entry" }));
+    fireEvent.click(await screen.findByRole("button", { name: "エントリーを作る" }));
     expect(screen.getByText("Enter a name.")).toBeInTheDocument();
     expect(createEntry).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText("Entry name"), { target: { value: "Team A" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create entry" }));
+    fireEvent.change(screen.getByLabelText("エントリーの名前"), { target: { value: "Team A" } });
+    fireEvent.click(screen.getByRole("button", { name: "エントリーを作る" }));
 
     expect(await screen.findByText("The entry was created.")).toBeInTheDocument();
     expect(createEntry).toHaveBeenCalledWith("race-1", "Team A");
@@ -241,8 +241,10 @@ describe("R6 entry", () => {
       createEntry: () => Promise.reject(problem(409, "state_conflict")),
     });
 
-    fireEvent.change(await screen.findByLabelText("Entry name"), { target: { value: "Team B" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create entry" }));
+    fireEvent.change(await screen.findByLabelText("エントリーの名前"), {
+      target: { value: "Team B" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "エントリーを作る" }));
 
     expect(await screen.findByText("This race already has an entry.")).toBeInTheDocument();
   });
@@ -255,9 +257,11 @@ describe("R6 entry", () => {
       addEntryMember,
     });
 
-    const attending = within(await screen.findByRole("region", { name: "Attending members" }));
-    expect(attending.queryByRole("button", { name: "Add Hanako" })).not.toBeInTheDocument();
-    fireEvent.click(attending.getByRole("button", { name: "Add Taro" }));
+    const attending = within(await screen.findByRole("region", { name: "入れられるメンバー" }));
+    expect(
+      attending.queryByRole("button", { name: "Hanako さんを入れる" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(attending.getByRole("button", { name: "Taro さんを入れる" }));
 
     await waitFor(() => expect(addEntryMember).toHaveBeenCalledWith("race-1", "e1", "m1"));
   });
@@ -270,7 +274,7 @@ describe("R6 entry", () => {
       removeEntryMember,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Remove Saburo" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Saburo さんを外す" }));
 
     const dialog = screen.getByRole("alertdialog", { name: "Remove Saburo from the entry?" });
     expect(dialog).toHaveTextContent("also removed from the running order");
