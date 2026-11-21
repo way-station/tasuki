@@ -15,7 +15,7 @@ describe("toRosterMemberBody", () => {
   it("needs a name", () => {
     expect(toRosterMemberBody({ name: "  " })).toEqual({
       ok: false,
-      errors: { name: "Enter a name." },
+      errors: { name: "名前を入れてください。" },
     });
   });
 });
