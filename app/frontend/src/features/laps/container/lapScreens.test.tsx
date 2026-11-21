@@ -108,7 +108,7 @@ describe("L1 my lap times", () => {
     });
 
     expect(
-      await screen.findByRole("heading", { name: "Lap times are not open" }),
+      await screen.findByRole("heading", { name: "ラップタイムはまだ入れられません" }),
     ).toBeInTheDocument();
   });
 
@@ -128,7 +128,7 @@ describe("L1 my lap times", () => {
     fireEvent.change(newLap(2), { target: { value: " 3:25 " } });
     fireEvent.click(screen.getByRole("button", { name: "送る" }));
 
-    expect(await screen.findByText("Lap times added.")).toBeInTheDocument();
+    expect(await screen.findByText("ラップタイムを足しました。")).toBeInTheDocument();
     expect(submitLaps).toHaveBeenCalledWith("race-1", ["3:20", "3:25"]);
     // The two laps are in the list now, so the empty form starts at 3 km.
     await waitFor(() => expect(newLap(3)).toHaveValue(""));
@@ -147,7 +147,7 @@ describe("L1 my lap times", () => {
     fireEvent.click(screen.getByRole("button", { name: "送る" }));
 
     expect(
-      await screen.findByText("Enter the time per km as M:SS, for example 3:25.", {
+      await screen.findByText("1 km のタイムを 分:秒 で入れてください（例：3:25）。", {
         selector: "p[id]",
       }),
     ).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe("L1 my lap times", () => {
     fireEvent.change(screen.getByLabelText("1 km"), { target: { value: "3:18" } });
     fireEvent.click(screen.getByRole("button", { name: "1 km のラップタイムを保存" }));
 
-    expect(await screen.findByText("Lap time saved.")).toBeInTheDocument();
+    expect(await screen.findByText("ラップタイムを保存しました。")).toBeInTheDocument();
     expect(editLap).toHaveBeenCalledWith("race-1", "lap-1", "3:18");
   });
 
@@ -179,7 +179,7 @@ describe("L1 my lap times", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "1 km のラップタイムを消す" }));
 
-    expect(await screen.findByText("Lap time deleted.")).toBeInTheDocument();
+    expect(await screen.findByText("ラップタイムを消しました。")).toBeInTheDocument();
     expect(deleteLap).toHaveBeenCalledWith("race-1", "lap-1");
   });
 
@@ -192,7 +192,7 @@ describe("L1 my lap times", () => {
     fireEvent.click(await screen.findByRole("button", { name: "1 km のラップタイムを消す" }));
 
     expect(
-      await screen.findByText("Your lap times changed in the meantime. The latest are shown."),
+      await screen.findByText("ラップタイムがほかの画面で変えられていたので、最新を出しています。"),
     ).toBeInTheDocument();
   });
 
