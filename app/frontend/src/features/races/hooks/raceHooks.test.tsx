@@ -152,7 +152,7 @@ describe("useCreateRace", () => {
       .mutateAsync({ ...validForm, name: "" })
       .catch((caught: unknown) => caught);
 
-    expect(raceFormErrors(error)).toEqual({ name: "Enter a name." });
+    expect(raceFormErrors(error)).toEqual({ name: "名前を入れてください。" });
     expect(createRace).not.toHaveBeenCalled();
   });
 
@@ -198,7 +198,7 @@ describe("useUpdateRace", () => {
       .mutateAsync({ form: { ...validForm, deadline: "" }, version: 3 })
       .catch((caught: unknown) => caught);
 
-    expect(raceFormErrors(error)).toEqual({ deadline: "Enter the deadline." });
+    expect(raceFormErrors(error)).toEqual({ deadline: "締め切りを入れてください。" });
     expect(updateRace).not.toHaveBeenCalled();
   });
 
