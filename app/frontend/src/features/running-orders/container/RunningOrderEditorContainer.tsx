@@ -29,12 +29,17 @@ export function RunningOrderEditorContainer() {
 
   if (editor.error !== null) {
     if (errorCode(editor.error) === "not_found") {
-      return <RunningOrderMessage title="Race not found" />;
+      return <RunningOrderMessage title="大会が見つかりません" />;
     }
-    return <RunningOrderMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RunningOrderMessage
+        title="うまくいきませんでした"
+        message="ページを読み込み直してください。"
+      />
+    );
   }
   if (editor.data === undefined) {
-    return <RunningOrderMessage title="Loading…" />;
+    return <RunningOrderMessage title="読み込み中…" />;
   }
   const data = editor.data.editor;
   if (data.entry === null) {
@@ -45,7 +50,7 @@ export function RunningOrderEditorContainer() {
     );
   }
   if (draft.value === undefined) {
-    return <RunningOrderMessage title="Loading…" />;
+    return <RunningOrderMessage title="読み込み中…" />;
   }
   const entry = data.entry;
   const form = draft.value;
@@ -54,7 +59,7 @@ export function RunningOrderEditorContainer() {
   const onVersionConflict = () => {
     // The draft stays; the organizer chooses to load the latest (ADR-0013).
     setConflict(true);
-    notify("error", "Someone else saved this running order first.");
+    notify("error", "ほかの人が先にこの走順を保存しました。");
   };
 
   const save = async () => {
@@ -62,21 +67,18 @@ export function RunningOrderEditorContainer() {
     try {
       await saveOrder.mutateAsync({ entryId: entry.id, form, version: draft.version ?? 0 });
       draft.clear();
-      notify("success", "Running order saved.");
+      notify("success", "走順を保存しました。");
     } catch (caught) {
       switch (errorCode(caught)) {
         case "version_conflict":
           onVersionConflict();
           return;
         case "validation_failed":
-          notify(
-            "error",
-            "The running order no longer matches the race or the entry. Load the latest.",
-          );
+          notify("error", "走順が大会かエントリーと合わなくなりました。最新を読み込んでください。");
           setConflict(true);
           return;
         default:
-          notify("error", "The running order could not be saved. Try again.");
+          notify("error", "走順を保存できませんでした。もう一度お試しください。");
       }
     }
   };
@@ -97,20 +99,20 @@ export function RunningOrderEditorContainer() {
     }
     try {
       await confirmOrder.mutateAsync({ entryId: entry.id, version });
-      notify("success", "Running order confirmed. Attending members can see it now.");
+      notify("success", "走順を確定しました。参加するメンバーに見えるようになりました。");
     } catch (caught) {
       switch (errorCode(caught)) {
         case "version_conflict":
           onVersionConflict();
           return;
         case "state_conflict":
-          notify("error", "This running order is already confirmed.");
+          notify("error", "この走順はもう確定しています。");
           return;
         case "validation_failed":
-          notify("error", "Every leg needs a runner before confirming.");
+          notify("error", "確定するには、すべての区に走者を入れてください。");
           return;
         default:
-          notify("error", "The running order could not be confirmed. Try again.");
+          notify("error", "走順を確定できませんでした。もう一度お試しください。");
       }
     }
   };
@@ -141,11 +143,12 @@ export function RunningOrderEditorContainer() {
       />
       {losing !== null && (
         <Confirmation
-          title="Save and delete lap times?"
-          messages={[
-            `${losing.map((runner) => runner.name).join(", ")} will run fewer legs. Their lap times for this race are deleted, and their average time is recalculated.`,
-          ]}
-          confirmLabel="Save"
+          title="確定した走順を変えますか？"
+          messages={["保存すると、すぐメンバーに見えます。走順は確定のままです。"]}
+          warning={`走る区が減るため、この大会のラップタイムが消える人：${losing.map((runner) => runner.name).join("、")}。平均タイムは計算し直されます。`}
+          confirmLabel="保存する"
+          busyLabel="保存中…"
+          tone="danger"
           busy={saveOrder.isPending}
           onConfirm={() => void save()}
           onCancel={() => setLosing(null)}
