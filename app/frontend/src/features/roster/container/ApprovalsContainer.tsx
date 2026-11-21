@@ -17,10 +17,12 @@ export function ApprovalsContainer() {
   const [rejecting, setRejecting] = useState<PendingLinkView | null>(null);
 
   if (links.error !== null) {
-    return <RosterMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RosterMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   if (links.data === undefined) {
-    return <RosterMessage title="Loading…" />;
+    return <RosterMessage title="読み込み中…" />;
   }
 
   // Another organizer may have decided first: the list is fetched again.
@@ -30,17 +32,17 @@ export function ApprovalsContainer() {
       notify(
         "success",
         approved
-          ? `${link.lineDisplayName} is approved as ${link.rosterMember.name}.`
-          : `${link.lineDisplayName} is rejected. Tell them outside the app.`,
+          ? `${link.rosterMember.name}（${link.lineDisplayName}）を承認しました。`
+          : `${link.rosterMember.name}（${link.lineDisplayName}）を却下しました。理由はアプリの外で伝えてください。`,
       );
     } catch (caught) {
       switch (errorCode(caught)) {
         case "state_conflict":
         case "not_found":
-          notify("error", "This link was already decided. The latest is shown.");
+          notify("error", "この紐付けはもう決まっていたので、最新を出しています。");
           return;
         default:
-          notify("error", "The link could not be decided. Try again.");
+          notify("error", "紐付けを決められませんでした。もう一度お試しください。");
       }
     } finally {
       setRejecting(null);
@@ -57,11 +59,11 @@ export function ApprovalsContainer() {
       />
       {rejecting !== null && (
         <Confirmation
-          title={`Reject ${rejecting.lineDisplayName}?`}
-          messages={[
-            `${rejecting.lineDisplayName} is not linked to ${rejecting.rosterMember.name}. To join, they need a new invite link. Tell them outside the app.`,
-          ]}
-          confirmLabel="Reject"
+          title={`${rejecting.rosterMember.name}（${rejecting.lineDisplayName}）を却下しますか？`}
+          messages={["この人は tasuki を使えません。理由はアプリの外で伝えてください。"]}
+          confirmLabel="却下する"
+          busyLabel="却下中…"
+          tone="danger"
           busy={reject.isPending}
           onConfirm={() => void decide(rejecting, false)}
           onCancel={() => setRejecting(null)}
