@@ -22,29 +22,34 @@ export function EntryContainer() {
   const [removing, setRemoving] = useState<MemberRef | null>(null);
 
   if (editor.error !== null) {
-    return <ParticipationMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <ParticipationMessage
+        title="うまくいきませんでした"
+        message="ページを読み込み直してください。"
+      />
+    );
   }
   if (editor.data === undefined) {
-    return <ParticipationMessage title="Loading…" />;
+    return <ParticipationMessage title="読み込み中…" />;
   }
   const entry = editor.data.entry;
 
   const create = async () => {
     const name = newName.trim();
     if (name === "") {
-      setNameError("Enter a name.");
+      setNameError("名前を入れてください。");
       return;
     }
     setNameError(undefined);
     try {
       await createEntry.mutateAsync(name);
-      notify("success", "The entry was created.");
+      notify("success", "エントリーを作りました。");
     } catch (caught) {
       notify(
         "error",
         errorCode(caught) === "state_conflict"
-          ? "This race already has an entry."
-          : "The entry could not be created. Try again.",
+          ? "この大会にはもうエントリーがあります。"
+          : "エントリーを作れませんでした。もう一度お試しください。",
       );
     }
   };
@@ -59,8 +64,8 @@ export function EntryContainer() {
       notify(
         "error",
         errorCode(caught) === "validation_failed"
-          ? `${member.name} is no longer attending.`
-          : `${member.name} could not be added. Try again.`,
+          ? `${member.name} さんはもう「参加」ではありません。`
+          : `${member.name} さんを入れられませんでした。もう一度お試しください。`,
       );
     }
   };
@@ -72,7 +77,7 @@ export function EntryContainer() {
     try {
       await removeMember.mutateAsync({ entryId: entry.id, rosterMemberId: member.rosterMemberId });
     } catch {
-      notify("error", `${member.name} could not be removed. Try again.`);
+      notify("error", `${member.name} さんを外せませんでした。もう一度お試しください。`);
     } finally {
       setRemoving(null);
     }
@@ -93,11 +98,13 @@ export function EntryContainer() {
       />
       {removing !== null && (
         <Confirmation
-          title={`Remove ${removing.name} from the entry?`}
+          title={`${removing.name} さんをエントリーから外しますか？`}
           messages={[
-            `${removing.name} is also removed from the running order. If the running order is confirmed, their lap times for this race are deleted and their average time is recalculated.`,
+            "走順からも外れます。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直されます。",
           ]}
-          confirmLabel="Remove"
+          confirmLabel="外す"
+          busyLabel="外し中…"
+          tone="danger"
           busy={busy}
           onConfirm={() => void remove(removing)}
           onCancel={() => setRemoving(null)}

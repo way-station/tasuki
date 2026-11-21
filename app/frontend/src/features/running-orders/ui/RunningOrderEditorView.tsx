@@ -5,7 +5,26 @@ import type {
   RunningOrderForm,
   RunningOrderStatus,
 } from "../types/runningOrder.ts";
-import { notDecided, statusLabels } from "./labels.ts";
+import {
+  blockButton,
+  card,
+  cards,
+  cardStack,
+  content,
+  dangerButton,
+  group,
+  input,
+  label,
+  neutralLabel,
+  numbers,
+  panel,
+  primaryButton,
+  regularButton,
+  secondaryButton,
+  smallButton,
+  warningNote,
+} from "../../../shared/ui/classes.ts";
+import { noRunner, notDecided, statusColors, statusLabels } from "./labels.ts";
 import { PredictionText } from "./PredictionText.tsx";
 
 type RunningOrderEditorViewProps = {
@@ -29,7 +48,7 @@ type RunningOrderEditorViewProps = {
   onLoadLatest: () => void;
 };
 
-// R7 (docs/design/screens.md). Runners are picked from the entry; time races
+// R7 (docs/design/screens.md, wireframes/r7.html). Runners are picked from the entry; time races
 // add and remove legs.
 export function RunningOrderEditorView({
   entryName,
@@ -58,75 +77,127 @@ export function RunningOrderEditorView({
     onChange({ runnerIds: form.runnerIds.filter((_, legIndex) => legIndex !== index) });
 
   return (
-    <section>
-      <h1>Running order</h1>
-      <p>
-        {entryName} · {status === null ? "Not saved yet" : statusLabels[status]}
-      </p>
+    <section className={content}>
+      <div className={group}>
+        <h1 className="text-title1 font-bold">走順</h1>
+        <p className="flex items-center gap-2">
+          <span className="text-subheadline text-slate-600">{entryName}</span>
+          {status !== null && (
+            <span className={`${label} ${statusColors[status]}`}>{statusLabels[status]}</span>
+          )}
+        </p>
+      </div>
       {conflict && (
-        <div role="alert">
-          <p>Someone else saved this running order first. Your changes are kept here.</p>
-          <button type="button" onClick={onLoadLatest}>
-            Load the latest (discard my changes)
+        <div role="alert" className={`${warningNote} flex flex-col gap-3`}>
+          <p>ほかの人が先に保存しました。</p>
+          <button
+            type="button"
+            onClick={onLoadLatest}
+            className={`${secondaryButton} ${regularButton}`}
+          >
+            最新を読み込む（自分の変更を捨てる）
           </button>
         </div>
       )}
-      <ol>
+      <ol aria-label="区と走者" className={cards}>
         {form.runnerIds.map((runnerId, index) => {
           const legNumber = index + 1;
           const distanceKm = legRule.type === "distance" ? legRule.distancesKm[index] : undefined;
           return (
-            <li key={index}>
-              <label>
-                Leg {legNumber}
-                {distanceKm !== undefined && ` (${distanceKm} km)`}
-                <select
-                  value={runnerId ?? ""}
-                  onChange={(event) =>
-                    setRunner(index, event.target.value === "" ? null : event.target.value)
-                  }
-                >
-                  <option value="">{notDecided}</option>
-                  {runners.map((runner) => (
-                    <option key={runner.rosterMemberId} value={runner.rosterMemberId}>
-                      {runner.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {legRule.type === "time" && form.runnerIds.length > 1 && (
-                <button type="button" onClick={() => removeLeg(index)}>
-                  Remove leg {legNumber}
-                </button>
-              )}
+            <li key={index} className={`${card} ${cardStack}`}>
+              <div className="flex items-center gap-3">
+                <span className="flex min-w-0 grow flex-col gap-0.5">
+                  <span className="text-headline font-semibold">{legNumber}区</span>
+                  {distanceKm !== undefined && (
+                    <span className={`text-subheadline text-slate-600 ${numbers}`}>
+                      {distanceKm} km
+                    </span>
+                  )}
+                </span>
+                {runnerId === null && (
+                  <span className={`${label} ${neutralLabel}`}>{notDecided}</span>
+                )}
+                {legRule.type === "time" && form.runnerIds.length > 1 && (
+                  <button
+                    type="button"
+                    aria-label={`${legNumber}区を消す`}
+                    onClick={() => removeLeg(index)}
+                    className={`${dangerButton} ${smallButton}`}
+                  >
+                    区を消す
+                  </button>
+                )}
+              </div>
+              <select
+                aria-label={`${legNumber}区の走者`}
+                className={input}
+                value={runnerId ?? ""}
+                onChange={(event) =>
+                  setRunner(index, event.target.value === "" ? null : event.target.value)
+                }
+              >
+                <option value="">{noRunner}</option>
+                {runners.map((runner) => (
+                  <option key={runner.rosterMemberId} value={runner.rosterMemberId}>
+                    {runner.name}
+                  </option>
+                ))}
+              </select>
             </li>
           );
         })}
       </ol>
       {legRule.type === "time" && (
-        <button type="button" onClick={() => onChange({ runnerIds: [...form.runnerIds, null] })}>
-          Add leg
+        <button
+          type="button"
+          onClick={() => onChange({ runnerIds: [...form.runnerIds, null] })}
+          className={`${secondaryButton} ${blockButton}`}
+        >
+          区を足す
         </button>
       )}
-      <PredictionText prediction={prediction} />
-      {unsaved && status !== null && (
-        <p>This is the prediction of the saved order. Saving updates it.</p>
-      )}
-      <button type="button" onClick={onSave} disabled={busy}>
-        Save
-      </button>
-      {status !== "confirmed" && (
-        <>
-          <button type="button" onClick={onConfirm} disabled={busy || !canConfirm}>
-            Confirm
-          </button>
-          {unsaved ? (
-            <p>Save your changes before confirming.</p>
-          ) : (
-            !everyRunner && <p>Every leg needs a runner before confirming.</p>
-          )}
-        </>
-      )}
+      <section aria-label="予想" className={panel}>
+        <PredictionText
+          prediction={prediction}
+          note={unsaved && status !== null ? "（保存した走順から）" : ""}
+        />
+        {unsaved && status !== null && (
+          <p className="rounded-lg bg-slate-100 px-4 py-3 text-subheadline text-slate-700">
+            保存していない変更があります。保存すると予想が更新されます。
+          </p>
+        )}
+      </section>
+      <div className={group}>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={busy}
+          className={`${primaryButton} ${blockButton}`}
+        >
+          保存
+        </button>
+        {status !== "confirmed" && (
+          <>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={busy || !canConfirm}
+              className={`${primaryButton} ${blockButton}`}
+            >
+              確定する
+            </button>
+            {unsaved ? (
+              <p className="text-footnote text-slate-600">確定するには、変更を保存してください。</p>
+            ) : (
+              !everyRunner && (
+                <p className="text-footnote text-slate-600">
+                  確定するには、すべての区に走者を入れてください。
+                </p>
+              )
+            )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

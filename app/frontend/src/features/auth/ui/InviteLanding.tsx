@@ -1,4 +1,6 @@
+import { CenteredScreen } from "./CenteredScreen.tsx";
 import { LineLoginButton } from "./LineLoginButton.tsx";
+import { LoginFailedNote } from "./LoginFailedNote.tsx";
 
 type InviteLandingProps = {
   teamName: string;
@@ -10,10 +12,14 @@ type InviteLandingProps = {
 // A1. Shows the team name, never the roster member's name (docs/design/screens.md).
 export function InviteLanding({ teamName, onLogin, loggingIn, failed }: InviteLandingProps) {
   return (
-    <section>
-      <h1>{teamName}</h1>
-      {failed && <p role="alert">Login failed. Please try again.</p>}
+    <CenteredScreen>
+      <div className="flex flex-col gap-2">
+        <p className="text-subheadline text-slate-600">チームに招待されています</p>
+        <h1 className="text-title1 font-bold">{teamName}</h1>
+      </div>
+      {failed && <LoginFailedNote />}
       <LineLoginButton onLogin={onLogin} loggingIn={loggingIn} />
-    </section>
+      <p className="text-footnote text-slate-600">ログインすると、幹事が承認するまで待ちます。</p>
+    </CenteredScreen>
   );
 }

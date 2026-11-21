@@ -25,7 +25,7 @@ export function AuthCompleteContainer() {
   switch (state) {
     case "pending":
     case "done":
-      return <AuthMessage title="Logging in…" />;
+      return <AuthMessage title="ログイン中…" />;
     case "unavailable":
       return <Navigate to="/unavailable" replace />;
     case "failed":

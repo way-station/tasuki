@@ -8,7 +8,7 @@ import {
 
 describe("lapsFormErrors", () => {
   it("reads the per-time errors of an invalid form only", () => {
-    const errors = { "times.0": "Enter the time per km as M:SS, for example 3:25." };
+    const errors = { "times.0": "1 km のタイムを 分:秒 で入れてください（例：3:25）。" };
 
     expect(lapsFormErrors(new LapsFormInvalidError(errors))).toEqual(errors);
     expect(lapsFormErrors(new Error("network"))).toBeUndefined();

@@ -81,7 +81,7 @@ describe("route guard", () => {
         getMe: () => Promise.reject(problem(401, "unauthenticated")),
       });
 
-      expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "ログイン" })).toBeInTheDocument();
       expect(router.state.location.pathname).toBe("/login");
       expect(router.state.location.search).toEqual({ redirect: "/races/1/running-order" });
     });
@@ -89,9 +89,9 @@ describe("route guard", () => {
 
   describe("member", () => {
     it.each([
-      ["pending", "Waiting for approval"],
-      ["rejected", "You were rejected"],
-      ["none", "tasuki cannot be used"],
+      ["pending", "幹事の承認を待っています"],
+      ["rejected", "却下されました"],
+      ["none", "tasuki を利用できません"],
     ] as const)("with status %s sees %s instead of the team's screens", async (status, heading) => {
       renderAt("/", me({ status, roster_member: null }));
 
@@ -110,7 +110,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({}));
 
-        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
@@ -122,7 +122,7 @@ describe("route guard", () => {
       async (status) => {
         renderAt("/roster", me({ is_organizer: true, status, roster_member: null }));
 
-        expect(await screen.findByRole("heading", { name: "Roster" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "名簿" })).toBeInTheDocument();
       },
     );
 
@@ -131,7 +131,7 @@ describe("route guard", () => {
       async (path) => {
         const router = renderAt(path, me({ is_organizer: true, ...unlinked }));
 
-        expect(await screen.findByRole("heading", { name: "Races" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
         expect(router.state.location.pathname).toBe("/");
       },
     );
@@ -147,7 +147,7 @@ describe("route guard", () => {
     renderAt("/", { getMe: () => Promise.reject(problem(403, "forbidden")) });
 
     expect(
-      await screen.findByRole("heading", { name: "Something went wrong" }),
+      await screen.findByRole("heading", { name: "うまくいきませんでした" }),
     ).toBeInTheDocument();
   });
 });
@@ -157,19 +157,27 @@ describe("login screen", () => {
     const authorizeLine = vi.fn(() => Promise.resolve("https://line.example/auth"));
     renderAt("/login?redirect=%2Fraces%2F1", { authorizeLine });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(await screen.findByRole("button", { name: "LINEでログイン" }));
 
     await waitFor(() => expect(leaveApp).toHaveBeenCalledWith("https://line.example/auth"));
     expect(authorizeLine).toHaveBeenCalledWith(undefined);
     expect(localStorage.getItem("tasuki.returnPath")).toBe("/races/1");
   });
 
+  it("keeps a link for other ways to log in, which leads nowhere yet", async () => {
+    const router = renderAt("/login", {});
+
+    fireEvent.click(await screen.findByRole("link", { name: "そのほかの方法でログイン" }));
+
+    expect(router.state.location.pathname).toBe("/login");
+  });
+
   it("shows an error when LINE Login cannot start", async () => {
     renderAt("/login", { authorizeLine: () => Promise.reject(problem(400, "invalid_request")) });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(await screen.findByRole("button", { name: "LINEでログイン" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Login failed");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ログインできませんでした");
     expect(leaveApp).not.toHaveBeenCalled();
   });
 });
@@ -183,7 +191,7 @@ describe("invite link landing (A1)", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(screen.getByRole("button", { name: "LINEでログイン" }));
 
     await waitFor(() => expect(leaveApp).toHaveBeenCalledWith("https://line.example/auth"));
     expect(authorizeLine).toHaveBeenCalledWith("abc");
@@ -195,7 +203,7 @@ describe("invite link landing (A1)", () => {
     });
 
     expect(
-      await screen.findByRole("heading", { name: "tasuki cannot be used" }),
+      await screen.findByRole("heading", { name: "tasuki を利用できません" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/unavailable");
   });
@@ -220,7 +228,7 @@ describe("login completion (/auth/complete)", () => {
     });
 
     expect(
-      await screen.findByRole("heading", { name: "Waiting for approval" }),
+      await screen.findByRole("heading", { name: "幹事の承認を待っています" }),
     ).toBeInTheDocument();
   });
 
@@ -228,7 +236,7 @@ describe("login completion (/auth/complete)", () => {
     const router = renderAt(`/auth/complete?error=${error}`, {});
 
     expect(
-      await screen.findByRole("heading", { name: "tasuki cannot be used" }),
+      await screen.findByRole("heading", { name: "tasuki を利用できません" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/unavailable");
   });
@@ -236,8 +244,8 @@ describe("login completion (/auth/complete)", () => {
   it("shows an error for a failed or cancelled login", async () => {
     renderAt("/auth/complete?error=login_failed", {});
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Login failed");
-    expect(screen.getByRole("button", { name: "Log in with LINE" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("ログインできませんでした");
+    expect(screen.getByRole("button", { name: "LINEでログイン" })).toBeInTheDocument();
   });
 
   it("shows an error for an unknown, expired, or used code", async () => {
@@ -245,6 +253,6 @@ describe("login completion (/auth/complete)", () => {
       createSession: () => Promise.reject(problem(400, "invalid_request")),
     });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Login failed");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ログインできませんでした");
   });
 });

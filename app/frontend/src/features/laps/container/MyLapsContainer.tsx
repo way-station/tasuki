@@ -37,21 +37,23 @@ export function MyLapsContainer() {
     if (errorCode(myLaps.error) === "not_found") {
       return (
         <LapsMessage
-          title="Lap times are not open"
-          message="You can add lap times once you run in a confirmed running order of this race."
+          title="ラップタイムはまだ入れられません"
+          message="確定した走順でこの大会を走ると、入れられるようになります。"
         />
       );
     }
-    return <LapsMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <LapsMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   if (myLaps.data === undefined || draft.value === undefined) {
-    return <LapsMessage title="Loading…" />;
+    return <LapsMessage title="読み込み中…" />;
   }
   const form = draft.value;
 
   // The lap is gone or the caller no longer runs: the latest laps are shown.
   const notifyGone = () =>
-    notify("error", "Your lap times changed in the meantime. The latest are shown.");
+    notify("error", "ラップタイムがほかの画面で変えられていたので、最新を出しています。");
 
   const submit = async () => {
     setErrors({});
@@ -59,7 +61,7 @@ export function MyLapsContainer() {
       await submitLaps.mutateAsync(form);
       setRound((draft.version ?? round) + 1);
       draft.clear();
-      notify("success", "Lap times added.");
+      notify("success", "ラップタイムを足しました。");
     } catch (caught) {
       const fieldErrors = lapsFormErrors(caught);
       if (fieldErrors !== undefined) {
@@ -71,10 +73,10 @@ export function MyLapsContainer() {
           notifyGone();
           return;
         case "validation_failed":
-          notify("error", "The lap times could not be added. Check the inputs.");
+          notify("error", "ラップタイムを足せませんでした。入力を確かめてください。");
           return;
         default:
-          notify("error", "The lap times could not be added. Try again.");
+          notify("error", "ラップタイムを足せませんでした。もう一度お試しください。");
       }
     }
   };
@@ -93,7 +95,7 @@ export function MyLapsContainer() {
     try {
       await editLap.mutateAsync({ lapId: editing.lapId, time: editing.time });
       setEditing(null);
-      notify("success", "Lap time saved.");
+      notify("success", "ラップタイムを保存しました。");
     } catch (caught) {
       const timeError = lapTimeError(caught);
       if (timeError !== undefined) {
@@ -106,10 +108,10 @@ export function MyLapsContainer() {
           notifyGone();
           return;
         case "validation_failed":
-          setEditing({ ...editing, error: "Check the time." });
+          setEditing({ ...editing, error: "タイムを確かめてください。" });
           return;
         default:
-          notify("error", "The lap time could not be saved. Try again.");
+          notify("error", "ラップタイムを保存できませんでした。もう一度お試しください。");
       }
     }
   };
@@ -117,13 +119,13 @@ export function MyLapsContainer() {
   const remove = async (lapId: string) => {
     try {
       await deleteLap.mutateAsync(lapId);
-      notify("success", "Lap time deleted.");
+      notify("success", "ラップタイムを消しました。");
     } catch (caught) {
       if (errorCode(caught) === "not_found") {
         notifyGone();
         return;
       }
-      notify("error", "The lap time could not be deleted. Try again.");
+      notify("error", "ラップタイムを消せませんでした。もう一度お試しください。");
     }
   };
 

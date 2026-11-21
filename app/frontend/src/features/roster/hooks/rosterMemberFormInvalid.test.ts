@@ -7,7 +7,7 @@ import {
 
 describe("rosterMemberFormErrors", () => {
   it("reads the per-field errors of an invalid form only", () => {
-    const errors = { name: "Enter a name." };
+    const errors = { name: "名前を入れてください。" };
 
     expect(rosterMemberFormErrors(new RosterMemberFormInvalidError(errors))).toEqual(errors);
     expect(rosterMemberFormErrors(new Error("network"))).toBeUndefined();

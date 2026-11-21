@@ -6,10 +6,12 @@ import { ProfileView } from "../ui/ProfileView.tsx";
 export function ProfileContainer() {
   const profile = useProfile();
   if (profile.error !== null) {
-    return <LapsMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <LapsMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   if (profile.data === undefined) {
-    return <LapsMessage title="Loading…" />;
+    return <LapsMessage title="読み込み中…" />;
   }
   return <ProfileView profile={profile.data} />;
 }

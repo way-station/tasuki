@@ -87,7 +87,7 @@ function editorStubs(race: Race, orders: RunningOrder[]): Partial<ApiClient> {
 }
 
 function leg(number: number) {
-  return screen.getByLabelText(new RegExp(`^Leg ${number}\\b`));
+  return screen.getByLabelText(`${number}区の走者`);
 }
 
 describe("R2 running order", () => {
@@ -97,14 +97,14 @@ describe("R2 running order", () => {
       listRunningOrders: () => Promise.resolve({ running_orders: [order("draft", [taro, null])] }),
     });
 
-    const section = await screen.findByRole("region", { name: "Running order of Team A" });
-    expect(section).toHaveTextContent("Draft");
+    const section = await screen.findByRole("region", { name: "Team A の走順" });
+    expect(section).toHaveTextContent("下書き");
     expect(
       within(section)
         .getAllByRole("row")
         .map((row) => row.textContent),
-    ).toEqual(["LegDistanceRunner", "15 kmTaro", "23 kmNot decided"]);
-    expect(section).toHaveTextContent("Prediction: 0:28:10 (some legs are empty and left out)");
+    ).toEqual(["区走者距離", "1区Taro5 km", "2区未定3 km"]);
+    expect(section).toHaveTextContent("予想タイム0:28:10空きの区を除いた予想です。");
   });
 
   it("shows a member who answered attending the confirmed order", async () => {
@@ -115,9 +115,9 @@ describe("R2 running order", () => {
         Promise.resolve({ running_orders: [order("confirmed", [taro, jiro])] }),
     });
 
-    expect(
-      await screen.findByRole("region", { name: "Running order of Team A" }),
-    ).toHaveTextContent("Confirmed");
+    expect(await screen.findByRole("region", { name: "Team A の走順" })).toHaveTextContent(
+      "走順確定",
+    );
   });
 
   it("asks nothing for a member who has not answered attending", async () => {
@@ -140,7 +140,7 @@ describe("R7 running order editor", () => {
       listEntries: () => Promise.resolve({ entries: [] }),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Go to the entry" }));
+    fireEvent.click(await screen.findByRole("button", { name: "エントリーへ" }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/races/race-1/entry"));
   });
@@ -152,14 +152,15 @@ describe("R7 running order editor", () => {
       saveRunningOrder,
     });
 
-    expect(await screen.findByText("Team A · Not saved yet")).toBeInTheDocument();
+    expect(await screen.findByText("Team A")).toBeInTheDocument();
+    expect(screen.queryByText("下書き")).not.toBeInTheDocument();
     expect(leg(1)).toHaveValue("");
     expect(leg(2)).toHaveValue("");
-    expect(screen.queryByRole("button", { name: "Add leg" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "区を足す" })).not.toBeInTheDocument();
     fireEvent.change(leg(1), { target: { value: "m1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Running order saved.")).toBeInTheDocument();
+    expect(await screen.findByText("走順を保存しました。")).toBeInTheDocument();
     expect(saveRunningOrder).toHaveBeenCalledWith("race-1", "e1", {
       legs: [
         { leg_number: 1, roster_member_id: "m1" },
@@ -171,12 +172,12 @@ describe("R7 running order editor", () => {
   it("adds and removes legs for a time race", async () => {
     renderAt("/races/race-1/running-order", organizer, editorStubs(timeRace, []));
 
-    fireEvent.click(await screen.findByRole("button", { name: "Add leg" }));
+    fireEvent.click(await screen.findByRole("button", { name: "区を足す" }));
     expect(leg(2)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Remove leg 1" }));
-    expect(screen.queryByLabelText(/^Leg 2\b/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Remove leg 1" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "1区を消す" }));
+    expect(screen.queryByLabelText("2区の走者")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1区を消す" })).not.toBeInTheDocument();
   });
 
   it("asks to save before confirming, and notes the prediction is of the saved order", async () => {
@@ -186,13 +187,13 @@ describe("R7 running order editor", () => {
       editorStubs(distanceRace, [order("draft", [taro, jiro])]),
     );
 
-    expect(await screen.findByRole("button", { name: "Confirm" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "確定する" })).toBeEnabled();
     fireEvent.change(leg(2), { target: { value: "m1" } });
 
-    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.getByText("Save your changes before confirming.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "確定する" })).toBeDisabled();
+    expect(screen.getByText("確定するには、変更を保存してください。")).toBeInTheDocument();
     expect(
-      screen.getByText("This is the prediction of the saved order. Saving updates it."),
+      screen.getByText("保存していない変更があります。保存すると予想が更新されます。"),
     ).toBeInTheDocument();
   });
 
@@ -203,8 +204,10 @@ describe("R7 running order editor", () => {
       editorStubs(distanceRace, [order("draft", [taro, null])]),
     );
 
-    expect(await screen.findByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.getByText("Every leg needs a runner before confirming.")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "確定する" })).toBeDisabled();
+    expect(
+      screen.getByText("確定するには、すべての区に走者を入れてください。"),
+    ).toBeInTheDocument();
   });
 
   it("confirms a saved draft with every leg filled", async () => {
@@ -214,10 +217,10 @@ describe("R7 running order editor", () => {
       confirmRunningOrder,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Confirm" }));
+    fireEvent.click(await screen.findByRole("button", { name: "確定する" }));
 
     expect(
-      await screen.findByText("Running order confirmed. Attending members can see it now."),
+      await screen.findByText("走順を確定しました。参加するメンバーに見えるようになりました。"),
     ).toBeInTheDocument();
     expect(confirmRunningOrder).toHaveBeenCalledWith("race-1", "e1", 2);
   });
@@ -229,13 +232,13 @@ describe("R7 running order editor", () => {
       saveRunningOrder,
     });
 
-    fireEvent.change(await screen.findByLabelText(/^Leg 2\b/), { target: { value: "m1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.change(await screen.findByLabelText("2区の走者"), { target: { value: "m1" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    const dialog = screen.getByRole("alertdialog", { name: "Save and delete lap times?" });
-    expect(dialog).toHaveTextContent("Jiro will run fewer legs");
+    const dialog = screen.getByRole("alertdialog", { name: "確定した走順を変えますか？" });
+    expect(dialog).toHaveTextContent("ラップタイムが消える人：Jiro。");
     expect(saveRunningOrder).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "保存する" }));
 
     await waitFor(() =>
       expect(saveRunningOrder).toHaveBeenCalledWith("race-1", "e1", {
@@ -255,11 +258,11 @@ describe("R7 running order editor", () => {
       saveRunningOrder,
     });
 
-    fireEvent.change(await screen.findByLabelText(/^Leg 1\b/), { target: { value: "m2" } });
+    fireEvent.change(await screen.findByLabelText("1区の走者"), { target: { value: "m2" } });
     fireEvent.change(leg(2), { target: { value: "m1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Running order saved.")).toBeInTheDocument();
+    expect(await screen.findByText("走順を保存しました。")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
@@ -274,21 +277,21 @@ describe("R7 running order editor", () => {
         return Promise.reject(problem(409, "version_conflict"));
       },
     });
-    fireEvent.change(await screen.findByLabelText(/^Leg 2\b/), { target: { value: "m1" } });
+    fireEvent.change(await screen.findByLabelText("2区の走者"), { target: { value: "m1" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText(/Your changes are kept here\./)).toBeInTheDocument();
+    expect(await screen.findByText("ほかの人が先に保存しました。")).toBeInTheDocument();
     expect(leg(2)).toHaveValue("m1");
 
-    fireEvent.click(screen.getByRole("button", { name: "Load the latest (discard my changes)" }));
+    fireEvent.click(screen.getByRole("button", { name: "最新を読み込む（自分の変更を捨てる）" }));
 
     await waitFor(() => expect(leg(1)).toHaveValue("m2"));
   });
 
   it("keeps the input as a draft after reloading", async () => {
     renderAt("/races/race-1/running-order", organizer, editorStubs(distanceRace, []));
-    fireEvent.change(await screen.findByLabelText(/^Leg 1\b/), { target: { value: "m2" } });
+    fireEvent.change(await screen.findByLabelText("1区の走者"), { target: { value: "m2" } });
 
     document.body.innerHTML = "";
     renderAt("/races/race-1/running-order", organizer, editorStubs(distanceRace, []));

@@ -62,24 +62,24 @@ function renderAt(path: string) {
 describe("createAppRouter", () => {
   it.each([
     ["/invite/abc", "Team"],
-    ["/login", "Log in"],
-    ["/auth/complete", "Log in"],
-    ["/waiting", "Waiting for approval"],
-    ["/rejected", "You were rejected"],
-    ["/unavailable", "tasuki cannot be used"],
-    ["/", "Races"],
-    ["/races/new", "Register race"],
+    ["/login", "ログイン"],
+    ["/auth/complete", "ログイン"],
+    ["/waiting", "幹事の承認を待っています"],
+    ["/rejected", "却下されました"],
+    ["/unavailable", "tasuki を利用できません"],
+    ["/", "大会"],
+    ["/races/new", "大会を登録"],
     ["/races/123", "Hakone"],
-    ["/races/123/edit", "Edit race"],
-    ["/races/123/invitations", "Invitations"],
-    ["/races/123/attendance", "Attendance"],
-    ["/races/123/entry", "Entry"],
-    ["/races/123/running-order", "Running order"],
-    ["/races/123/laps", "My lap times"],
+    ["/races/123/edit", "大会を編集"],
+    ["/races/123/invitations", "招待"],
+    ["/races/123/attendance", "出欠"],
+    ["/races/123/entry", "エントリー"],
+    ["/races/123/running-order", "走順"],
+    ["/races/123/laps", "自分のラップタイム"],
     ["/me", "Taro Yamada"],
-    ["/roster", "Roster"],
+    ["/roster", "名簿"],
     ["/roster/123", "Jiro"],
-    ["/approvals", "Approvals"],
+    ["/approvals", "承認"],
   ])("shows %s as %s", async (path, heading) => {
     renderAt(path);
 
@@ -91,7 +91,9 @@ describe("createAppRouter", () => {
     async (path) => {
       renderAt(path);
 
-      expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+      expect(
+        await screen.findByRole("heading", { name: "ページが見つかりません" }),
+      ).toBeInTheDocument();
     },
   );
 
@@ -106,7 +108,7 @@ describe("createAppRouter", () => {
   it("shows the not-found page inside the common layout", async () => {
     renderAt("/unknown");
 
-    const heading = await screen.findByRole("heading", { name: "Page not found" });
+    const heading = await screen.findByRole("heading", { name: "ページが見つかりません" });
     expect(screen.getByRole("main")).toContainElement(heading);
   });
 });

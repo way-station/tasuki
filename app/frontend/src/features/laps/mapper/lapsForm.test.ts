@@ -19,10 +19,10 @@ describe("toLapsBody", () => {
     expect(toLapsBody({ times: ["3:20", "", "3:5", "3:60", "205"] })).toEqual({
       ok: false,
       errors: {
-        "times.1": "Enter the time per km as M:SS, for example 3:25.",
-        "times.2": "Enter the time per km as M:SS, for example 3:25.",
-        "times.3": "Enter the time per km as M:SS, for example 3:25.",
-        "times.4": "Enter the time per km as M:SS, for example 3:25.",
+        "times.1": "1 km のタイムを 分:秒 で入れてください（例：3:25）。",
+        "times.2": "1 km のタイムを 分:秒 で入れてください（例：3:25）。",
+        "times.3": "1 km のタイムを 分:秒 で入れてください（例：3:25）。",
+        "times.4": "1 km のタイムを 分:秒 で入れてください（例：3:25）。",
       },
     });
   });
@@ -30,7 +30,7 @@ describe("toLapsBody", () => {
   it("needs at least one time", () => {
     expect(toLapsBody({ times: [] })).toEqual({
       ok: false,
-      errors: { times: "Add at least one lap time." },
+      errors: { times: "ラップタイムを 1 つ以上入れてください。" },
     });
   });
 });
@@ -43,7 +43,7 @@ describe("toLapEditBody", () => {
   it("rejects a time that is not M:SS", () => {
     expect(toLapEditBody("3.30")).toEqual({
       ok: false,
-      error: "Enter the time per km as M:SS, for example 3:25.",
+      error: "1 km のタイムを 分:秒 で入れてください（例：3:25）。",
     });
   });
 });

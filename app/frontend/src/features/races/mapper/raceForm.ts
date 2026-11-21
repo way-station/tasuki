@@ -53,14 +53,14 @@ export function toRaceBody(form: RaceForm): RaceBodyResult {
   const errors: RaceFormErrors = {};
   const name = form.name.trim();
   if (name === "") {
-    errors.name = "Enter a name.";
+    errors.name = "名前を入れてください。";
   }
   if (form.raceDate === "") {
-    errors.raceDate = "Enter the race date.";
+    errors.raceDate = "開催日を入れてください。";
   }
   const deadline = toRfc3339(form.deadline);
   if (deadline === undefined) {
-    errors.deadline = "Enter the deadline.";
+    errors.deadline = "締め切りを入れてください。";
   }
 
   const description =
@@ -89,19 +89,19 @@ type TypeFields = Omit<RaceCreateBody["description"], "type" | "race_date" | "de
 
 function distanceFields(form: RaceForm, errors: RaceFormErrors): TypeFields {
   if (form.legDistancesKm.length === 0) {
-    errors.legDistancesKm = "Add at least one leg.";
+    errors.legDistancesKm = "区を 1 つ以上足してください。";
   }
   const legDistancesKm = form.legDistancesKm.map((input, index) => {
     const km = positiveNumber(input);
     if (km === undefined) {
-      errors[`legDistancesKm.${index}`] = "Enter a distance above 0 km.";
+      errors[`legDistancesKm.${index}`] = "0 km より長い距離を入れてください。";
     }
     return km ?? 0;
   });
 
   const totalTime = form.targetTotalTime.trim();
   if (totalTime !== "" && !totalTimePattern.test(totalTime)) {
-    errors.targetTotalTime = "Enter the time as H:MM:SS.";
+    errors.targetTotalTime = "時間:分:秒 で入れてください（例：1:08:00）。";
   }
   return {
     leg_distances_km: legDistancesKm,
@@ -112,17 +112,17 @@ function distanceFields(form: RaceForm, errors: RaceFormErrors): TypeFields {
 function timeFields(form: RaceForm, errors: RaceFormErrors): TypeFields {
   const timeLimitMinutes = positiveInteger(form.timeLimitMinutes);
   if (timeLimitMinutes === undefined) {
-    errors.timeLimitMinutes = "Enter the time limit in whole minutes.";
+    errors.timeLimitMinutes = "制限時間を分の整数で入れてください。";
   }
   const lapDistanceKm = positiveNumber(form.lapDistanceKm);
   if (lapDistanceKm === undefined) {
-    errors.lapDistanceKm = "Enter a distance above 0 km.";
+    errors.lapDistanceKm = "0 km より長い距離を入れてください。";
   }
 
   const lapsInput = form.targetLaps.trim();
   const laps = positiveInteger(lapsInput);
   if (lapsInput !== "" && laps === undefined) {
-    errors.targetLaps = "Enter the laps as a whole number.";
+    errors.targetLaps = "周回数を整数で入れてください。";
   }
   return {
     time_limit_minutes: timeLimitMinutes ?? 0,
