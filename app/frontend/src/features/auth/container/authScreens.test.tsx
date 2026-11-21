@@ -157,7 +157,7 @@ describe("login screen", () => {
     const authorizeLine = vi.fn(() => Promise.resolve("https://line.example/auth"));
     renderAt("/login?redirect=%2Fraces%2F1", { authorizeLine });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(await screen.findByRole("button", { name: "LINEでログイン" }));
 
     await waitFor(() => expect(leaveApp).toHaveBeenCalledWith("https://line.example/auth"));
     expect(authorizeLine).toHaveBeenCalledWith(undefined);
@@ -167,7 +167,7 @@ describe("login screen", () => {
   it("shows an error when LINE Login cannot start", async () => {
     renderAt("/login", { authorizeLine: () => Promise.reject(problem(400, "invalid_request")) });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(await screen.findByRole("button", { name: "LINEでログイン" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ログインできませんでした");
     expect(leaveApp).not.toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe("invite link landing (A1)", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Team" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Log in with LINE" }));
+    fireEvent.click(screen.getByRole("button", { name: "LINEでログイン" }));
 
     await waitFor(() => expect(leaveApp).toHaveBeenCalledWith("https://line.example/auth"));
     expect(authorizeLine).toHaveBeenCalledWith("abc");
@@ -237,7 +237,7 @@ describe("login completion (/auth/complete)", () => {
     renderAt("/auth/complete?error=login_failed", {});
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ログインできませんでした");
-    expect(screen.getByRole("button", { name: "Log in with LINE" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "LINEでログイン" })).toBeInTheDocument();
   });
 
   it("shows an error for an unknown, expired, or used code", async () => {
