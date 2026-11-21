@@ -57,14 +57,13 @@ describe("M1 roster", () => {
       ),
     );
 
-    const rows = await screen.findAllByRole("row");
-    expect(rows.slice(1).map((row) => within(row).getAllByRole("cell")[2].textContent)).toEqual([
-      "Approved",
-      "No user",
-    ]);
-    expect(within(rows[2]).getAllByRole("cell")[1]).toHaveTextContent("Left");
-    expect(screen.getByRole("button", { name: "Unlink Taro" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Undo left for Jiro" })).toBeInTheDocument();
+    const [taro, jiro] = within(
+      await screen.findByRole("region", { name: "メンバー" }),
+    ).getAllByRole("listitem");
+    expect(taro).toHaveTextContent("承認済み");
+    expect(jiro).toHaveTextContent("退会");
+    expect(screen.getByRole("button", { name: "Taro さんの紐付けを解除" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Jiro さんの退会を取り消す" })).toBeInTheDocument();
   });
 
   it("offers an invite link only to members who stay and have no user", async () => {
@@ -78,11 +77,13 @@ describe("M1 roster", () => {
     );
 
     expect(
-      await screen.findByRole("button", { name: "Create an invite link for Taro" }),
+      await screen.findByRole("button", { name: "Taro さんの招待リンクを作る" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /invite link for Jiro/ })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /invite link for Saburo/ }),
+      screen.queryByRole("button", { name: /^Jiro さんの招待リンク/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Saburo さんの招待リンク/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -90,19 +91,21 @@ describe("M1 roster", () => {
     const createRosterMember = vi.fn(() => Promise.resolve(member({})));
     renderAt("/roster", { ...rosterOf(), createRosterMember });
 
-    fireEvent.change(await screen.findByLabelText("Name"), { target: { value: " Taro " } });
-    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    fireEvent.change(await screen.findByLabelText("メンバーを追加（名前だけ）"), {
+      target: { value: " Taro " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
 
     expect(await screen.findByText("Roster member added.")).toBeInTheDocument();
     expect(createRosterMember).toHaveBeenCalledWith("Taro");
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText("メンバーを追加（名前だけ）")).toHaveValue("");
   });
 
   it("shows an error for an empty name and sends nothing", async () => {
     const createRosterMember = vi.fn();
     renderAt("/roster", { ...rosterOf(), createRosterMember });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Add" }));
+    fireEvent.click(await screen.findByRole("button", { name: "追加" }));
 
     expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
     expect(createRosterMember).not.toHaveBeenCalled();
@@ -120,10 +123,12 @@ describe("M1 roster", () => {
         }),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Create an invite link for Taro" }));
-    const panel = await screen.findByRole("region", { name: "Invite link for Taro" });
-    expect(within(panel).getByLabelText("Link")).toHaveValue("https://tasuki.example/invite/abc");
-    fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの招待リンクを作る" }));
+    const panel = await screen.findByRole("region", { name: "Taro さんの招待リンク" });
+    expect(within(panel).getByLabelText("招待リンク")).toHaveValue(
+      "https://tasuki.example/invite/abc",
+    );
+    fireEvent.click(within(panel).getByRole("button", { name: "コピー" }));
 
     expect(await screen.findByText("Invite link copied.")).toBeInTheDocument();
     expect(writeText).toHaveBeenCalledWith("https://tasuki.example/invite/abc");
@@ -143,8 +148,8 @@ describe("M1 roster", () => {
         }),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Create an invite link for Taro" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの招待リンクを作る" }));
+    fireEvent.click(await screen.findByRole("button", { name: "コピー" }));
 
     expect(
       await screen.findByText("The link could not be copied. Select it and copy it by hand."),
@@ -155,7 +160,7 @@ describe("M1 roster", () => {
     const setRosterMemberLeft = vi.fn(() => Promise.resolve(member({ left: true })));
     renderAt("/roster", { ...rosterOf(member({})), setRosterMemberLeft });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Mark Taro as left" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんを退会にする" }));
     const dialog = screen.getByRole("alertdialog", { name: "Mark Taro as left?" });
     expect(setRosterMemberLeft).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Mark as left" }));
@@ -168,7 +173,7 @@ describe("M1 roster", () => {
     const setRosterMemberLeft = vi.fn(() => Promise.resolve(member({})));
     renderAt("/roster", { ...rosterOf(member({ left: true })), setRosterMemberLeft });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Undo left for Taro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの退会を取り消す" }));
 
     expect(await screen.findByText("Taro is back.")).toBeInTheDocument();
     expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", false);
@@ -181,7 +186,7 @@ describe("M1 roster", () => {
       unlinkRosterMember,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Unlink Taro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの紐付けを解除" }));
     const dialog = screen.getByRole("alertdialog", { name: "Unlink Taro's user?" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }));
 
@@ -195,7 +200,7 @@ describe("M1 roster", () => {
       unlinkRosterMember: () => Promise.reject(problem(409, "state_conflict")),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Unlink Taro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro さんの紐付けを解除" }));
     fireEvent.click(screen.getByRole("button", { name: "Unlink" }));
 
     expect(
@@ -207,7 +212,7 @@ describe("M1 roster", () => {
   it("opens a member's profile", async () => {
     const router = renderAt("/roster", rosterOf(member({})));
 
-    fireEvent.click(await screen.findByRole("button", { name: "Profile of Taro" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taroユーザーなし" }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/roster/m1"));
   });
@@ -237,13 +242,13 @@ describe("M2 member profile", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Taro" })).toBeInTheDocument();
-    expect(screen.getByText("3:28 /km")).toBeInTheDocument();
+    expect(screen.getByText("3:28")).toBeInTheDocument();
     expect(
-      screen
+      within(screen.getByRole("region", { name: "大会ごとのラップタイム" }))
         .getAllByRole("row")
-        .slice(1)
         .map((row) => row.textContent),
-    ).toEqual(["Hakone3:20, 3:30"]);
+    ).toEqual(["kmラップ", "13:20", "23:30"]);
+    expect(screen.getByText("Hakone")).toBeInTheDocument();
   });
 
   it("tells the organizer about an unknown member", async () => {
@@ -276,7 +281,7 @@ describe("M3 approvals", () => {
       approveMemberLink,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Approve taro_line" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を承認" }));
 
     expect(await screen.findByText("taro_line is approved as Taro.")).toBeInTheDocument();
     expect(approveMemberLink).toHaveBeenCalledWith("link-1");
@@ -289,7 +294,7 @@ describe("M3 approvals", () => {
       rejectMemberLink,
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Reject taro_line" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を却下" }));
     const dialog = screen.getByRole("alertdialog", { name: "Reject taro_line?" });
     expect(rejectMemberLink).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
@@ -306,7 +311,7 @@ describe("M3 approvals", () => {
       approveMemberLink: () => Promise.reject(problem(409, "state_conflict")),
     });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Approve taro_line" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を承認" }));
 
     expect(
       await screen.findByText("This link was already decided. The latest is shown."),
@@ -316,6 +321,6 @@ describe("M3 approvals", () => {
   it("says when nobody is waiting", async () => {
     renderAt("/approvals", { listPendingMemberLinks: () => Promise.resolve({ links: [] }) });
 
-    expect(await screen.findByText("Nobody is waiting for approval.")).toBeInTheDocument();
+    expect(await screen.findByText("承認待ちはありません")).toBeInTheDocument();
   });
 });

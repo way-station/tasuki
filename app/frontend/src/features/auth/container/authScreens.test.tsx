@@ -122,7 +122,7 @@ describe("route guard", () => {
       async (status) => {
         renderAt("/roster", me({ is_organizer: true, status, roster_member: null }));
 
-        expect(await screen.findByRole("heading", { name: "Roster" })).toBeInTheDocument();
+        expect(await screen.findByRole("heading", { name: "名簿" })).toBeInTheDocument();
       },
     );
 

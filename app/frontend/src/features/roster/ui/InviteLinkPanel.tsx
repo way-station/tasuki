@@ -1,4 +1,12 @@
 import { useId } from "react";
+import {
+  fieldHelp,
+  input,
+  panel,
+  primaryButton,
+  secondaryButton,
+  smallButton,
+} from "../../../shared/ui/classes.ts";
 import type { InviteLinkView } from "../types/roster.ts";
 import { formatDateTime } from "./labels.ts";
 
@@ -14,19 +22,31 @@ type InviteLinkPanelProps = {
 export function InviteLinkPanel({ name, link, onCopy, onClose }: InviteLinkPanelProps) {
   const id = useId();
   return (
-    <section aria-label={`Invite link for ${name}`}>
-      <h2>Invite link for {name}</h2>
-      <label htmlFor={id}>Link</label>
-      <input id={id} value={link.url} readOnly />
-      <p>
-        Valid until <time dateTime={link.expiresAt}>{formatDateTime(link.expiresAt)}</time>. Send it
-        to {name} directly. Creating another link makes this one unusable.
+    <section aria-label={`${name} さんの招待リンク`} className={panel}>
+      <h2 className="text-headline font-semibold">{name} さんの招待リンク</h2>
+      <div className="flex items-center gap-2">
+        <label htmlFor={id} className="sr-only">
+          招待リンク
+        </label>
+        <input id={id} className={input} value={link.url} readOnly />
+        <button
+          type="button"
+          onClick={onCopy}
+          className={`${primaryButton} ${smallButton} shrink-0`}
+        >
+          コピー
+        </button>
+      </div>
+      <p className={fieldHelp}>
+        <time dateTime={link.expiresAt}>{formatDateTime(link.expiresAt)}</time>{" "}
+        まで使えます。本人に直接送ってください。作り直すと、このリンクは使えなくなります。
       </p>
-      <button type="button" onClick={onCopy}>
-        Copy link
-      </button>
-      <button type="button" onClick={onClose}>
-        Close
+      <button
+        type="button"
+        onClick={onClose}
+        className={`${secondaryButton} ${smallButton} self-start`}
+      >
+        閉じる
       </button>
     </section>
   );
