@@ -164,6 +164,14 @@ describe("login screen", () => {
     expect(localStorage.getItem("tasuki.returnPath")).toBe("/races/1");
   });
 
+  it("keeps a link for other ways to log in, which leads nowhere yet", async () => {
+    const router = renderAt("/login", {});
+
+    fireEvent.click(await screen.findByRole("link", { name: "そのほかの方法でログイン" }));
+
+    expect(router.state.location.pathname).toBe("/login");
+  });
+
   it("shows an error when LINE Login cannot start", async () => {
     renderAt("/login", { authorizeLine: () => Promise.reject(problem(400, "invalid_request")) });
 
