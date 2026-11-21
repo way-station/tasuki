@@ -68,9 +68,9 @@ describe("createAppRouter", () => {
     ["/rejected", "却下されました"],
     ["/unavailable", "tasuki を利用できません"],
     ["/", "大会"],
-    ["/races/new", "Register race"],
+    ["/races/new", "大会を登録"],
     ["/races/123", "Hakone"],
-    ["/races/123/edit", "Edit race"],
+    ["/races/123/edit", "大会を編集"],
     ["/races/123/invitations", "招待"],
     ["/races/123/attendance", "出欠"],
     ["/races/123/entry", "エントリー"],
@@ -91,7 +91,9 @@ describe("createAppRouter", () => {
     async (path) => {
       renderAt(path);
 
-      expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+      expect(
+        await screen.findByRole("heading", { name: "ページが見つかりません" }),
+      ).toBeInTheDocument();
     },
   );
 
@@ -106,7 +108,7 @@ describe("createAppRouter", () => {
   it("shows the not-found page inside the common layout", async () => {
     renderAt("/unknown");
 
-    const heading = await screen.findByRole("heading", { name: "Page not found" });
+    const heading = await screen.findByRole("heading", { name: "ページが見つかりません" });
     expect(screen.getByRole("main")).toContainElement(heading);
   });
 });
