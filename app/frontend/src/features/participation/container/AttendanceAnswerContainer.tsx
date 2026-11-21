@@ -8,12 +8,11 @@ import { AttendanceAnswerView } from "../ui/AttendanceAnswerView.tsx";
 import { Confirmation } from "../../../shared/ui/Confirmation.tsx";
 
 // What changing the answer can do (docs/design/screens.md, R2).
-const finalWarning =
-  "Not attending is final: the race disappears from your screens and you cannot change your answer.";
+const finalWarning = "この大会は表示されなくなり、回答は変えられません。";
 // Members cannot see the entry, so this is said whenever they leave
 // "attending".
 const entryWarning =
-  "If you are in the entry, you are removed from it and from the running order. If the running order is confirmed, your lap times for this race are deleted and your average time is recalculated.";
+  "エントリーに入っていれば、エントリーと走順から外れます。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直されます。";
 
 type AttendanceAnswerContainerProps = {
   raceId: string;
@@ -32,7 +31,7 @@ export function AttendanceAnswerContainer({ raceId, current }: AttendanceAnswerC
     try {
       await answerAttendance.mutateAsync(answer);
       setConfirming(null);
-      notify("success", "Your answer was saved.");
+      notify("success", "回答を保存しました。");
       if (answer === "not_attending") {
         // The race is no longer shown to the member.
         void navigate({ to: "/" });
@@ -42,8 +41,8 @@ export function AttendanceAnswerContainer({ raceId, current }: AttendanceAnswerC
       notify(
         "error",
         errorCode(caught) === "not_found"
-          ? "You can no longer answer for this race."
-          : "Your answer could not be saved. Try again.",
+          ? "この大会にはもう回答できません。"
+          : "回答を保存できませんでした。もう一度お試しください。",
       );
     }
   };
@@ -68,12 +67,14 @@ export function AttendanceAnswerContainer({ raceId, current }: AttendanceAnswerC
       />
       {confirming !== null && (
         <Confirmation
-          title={confirming === "not_attending" ? "Answer not attending?" : "Change your answer?"}
+          title={confirming === "not_attending" ? "不参加にしますか？" : "保留にしますか？"}
           messages={[
             ...(confirming === "not_attending" ? [finalWarning] : []),
             ...(current === "attending" ? [entryWarning] : []),
           ]}
-          confirmLabel={confirming === "not_attending" ? "Answer not attending" : "Change answer"}
+          confirmLabel={confirming === "not_attending" ? "不参加にする" : "保留にする"}
+          busyLabel="保存中…"
+          tone={confirming === "not_attending" ? "danger" : "primary"}
           busy={answerAttendance.isPending}
           onConfirm={() => void send(confirming)}
           onCancel={() => setConfirming(null)}

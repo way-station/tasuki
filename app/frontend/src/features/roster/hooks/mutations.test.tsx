@@ -83,7 +83,9 @@ describe("useAddRosterMember", () => {
     result.current.mutate({ name: " " });
 
     await waitFor(() =>
-      expect(rosterMemberFormErrors(result.current.error)).toEqual({ name: "Enter a name." }),
+      expect(rosterMemberFormErrors(result.current.error)).toEqual({
+        name: "名前を入れてください。",
+      }),
     );
     expect(createRosterMember).not.toHaveBeenCalled();
   });

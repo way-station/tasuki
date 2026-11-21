@@ -85,27 +85,27 @@ describe("toRaceBody", () => {
 
   it("requires the name, the race date, and the deadline", () => {
     expect(errorsOf(form({ name: " ", raceDate: "", deadline: "" }))).toEqual({
-      name: "Enter a name.",
-      raceDate: "Enter the race date.",
-      deadline: "Enter the deadline.",
+      name: "名前を入れてください。",
+      raceDate: "開催日を入れてください。",
+      deadline: "締め切りを入れてください。",
     });
   });
 
   it("requires a distance race to have legs above 0 km", () => {
     expect(errorsOf(form({ legDistancesKm: [] }))).toEqual({
-      legDistancesKm: "Add at least one leg.",
+      legDistancesKm: "区を 1 つ以上足してください。",
     });
     expect(errorsOf(form({ legDistancesKm: ["5", "", "0", "-1", "abc"] }))).toEqual({
-      "legDistancesKm.1": "Enter a distance above 0 km.",
-      "legDistancesKm.2": "Enter a distance above 0 km.",
-      "legDistancesKm.3": "Enter a distance above 0 km.",
-      "legDistancesKm.4": "Enter a distance above 0 km.",
+      "legDistancesKm.1": "0 km より長い距離を入れてください。",
+      "legDistancesKm.2": "0 km より長い距離を入れてください。",
+      "legDistancesKm.3": "0 km より長い距離を入れてください。",
+      "legDistancesKm.4": "0 km より長い距離を入れてください。",
     });
   });
 
   it("requires a target time as H:MM:SS", () => {
     expect(errorsOf(form({ targetTotalTime: "2:5:00" }))).toEqual({
-      targetTotalTime: "Enter the time as H:MM:SS.",
+      targetTotalTime: "時間:分:秒 で入れてください（例：1:08:00）。",
     });
   });
 
@@ -115,9 +115,9 @@ describe("toRaceBody", () => {
         form({ type: "time", timeLimitMinutes: "90.5", lapDistanceKm: "", targetLaps: "2.5" }),
       ),
     ).toEqual({
-      timeLimitMinutes: "Enter the time limit in whole minutes.",
-      lapDistanceKm: "Enter a distance above 0 km.",
-      targetLaps: "Enter the laps as a whole number.",
+      timeLimitMinutes: "制限時間を分の整数で入れてください。",
+      lapDistanceKm: "0 km より長い距離を入れてください。",
+      targetLaps: "周回数を整数で入れてください。",
     });
   });
 

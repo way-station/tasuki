@@ -133,7 +133,7 @@ describe("R2 race detail", () => {
     expect(await screen.findByText("締め切り")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "大会を編集" }));
 
-    expect(await screen.findByRole("heading", { name: "Edit race" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "大会を編集" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/race-1/edit");
   });
 
@@ -151,7 +151,9 @@ describe("R2 race detail", () => {
       getRace: () => Promise.reject(problem(404, "not_found")),
     });
 
-    expect(await screen.findByRole("heading", { name: "Race not found" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "大会が見つかりません" }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -169,14 +171,14 @@ describe("R3 register race", () => {
       createRace,
       getRace: () => Promise.resolve(distanceRace),
     });
-    await screen.findByRole("heading", { name: "Register race" });
+    await screen.findByRole("heading", { name: "大会を登録" });
 
     fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     expect(await screen.findByRole("heading", { name: "Hakone" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/races/race-1");
-    expect(screen.getByText("Race registered.")).toBeInTheDocument();
+    expect(screen.getByText("大会を登録しました。")).toBeInTheDocument();
     expect(createRace).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Hakone",
@@ -188,18 +190,18 @@ describe("R3 register race", () => {
   it("shows what is missing without sending", async () => {
     const createRace = vi.fn(() => Promise.resolve(distanceRace));
     renderAt("/races/new", organizer, { createRace });
-    await screen.findByRole("heading", { name: "Register race" });
+    await screen.findByRole("heading", { name: "大会を登録" });
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
+    expect(await screen.findByText("名前を入れてください。")).toBeInTheDocument();
     expect(screen.getByLabelText("大会名")).toHaveAttribute("aria-invalid", "true");
     expect(createRace).not.toHaveBeenCalled();
   });
 
   it("shows the time race fields and keeps the distance input when switching back", async () => {
     renderAt("/races/new", organizer, {});
-    await screen.findByRole("heading", { name: "Register race" });
+    await screen.findByRole("heading", { name: "大会を登録" });
     fireEvent.change(screen.getByLabelText("1区の距離"), { target: { value: "5" } });
 
     fireEvent.click(screen.getByLabelText("時間制"));
@@ -212,7 +214,7 @@ describe("R3 register race", () => {
 
   it("adds and removes legs", async () => {
     renderAt("/races/new", organizer, {});
-    await screen.findByRole("heading", { name: "Register race" });
+    await screen.findByRole("heading", { name: "大会を登録" });
 
     fireEvent.click(screen.getByRole("button", { name: "区を足す" }));
     expect(screen.getByLabelText("2区の距離")).toBeInTheDocument();
@@ -223,7 +225,7 @@ describe("R3 register race", () => {
 
   it("keeps the input as a draft after reloading", async () => {
     renderAt("/races/new", organizer, {});
-    await screen.findByRole("heading", { name: "Register race" });
+    await screen.findByRole("heading", { name: "大会を登録" });
     fireEvent.change(screen.getByLabelText("大会名"), { target: { value: "Hakone" } });
 
     document.body.innerHTML = "";
@@ -246,7 +248,7 @@ describe("R3 edit race", () => {
     fireEvent.change(screen.getByLabelText("大会名"), { target: { value: "Hakone 2026" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Race saved.")).toBeInTheDocument();
+    expect(await screen.findByText("大会を保存しました。")).toBeInTheDocument();
     expect(updateRace).toHaveBeenCalledWith(
       "race-1",
       expect.objectContaining({ name: "Hakone 2026", version: 3 }),

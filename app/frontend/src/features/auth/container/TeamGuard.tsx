@@ -16,10 +16,12 @@ export function TeamGuard({ access }: TeamGuardProps) {
 
   if (me.data === undefined) {
     if (me.isPending) {
-      return <AuthMessage title="Loading…" />;
+      return <AuthMessage title="読み込み中…" />;
     }
     if (!isUnauthenticated(me.error)) {
-      return <AuthMessage title="Something went wrong" message="Reload the page." />;
+      return (
+        <AuthMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+      );
     }
   }
 

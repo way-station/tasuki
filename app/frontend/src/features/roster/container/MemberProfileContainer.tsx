@@ -10,12 +10,14 @@ export function MemberProfileContainer() {
   const profile = useMemberProfile(rosterMemberId);
   if (profile.error !== null) {
     if (errorCode(profile.error) === "not_found") {
-      return <RosterMessage title="Roster member not found" />;
+      return <RosterMessage title="名簿のメンバーが見つかりません" />;
     }
-    return <RosterMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RosterMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   if (profile.data === undefined) {
-    return <RosterMessage title="Loading…" />;
+    return <RosterMessage title="読み込み中…" />;
   }
   return <MemberProfileDetails profile={profile.data} />;
 }

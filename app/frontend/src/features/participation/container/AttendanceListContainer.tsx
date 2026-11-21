@@ -9,10 +9,15 @@ export function AttendanceListContainer() {
   const rows = useAttendanceRows(raceId);
 
   if (rows.isPending) {
-    return <ParticipationMessage title="Loading…" />;
+    return <ParticipationMessage title="読み込み中…" />;
   }
   if (rows.isError) {
-    return <ParticipationMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <ParticipationMessage
+        title="うまくいきませんでした"
+        message="ページを読み込み直してください。"
+      />
+    );
   }
   return <AttendanceListView rows={rows.data} />;
 }

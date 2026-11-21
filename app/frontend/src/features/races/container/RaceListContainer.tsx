@@ -11,10 +11,12 @@ export function RaceListContainer() {
   const navigate = useNavigate();
 
   if (races.isPending) {
-    return <RaceMessage title="Loading…" />;
+    return <RaceMessage title="読み込み中…" />;
   }
   if (races.isError) {
-    return <RaceMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RaceMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   return (
     <RaceList

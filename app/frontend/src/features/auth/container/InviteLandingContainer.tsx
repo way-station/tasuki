@@ -12,13 +12,15 @@ export function InviteLandingContainer() {
   const login = useLineLogin({ inviteToken: token });
 
   if (inviteLink.isPending) {
-    return <AuthMessage title="Loading…" />;
+    return <AuthMessage title="読み込み中…" />;
   }
   if (inviteLink.isError) {
     if (errorCode(inviteLink.error) === "invite_unusable") {
       return <Navigate to="/unavailable" replace />;
     }
-    return <AuthMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <AuthMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   return <InviteLanding teamName={inviteLink.data.teamName} {...login} />;
 }
