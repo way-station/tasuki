@@ -17,6 +17,6 @@ export type RosterMemberBodyResult =
 export function toRosterMemberBody(form: RosterMemberForm): RosterMemberBodyResult {
   const name = form.name.trim();
   return name === ""
-    ? { ok: false, errors: { name: "Enter a name." } }
+    ? { ok: false, errors: { name: "名前を入れてください。" } }
     : { ok: true, body: { name } };
 }
