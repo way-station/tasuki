@@ -19,22 +19,27 @@ export function InvitationsContainer() {
   const [cancelling, setCancelling] = useState<InvitationRow | null>(null);
 
   if (rows.isPending) {
-    return <ParticipationMessage title="Loading…" />;
+    return <ParticipationMessage title="読み込み中…" />;
   }
   if (rows.isError) {
-    return <ParticipationMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <ParticipationMessage
+        title="うまくいきませんでした"
+        message="ページを読み込み直してください。"
+      />
+    );
   }
 
   const inviteMember = async (row: InvitationRow) => {
     try {
       await invite.mutateAsync(row.rosterMemberId);
-      notify("success", `${row.name} was invited.`);
+      notify("success", `${row.name} さんを誘いました。`);
     } catch (caught) {
       notify(
         "error",
         errorCode(caught) === "validation_failed"
-          ? `${row.name} has left the team.`
-          : `${row.name} could not be invited. Try again.`,
+          ? `${row.name} さんはもう退会しています。`
+          : `${row.name} さんを誘えませんでした。もう一度お試しください。`,
       );
     }
   };
@@ -42,9 +47,9 @@ export function InvitationsContainer() {
   const cancel = async (row: InvitationRow) => {
     try {
       await cancelInvitation.mutateAsync(row.rosterMemberId);
-      notify("success", `${row.name}'s invitation was cancelled.`);
+      notify("success", `${row.name} さんの招待を取り消しました。`);
     } catch {
-      notify("error", `${row.name}'s invitation could not be cancelled. Try again.`);
+      notify("error", `${row.name} さんの招待を取り消せませんでした。もう一度お試しください。`);
     } finally {
       setCancelling(null);
     }
@@ -61,11 +66,13 @@ export function InvitationsContainer() {
       />
       {cancelling !== null && (
         <Confirmation
-          title={`Cancel ${cancelling.name}'s invitation?`}
+          title={`${cancelling.name} さんの招待を取り消しますか？`}
           messages={[
-            `${cancelling.name} is also removed from attendance, the entry, and the running order. If the running order is confirmed, their lap times for this race are deleted and their average time is recalculated.`,
+            "出欠、エントリー、走順からも外れます。走順が確定していれば、この大会のラップタイムは消え、平均タイムは計算し直されます。",
           ]}
-          confirmLabel="Cancel invitation"
+          confirmLabel="取り消す"
+          busyLabel="取り消し中…"
+          tone="danger"
           busy={busy}
           onConfirm={() => void cancel(cancelling)}
           onCancel={() => setCancelling(null)}
