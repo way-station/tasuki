@@ -96,7 +96,7 @@ describe("M1 roster", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "追加" }));
 
-    expect(await screen.findByText("Roster member added.")).toBeInTheDocument();
+    expect(await screen.findByText("名簿にメンバーを足しました。")).toBeInTheDocument();
     expect(createRosterMember).toHaveBeenCalledWith("Taro");
     expect(screen.getByLabelText("メンバーを追加（名前だけ）")).toHaveValue("");
   });
@@ -107,7 +107,7 @@ describe("M1 roster", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "追加" }));
 
-    expect(await screen.findByText("Enter a name.")).toBeInTheDocument();
+    expect(await screen.findByText("名前を入れてください。")).toBeInTheDocument();
     expect(createRosterMember).not.toHaveBeenCalled();
   });
 
@@ -130,7 +130,7 @@ describe("M1 roster", () => {
     );
     fireEvent.click(within(panel).getByRole("button", { name: "コピー" }));
 
-    expect(await screen.findByText("Invite link copied.")).toBeInTheDocument();
+    expect(await screen.findByText("招待リンクをコピーしました。")).toBeInTheDocument();
     expect(writeText).toHaveBeenCalledWith("https://tasuki.example/invite/abc");
   });
 
@@ -152,7 +152,7 @@ describe("M1 roster", () => {
     fireEvent.click(await screen.findByRole("button", { name: "コピー" }));
 
     expect(
-      await screen.findByText("The link could not be copied. Select it and copy it by hand."),
+      await screen.findByText("リンクをコピーできませんでした。選んで手でコピーしてください。"),
     ).toBeInTheDocument();
   });
 
@@ -161,11 +161,11 @@ describe("M1 roster", () => {
     renderAt("/roster", { ...rosterOf(member({})), setRosterMemberLeft });
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro さんを退会にする" }));
-    const dialog = screen.getByRole("alertdialog", { name: "Mark Taro as left?" });
+    const dialog = screen.getByRole("alertdialog", { name: "Taro さんを退会にしますか？" });
     expect(setRosterMemberLeft).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Mark as left" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "退会にする" }));
 
-    expect(await screen.findByText("Taro is marked as left.")).toBeInTheDocument();
+    expect(await screen.findByText("Taro さんを退会にしました。")).toBeInTheDocument();
     expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", true);
   });
 
@@ -175,7 +175,7 @@ describe("M1 roster", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro さんの退会を取り消す" }));
 
-    expect(await screen.findByText("Taro is back.")).toBeInTheDocument();
+    expect(await screen.findByText("Taro さんを戻しました。")).toBeInTheDocument();
     expect(setRosterMemberLeft).toHaveBeenCalledWith("m1", false);
   });
 
@@ -187,10 +187,10 @@ describe("M1 roster", () => {
     });
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro さんの紐付けを解除" }));
-    const dialog = screen.getByRole("alertdialog", { name: "Unlink Taro's user?" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Taro さんの紐付けを解除しますか？" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "解除する" }));
 
-    expect(await screen.findByText("Taro is unlinked.")).toBeInTheDocument();
+    expect(await screen.findByText("Taro さんの紐付けを解除しました。")).toBeInTheDocument();
     expect(unlinkRosterMember).toHaveBeenCalledWith("m1");
   });
 
@@ -201,10 +201,10 @@ describe("M1 roster", () => {
     });
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro さんの紐付けを解除" }));
-    fireEvent.click(screen.getByRole("button", { name: "Unlink" }));
+    fireEvent.click(screen.getByRole("button", { name: "解除する" }));
 
     expect(
-      await screen.findByText("The roster changed in the meantime. The latest is shown."),
+      await screen.findByText("名簿がほかの人に変えられていたので、最新を出しています。"),
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
@@ -257,7 +257,7 @@ describe("M2 member profile", () => {
     });
 
     expect(
-      await screen.findByRole("heading", { name: "Roster member not found" }),
+      await screen.findByRole("heading", { name: "名簿のメンバーが見つかりません" }),
     ).toBeInTheDocument();
   });
 });
@@ -283,7 +283,7 @@ describe("M3 approvals", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を承認" }));
 
-    expect(await screen.findByText("taro_line is approved as Taro.")).toBeInTheDocument();
+    expect(await screen.findByText("Taro（taro_line）を承認しました。")).toBeInTheDocument();
     expect(approveMemberLink).toHaveBeenCalledWith("link-1");
   });
 
@@ -295,12 +295,14 @@ describe("M3 approvals", () => {
     });
 
     fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を却下" }));
-    const dialog = screen.getByRole("alertdialog", { name: "Reject taro_line?" });
+    const dialog = screen.getByRole("alertdialog", { name: "Taro（taro_line）を却下しますか？" });
     expect(rejectMemberLink).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "却下する" }));
 
     expect(
-      await screen.findByText("taro_line is rejected. Tell them outside the app."),
+      await screen.findByText(
+        "Taro（taro_line）を却下しました。理由はアプリの外で伝えてください。",
+      ),
     ).toBeInTheDocument();
     expect(rejectMemberLink).toHaveBeenCalledWith("link-1");
   });
@@ -314,7 +316,7 @@ describe("M3 approvals", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Taro（taro_line）を承認" }));
 
     expect(
-      await screen.findByText("This link was already decided. The latest is shown."),
+      await screen.findByText("この紐付けはもう決まっていたので、最新を出しています。"),
     ).toBeInTheDocument();
   });
 
