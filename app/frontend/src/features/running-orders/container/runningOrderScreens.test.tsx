@@ -160,7 +160,7 @@ describe("R7 running order editor", () => {
     fireEvent.change(leg(1), { target: { value: "m1" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Running order saved.")).toBeInTheDocument();
+    expect(await screen.findByText("走順を保存しました。")).toBeInTheDocument();
     expect(saveRunningOrder).toHaveBeenCalledWith("race-1", "e1", {
       legs: [
         { leg_number: 1, roster_member_id: "m1" },
@@ -220,7 +220,7 @@ describe("R7 running order editor", () => {
     fireEvent.click(await screen.findByRole("button", { name: "確定する" }));
 
     expect(
-      await screen.findByText("Running order confirmed. Attending members can see it now."),
+      await screen.findByText("走順を確定しました。参加するメンバーに見えるようになりました。"),
     ).toBeInTheDocument();
     expect(confirmRunningOrder).toHaveBeenCalledWith("race-1", "e1", 2);
   });
@@ -235,10 +235,10 @@ describe("R7 running order editor", () => {
     fireEvent.change(await screen.findByLabelText("2区の走者"), { target: { value: "m1" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    const dialog = screen.getByRole("alertdialog", { name: "Save and delete lap times?" });
-    expect(dialog).toHaveTextContent("Jiro will run fewer legs");
+    const dialog = screen.getByRole("alertdialog", { name: "確定した走順を変えますか？" });
+    expect(dialog).toHaveTextContent("ラップタイムが消える人：Jiro。");
     expect(saveRunningOrder).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "保存する" }));
 
     await waitFor(() =>
       expect(saveRunningOrder).toHaveBeenCalledWith("race-1", "e1", {
@@ -262,7 +262,7 @@ describe("R7 running order editor", () => {
     fireEvent.change(leg(2), { target: { value: "m1" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(await screen.findByText("Running order saved.")).toBeInTheDocument();
+    expect(await screen.findByText("走順を保存しました。")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
