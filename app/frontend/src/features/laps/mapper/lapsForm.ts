@@ -15,7 +15,7 @@ export type LapsBodyResult =
 export function toLapsBody(form: LapsForm): LapsBodyResult {
   const errors: LapsFormErrors = {};
   if (form.times.length === 0) {
-    errors.times = "Add at least one lap time.";
+    errors.times = "ラップタイムを 1 つ以上入れてください。";
   }
   const times = form.times.map((input, index) => {
     const time = input.trim();
@@ -40,4 +40,4 @@ export function toLapEditBody(input: string): LapEditBodyResult {
 
 // The pattern of MmSs in the OpenAPI document.
 const lapTimePattern = /^[0-9]{1,2}:[0-5][0-9]$/;
-const lapTimeError = "Enter the time per km as M:SS, for example 3:25.";
+const lapTimeError = "1 km のタイムを 分:秒 で入れてください（例：3:25）。";
