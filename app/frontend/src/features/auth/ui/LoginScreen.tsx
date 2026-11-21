@@ -13,7 +13,9 @@ type LoginScreenProps = {
 export function LoginScreen({ onLogin, loggingIn, failed }: LoginScreenProps) {
   return (
     <CenteredScreen>
-      <h1 className="text-title2 font-bold">ログイン</h1>
+      {/* Not shown: the button says what the screen is for. Screen readers
+          still get the screen's name. */}
+      <h1 className="sr-only">ログイン</h1>
       {failed && <LoginFailedNote />}
       <LineLoginButton onLogin={onLogin} loggingIn={loggingIn} />
       {/* Provisional: a place for other ways to log in, such as logging in
