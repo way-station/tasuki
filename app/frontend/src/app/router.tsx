@@ -8,7 +8,9 @@ import { AuthCompleteContainer } from "../features/auth/container/AuthCompleteCo
 import { InviteLandingContainer } from "../features/auth/container/InviteLandingContainer.tsx";
 import { LoginContainer } from "../features/auth/container/LoginContainer.tsx";
 import { TeamGuard } from "../features/auth/container/TeamGuard.tsx";
-import { AuthMessage } from "../features/auth/ui/AuthMessage.tsx";
+import { RejectedScreen } from "../features/auth/ui/RejectedScreen.tsx";
+import { UnavailableScreen } from "../features/auth/ui/UnavailableScreen.tsx";
+import { WaitingScreen } from "../features/auth/ui/WaitingScreen.tsx";
 import { MyLapsContainer } from "../features/laps/container/MyLapsContainer.tsx";
 import { ProfileContainer } from "../features/laps/container/ProfileContainer.tsx";
 import { AttendanceListContainer } from "../features/participation/container/AttendanceListContainer.tsx";
@@ -58,21 +60,17 @@ const authCompleteRoute = createRoute({
 const waitingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "waiting",
-  component: () => (
-    <AuthMessage title="Waiting for approval" message="Waiting for an organizer to approve you." />
-  ),
+  component: WaitingScreen,
 });
 const rejectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "rejected",
-  component: () => <AuthMessage title="You were rejected" />,
+  component: RejectedScreen,
 });
 const unavailableRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "unavailable",
-  component: () => (
-    <AuthMessage title="tasuki cannot be used" message="Please contact an organizer." />
-  ),
+  component: UnavailableScreen,
 });
 
 // ---- The team's screens, behind the route guard (#113) --------------------

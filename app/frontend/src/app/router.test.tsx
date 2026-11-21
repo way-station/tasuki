@@ -62,11 +62,11 @@ function renderAt(path: string) {
 describe("createAppRouter", () => {
   it.each([
     ["/invite/abc", "Team"],
-    ["/login", "Log in"],
-    ["/auth/complete", "Log in"],
-    ["/waiting", "Waiting for approval"],
-    ["/rejected", "You were rejected"],
-    ["/unavailable", "tasuki cannot be used"],
+    ["/login", "ログイン"],
+    ["/auth/complete", "ログイン"],
+    ["/waiting", "幹事の承認を待っています"],
+    ["/rejected", "却下されました"],
+    ["/unavailable", "tasuki を利用できません"],
     ["/", "大会"],
     ["/races/new", "Register race"],
     ["/races/123", "Hakone"],
