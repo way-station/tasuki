@@ -1,4 +1,6 @@
+import { CenteredScreen } from "./CenteredScreen.tsx";
 import { LineLoginButton } from "./LineLoginButton.tsx";
+import { LoginFailedNote } from "./LoginFailedNote.tsx";
 
 type LoginScreenProps = {
   onLogin: () => void;
@@ -7,13 +9,13 @@ type LoginScreenProps = {
   failed: boolean;
 };
 
-// The login screen for returning users, also shown when a login failed.
+// A5: the login screen for returning users, also shown when a login failed.
 export function LoginScreen({ onLogin, loggingIn, failed }: LoginScreenProps) {
   return (
-    <section>
-      <h1>Log in</h1>
-      {failed && <p role="alert">Login failed. Please try again.</p>}
+    <CenteredScreen>
+      <h1 className="text-title2 font-bold">ログイン</h1>
+      {failed && <LoginFailedNote />}
       <LineLoginButton onLogin={onLogin} loggingIn={loggingIn} />
-    </section>
+    </CenteredScreen>
   );
 }
