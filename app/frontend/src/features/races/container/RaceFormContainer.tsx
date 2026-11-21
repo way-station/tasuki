@@ -34,12 +34,14 @@ export function RaceFormContainer() {
 
   if (error !== null) {
     if (errorCode(error) === "not_found") {
-      return <RaceMessage title="Race not found" />;
+      return <RaceMessage title="大会が見つかりません" />;
     }
-    return <RaceMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RaceMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   if (draft.value === undefined) {
-    return <RaceMessage title="Loading…" />;
+    return <RaceMessage title="読み込み中…" />;
   }
   const form = draft.value;
 
@@ -51,7 +53,7 @@ export function RaceFormContainer() {
           ? await createRace.mutateAsync(form)
           : await updateRace.mutateAsync({ form, version: draft.version ?? 0 });
       draft.clear();
-      notify("success", raceId === undefined ? "Race registered." : "Race saved.");
+      notify("success", raceId === undefined ? "大会を登録しました。" : "大会を保存しました。");
       void navigate({ to: "/races/$raceId", params: { raceId: saved.id } });
     } catch (caught) {
       const fieldErrors = raceFormErrors(caught);
@@ -63,13 +65,13 @@ export function RaceFormContainer() {
         case "version_conflict":
           // The draft stays; the user chooses to load the latest (ADR-0013).
           setConflict(true);
-          notify("error", "Someone else saved this race first.");
+          notify("error", "ほかの人が先にこの大会を保存しました。");
           return;
         case "validation_failed":
-          notify("error", "The race could not be saved. Check the inputs.");
+          notify("error", "大会を保存できませんでした。入力を確かめてください。");
           return;
         default:
-          notify("error", "The race could not be saved. Try again.");
+          notify("error", "大会を保存できませんでした。もう一度お試しください。");
       }
     }
   };
@@ -82,7 +84,7 @@ export function RaceFormContainer() {
 
   return (
     <RaceFormView
-      title={raceId === undefined ? "Register race" : "Edit race"}
+      title={raceId === undefined ? "大会を登録" : "大会を編集"}
       form={form}
       errors={errors}
       saving={createRace.isPending || updateRace.isPending}

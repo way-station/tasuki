@@ -25,14 +25,16 @@ export function RaceDetailContainer() {
   const navigate = useNavigate();
 
   if (race.isPending) {
-    return <RaceMessage title="Loading…" />;
+    return <RaceMessage title="読み込み中…" />;
   }
   if (race.isError) {
     // A race the user may not see is not_found too (docs/design/api.md).
     if (errorCode(race.error) === "not_found") {
-      return <RaceMessage title="Race not found" />;
+      return <RaceMessage title="大会が見つかりません" />;
     }
-    return <RaceMessage title="Something went wrong" message="Reload the page." />;
+    return (
+      <RaceMessage title="うまくいきませんでした" message="ページを読み込み直してください。" />
+    );
   }
   const open = (section: RaceSection) =>
     void navigate({ to: sectionPaths[section], params: { raceId } });
