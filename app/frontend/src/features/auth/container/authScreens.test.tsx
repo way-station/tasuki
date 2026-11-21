@@ -147,7 +147,7 @@ describe("route guard", () => {
     renderAt("/", { getMe: () => Promise.reject(problem(403, "forbidden")) });
 
     expect(
-      await screen.findByRole("heading", { name: "Something went wrong" }),
+      await screen.findByRole("heading", { name: "うまくいきませんでした" }),
     ).toBeInTheDocument();
   });
 });
