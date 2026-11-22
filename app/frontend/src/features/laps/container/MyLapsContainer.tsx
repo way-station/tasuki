@@ -8,6 +8,7 @@ import { lapsDraftSource } from "../hooks/lapsDraft.ts";
 import { lapsFormErrors, lapTimeError } from "../hooks/lapsFormInvalid.ts";
 import { useDeleteLap, useEditLap, useSubmitLaps } from "../hooks/mutations.ts";
 import { useMyLaps } from "../hooks/useMyLaps.ts";
+import { useRunnerLegs } from "../hooks/useRunnerLegs.ts";
 import type { LapsForm, LapsFormErrors } from "../types/lap.ts";
 import { LapsMessage } from "../ui/LapsMessage.tsx";
 import { type LapEdit, MyLapsEditorView } from "../ui/MyLapsEditorView.tsx";
@@ -20,6 +21,8 @@ export function MyLapsContainer() {
   const { raceId } = useParams({ from: "/team/races/$raceId" });
   const me = useMe();
   const myLaps = useMyLaps(raceId);
+  // L1 is open only to runners of a confirmed running order, who may see it.
+  const legsOf = useRunnerLegs(raceId, myLaps.data !== undefined);
   // useDraft copies the source again only for a version it has not cleared,
   // so each submit starts the next empty form with a new round.
   const [round, setRound] = useState(0);
@@ -132,6 +135,7 @@ export function MyLapsContainer() {
   return (
     <MyLapsEditorView
       myLaps={myLaps.data}
+      legs={me.data?.rosterMember == null ? [] : legsOf(me.data.rosterMember.id)}
       form={form}
       errors={errors}
       editing={editing}
