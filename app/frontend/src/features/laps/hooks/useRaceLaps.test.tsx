@@ -27,7 +27,9 @@ describe("useRaceLaps", () => {
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([{ rosterMemberId: "m1", name: "Taro", laps: [] }]);
+    expect(result.current.data).toEqual([
+      { rosterMemberId: "m1", name: "Taro", laps: [], averageTime: null, legs: [] },
+    ]);
   });
 
   it("asks nothing for a member", () => {
