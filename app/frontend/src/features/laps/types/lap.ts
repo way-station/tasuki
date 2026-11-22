@@ -28,11 +28,28 @@ export type MyLapsView = AverageView & {
   laps: LapView[];
 };
 
+// A leg the runner runs in the race's running order.
+export type RunnerLeg = {
+  legNumber: number;
+  // Distance races only.
+  distanceKm?: number;
+};
+
+// A leg of the running order as the running-orders feature gives it: only
+// what the lap screens need.
+export type OrderLeg = RunnerLeg & {
+  runner: { rosterMemberId: string } | null;
+};
+
 // The laps of one runner, as organizers see them on R2. View only.
 export type RunnerLapsView = {
   rosterMemberId: string;
   name: string;
   laps: LapView[];
+  // MM:SS, the mean of this race's laps. `null` while there is none.
+  averageTime: string | null;
+  // Filled from the running order; empty until it arrives.
+  legs: RunnerLeg[];
 };
 
 // P1. Members enter nothing here.
