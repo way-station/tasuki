@@ -45,6 +45,25 @@ function myLaps(times: string[], averageTime = "3:28"): MyLaps {
   };
 }
 
+// A confirmed running order of `race`: leg 1 (5 km) and leg 2 (3 km).
+function confirmedOrder(runners: ({ roster_member_id: string; name: string } | null)[]) {
+  return {
+    running_orders: [
+      {
+        entry_id: "e1",
+        entry_name: "Team A",
+        status: "confirmed" as const,
+        legs: runners.map((runner, index) => ({
+          leg_number: index + 1,
+          distance_km: [5, 3][index],
+          runner,
+        })),
+        prediction: null,
+      },
+    ],
+  };
+}
+
 function newLap(number: number) {
   return screen.getByLabelText(`${number} km`);
 }
@@ -79,6 +98,39 @@ describe("R2 lap times", () => {
     expect(jiro).toHaveTextContent("Jiroまだ入力されていません");
   });
 
+  it("shows each runner's legs and the mean of their laps", async () => {
+    renderAt("/races/race-1", organizer, {
+      getRace: () => Promise.resolve({ ...race, version: 1, can_submit_laps: false }),
+      listRunningOrders: () =>
+        Promise.resolve(
+          confirmedOrder([
+            { roster_member_id: "m1", name: "Taro" },
+            { roster_member_id: "m2", name: "Jiro" },
+          ]),
+        ),
+      listRaceLaps: () =>
+        Promise.resolve({
+          runners: [
+            {
+              roster_member_id: "m1",
+              name: "Taro",
+              laps: [
+                { id: "lap-1", time: "3:20" },
+                { id: "lap-2", time: "3:25" },
+              ],
+            },
+            { roster_member_id: "m2", name: "Jiro", laps: [] },
+          ],
+        }),
+    });
+
+    const section = await screen.findByRole("region", { name: "走者のラップタイム" });
+    const [taro, jiro] = within(section).getAllByRole("listitem");
+    expect(await within(taro).findByText("1区")).toBeInTheDocument();
+    expect(taro).toHaveTextContent("平均 3:23");
+    expect(jiro).toHaveTextContent("Jiro2区・まだ入力されていません");
+  });
+
   it("asks nothing for a member", async () => {
     const listRaceLaps = vi.fn(() => Promise.resolve({ runners: [] }));
     renderAt("/races/race-1", member, { getRace: () => Promise.resolve(race), listRaceLaps });
@@ -89,6 +141,16 @@ describe("R2 lap times", () => {
 });
 
 describe("L1 my lap times", () => {
+  it("shows the member's legs and their distance under the title", async () => {
+    renderAt("/races/race-1/laps", member, {
+      getMyLaps: () => Promise.resolve(myLaps([])),
+      listRunningOrders: () =>
+        Promise.resolve(confirmedOrder([null, { roster_member_id: "m1", name: "Taro" }])),
+    });
+
+    expect(await screen.findByText("2区・3 km")).toBeInTheDocument();
+  });
+
   it("shows the laps in the order they were submitted, one per km", async () => {
     renderAt("/races/race-1/laps", member, {
       getMyLaps: () => Promise.resolve(myLaps(["3:20", "3:25"], "3:23")),
