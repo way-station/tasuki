@@ -11,8 +11,14 @@ describe("toRunnerLapsViews", () => {
         ],
       }),
     ).toEqual([
-      { rosterMemberId: "m1", name: "Taro", laps: [{ id: "l1", time: "3:25" }] },
-      { rosterMemberId: "m2", name: "Jiro", laps: [] },
+      {
+        rosterMemberId: "m1",
+        name: "Taro",
+        laps: [{ id: "l1", time: "3:25" }],
+        averageTime: "3:25",
+        legs: [],
+      },
+      { rosterMemberId: "m2", name: "Jiro", laps: [], averageTime: null, legs: [] },
     ]);
   });
 });

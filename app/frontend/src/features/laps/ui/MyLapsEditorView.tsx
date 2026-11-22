@@ -1,5 +1,6 @@
 import { useId, type FormEvent } from "react";
-import type { LapsForm, LapsFormErrors, MyLapsView } from "../types/lap.ts";
+import type { LapsForm, LapsFormErrors, MyLapsView, RunnerLeg } from "../types/lap.ts";
+import { legsText } from "./legsText.ts";
 import {
   blockButton,
   card,
@@ -28,6 +29,8 @@ export type LapEdit = {
 
 type MyLapsEditorViewProps = {
   myLaps: MyLapsView;
+  // The caller's legs in the running order, shown under the title.
+  legs: RunnerLeg[];
   form: LapsForm;
   errors: LapsFormErrors;
   editing: LapEdit | null;
@@ -46,6 +49,7 @@ type MyLapsEditorViewProps = {
 // out until there is a lap.
 export function MyLapsEditorView({
   myLaps,
+  legs,
   form,
   errors,
   editing,
@@ -75,7 +79,12 @@ export function MyLapsEditorView({
 
   return (
     <section className={content}>
-      <h1 className="text-title1 font-bold">自分のラップタイム</h1>
+      <div className={group}>
+        <h1 className="text-title1 font-bold">自分のラップタイム</h1>
+        {legs.length > 0 && (
+          <p className={`text-subheadline text-slate-600 ${numbers}`}>{legsText(legs, true)}</p>
+        )}
+      </div>
       {myLaps.laps.length > 0 && (
         <section className={group}>
           <h2 className={groupHeading}>送ったラップタイム（1km あたり）</h2>
