@@ -24,6 +24,7 @@ import { MemberProfileContainer } from "../features/roster/container/MemberProfi
 import { RosterContainer } from "../features/roster/container/RosterContainer.tsx";
 import { RunningOrderEditorContainer } from "../features/running-orders/container/RunningOrderEditorContainer.tsx";
 import { Layout } from "./Layout.tsx";
+import { TeamFrame } from "./TeamFrame.tsx";
 import { NotFound } from "./NotFound.tsx";
 
 // One route per screen in docs/design/screens.md, all inside the common
@@ -78,7 +79,11 @@ const unavailableRoute = createRoute({
 const teamRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "team",
-  component: () => <TeamGuard access="team" />,
+  component: () => (
+    <TeamFrame>
+      <TeamGuard access="team" />
+    </TeamFrame>
+  ),
 });
 const organizerRoute = createRoute({
   getParentRoute: () => teamRoute,
