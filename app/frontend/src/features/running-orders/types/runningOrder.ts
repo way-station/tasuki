@@ -23,19 +23,21 @@ export type LegView = {
 };
 
 // Calculated by the backend from the saved running order; empty legs are left
-// out.
+// out, and their numbers are named under the prediction.
 export type PredictionView =
   | {
       type: "distance";
       // H:MM:SS
       totalTime: string;
-      hasEmptyLegs: boolean;
+      // In leg order. Empty when every leg has a runner.
+      emptyLegNumbers: number[];
     }
   | {
       type: "time";
       // Rounded down.
       laps: number;
-      hasEmptyLegs: boolean;
+      // In leg order. Empty when every leg has a runner.
+      emptyLegNumbers: number[];
     };
 
 // A saved running order (R2, R7). The MVP allows one entry per race, so a race

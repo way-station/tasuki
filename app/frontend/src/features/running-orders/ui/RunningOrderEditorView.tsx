@@ -160,12 +160,12 @@ export function RunningOrderEditorView({
         <PredictionText
           prediction={prediction}
           note={unsaved && status !== null ? "（保存した走順から）" : ""}
+          changesNote={
+            unsaved && status !== null
+              ? "保存していない変更があります。保存すると予想が更新されます。"
+              : undefined
+          }
         />
-        {unsaved && status !== null && (
-          <p className="rounded-lg bg-slate-100 px-4 py-3 text-subheadline text-slate-700">
-            保存していない変更があります。保存すると予想が更新されます。
-          </p>
-        )}
       </section>
       <div className={group}>
         <button
