@@ -4,7 +4,7 @@
 #   dev - development environment for the Dev Container
 # There is no production frontend image: the backend image builds and serves it (ADR-0018).
 
-FROM jdxcode/mise:2026.10.25-debian AS dev
+FROM jdxcode/mise:2026.11.4-debian AS dev
 
 # Install Node and pnpm from app/frontend/mise.toml, used as the global mise config.
 COPY mise.toml /mise/config.toml
