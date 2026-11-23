@@ -5,6 +5,7 @@ import { RaceLapsSectionContainer } from "../../laps/container/RaceLapsSectionCo
 import { AttendanceAnswerContainer } from "../../participation/container/AttendanceAnswerContainer.tsx";
 import { RunningOrderSectionContainer } from "../../running-orders/container/RunningOrderSectionContainer.tsx";
 import { useRace } from "../hooks/useRace.ts";
+import { useRaceManagementSummary } from "../hooks/useRaceManagementSummary.ts";
 import { RaceDetailView, type RaceSection } from "../ui/RaceDetailView.tsx";
 import { RaceMessage } from "../ui/RaceMessage.tsx";
 
@@ -22,6 +23,8 @@ export function RaceDetailContainer() {
   const { raceId } = useParams({ from: "/team/races/$raceId" });
   const me = useMe();
   const race = useRace(raceId);
+  const isOrganizer = me.data?.isOrganizer ?? false;
+  const summary = useRaceManagementSummary(raceId, isOrganizer);
   const navigate = useNavigate();
 
   if (race.isPending) {
@@ -39,11 +42,11 @@ export function RaceDetailContainer() {
   const open = (section: RaceSection) =>
     void navigate({ to: sectionPaths[section], params: { raceId } });
   const myAttendance = race.data.myAttendance;
-  const isOrganizer = me.data?.isOrganizer ?? false;
   return (
     <RaceDetailView
       race={race.data}
       isOrganizer={isOrganizer}
+      summary={summary}
       onOpen={open}
       attendance={
         // "Not attending" cannot be changed (docs/design/api.md), so there is

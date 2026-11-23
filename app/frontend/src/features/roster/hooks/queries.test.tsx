@@ -62,8 +62,7 @@ describe("useMemberProfile", () => {
       }),
     );
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.averageTime).toBe("3:40");
+    await waitFor(() => expect(result.current.data?.averageTime).toBe("3:40"));
   });
 
   it("reports not_found for an unknown member", async () => {

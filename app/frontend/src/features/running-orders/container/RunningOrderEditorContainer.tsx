@@ -127,6 +127,7 @@ export function RunningOrderEditorContainer() {
       <RunningOrderEditorView
         entryName={entry.name}
         legRule={data.legRule}
+        timeGoal={data.timeGoal}
         runners={data.runners}
         form={form}
         status={data.saved?.status ?? null}

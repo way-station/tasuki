@@ -52,6 +52,7 @@ describe("toRunningOrderEditor", () => {
     expect(toRunningOrderEditor(distanceRace, entries, { running_orders: [] })).toEqual({
       entry: { id: "e1", name: "Team A" },
       legRule: { type: "distance", distancesKm: [5, 3.2] },
+      timeGoal: null,
       runners: [
         { rosterMemberId: "m1", name: "Taro" },
         { rosterMemberId: "m2", name: "Jiro" },
@@ -64,6 +65,25 @@ describe("toRunningOrderEditor", () => {
     const editor = toRunningOrderEditor(timeRace, entries, { running_orders: [] });
 
     expect(editor.entry === null ? undefined : editor.legRule).toEqual({ type: "time" });
+  });
+
+  it("takes a time race's goal, with the target laps only when set", () => {
+    const withoutTarget = toRunningOrderEditor(timeRace, entries, { running_orders: [] });
+    const withTarget = toRunningOrderEditor(
+      { ...timeRace, description: { ...timeRace.description, target: { laps: 75 } } },
+      entries,
+      { running_orders: [] },
+    );
+
+    expect(withoutTarget.entry === null ? undefined : withoutTarget.timeGoal).toEqual({
+      timeLimitMinutes: 180,
+      lapDistanceKm: 2,
+    });
+    expect(withTarget.entry === null ? undefined : withTarget.timeGoal).toEqual({
+      targetLaps: 75,
+      timeLimitMinutes: 180,
+      lapDistanceKm: 2,
+    });
   });
 
   it("includes the saved running order of the entry", () => {

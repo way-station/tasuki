@@ -9,6 +9,7 @@ import {
   neutralLabel,
   numbers,
 } from "../../../shared/ui/classes.ts";
+import { formatDate } from "../../races/ui/labels.ts";
 import type { MemberProfileView } from "../types/roster.ts";
 
 type MemberProfileDetailsProps = {
@@ -45,7 +46,14 @@ export function MemberProfileDetails({ profile }: MemberProfileDetailsProps) {
           <ul className={cards}>
             {profile.lapsByRace.map((race) => (
               <li key={race.raceId} className={`${card} ${cardStack}`}>
-                <span className="text-headline font-semibold">{race.raceName}</span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-headline font-semibold">{race.raceName}</span>
+                  {(race.raceDate !== undefined || race.legNumbers.length > 0) && (
+                    <span className={`text-subheadline text-slate-600 ${numbers}`}>
+                      {raceLine(race.raceDate, race.legNumbers)}
+                    </span>
+                  )}
+                </span>
                 <table className={`w-full border-collapse ${numbers}`}>
                   <thead>
                     <tr>
@@ -79,4 +87,13 @@ export function MemberProfileDetails({ profile }: MemberProfileDetailsProps) {
       </section>
     </section>
   );
+}
+
+// 2026年12月20日（日）・1区・4区 (wireframes/m2.html).
+function raceLine(raceDate: string | undefined, legNumbers: number[]): string {
+  const parts = legNumbers.map((legNumber) => `${legNumber}区`);
+  if (raceDate !== undefined) {
+    parts.unshift(formatDate(raceDate));
+  }
+  return parts.join("・");
 }
