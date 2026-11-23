@@ -25,7 +25,20 @@ describe("toRunningOrderView", () => {
         { legNumber: 1, distanceKm: 5, runner: { rosterMemberId: "m1", name: "Taro" } },
         { legNumber: 2, distanceKm: 3.2, runner: null },
       ],
-      prediction: { type: "distance", totalTime: "0:28:10", hasEmptyLegs: true },
+      prediction: { type: "distance", totalTime: "0:28:10", emptyLegNumbers: [2] },
+    });
+  });
+
+  it("names no empty legs when the backend left none out", () => {
+    const view = toRunningOrderView({
+      ...order,
+      prediction: { total_time: "0:28:10", laps: null, has_empty_legs: false },
+    });
+
+    expect(view.prediction).toEqual({
+      type: "distance",
+      totalTime: "0:28:10",
+      emptyLegNumbers: [],
     });
   });
 
@@ -35,7 +48,7 @@ describe("toRunningOrderView", () => {
       prediction: { total_time: null, laps: 25, has_empty_legs: false },
     });
 
-    expect(view.prediction).toEqual({ type: "time", laps: 25, hasEmptyLegs: false });
+    expect(view.prediction).toEqual({ type: "time", laps: 25, emptyLegNumbers: [] });
   });
 
   it("has no prediction while no leg has a runner", () => {
