@@ -9,7 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/oapi-codegen/nullable v1.2.0
 	github.com/oapi-codegen/runtime v1.8.0
-	go.mongodb.org/mongo-driver/v2 v2.9.2
+	go.mongodb.org/mongo-driver/v2 v2.10.0
 )
 
 require (
@@ -21,7 +21,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/oapi-codegen/oapi-codegen/v2 v2.8.0 // indirect
 	github.com/oasdiff/yaml v0.1.1 // indirect
 	github.com/oasdiff/yaml3 v0.0.14 // indirect
@@ -29,12 +29,11 @@ require (
 	github.com/speakeasy-api/jsonpath v0.6.3 // indirect
 	github.com/speakeasy-api/openapi v1.24.0 // indirect
 	github.com/vmware-labs/yaml-jsonpath v0.3.2 // indirect
-	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
-	github.com/xdg-go/scram v1.2.0 // indirect
+	github.com/xdg-go/scram v1.4.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
