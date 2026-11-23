@@ -4,6 +4,7 @@ import type {
   Runner,
   RunningOrderForm,
   RunningOrderStatus,
+  TimeGoal,
 } from "../types/runningOrder.ts";
 import {
   blockButton,
@@ -30,6 +31,8 @@ import { PredictionText } from "./PredictionText.tsx";
 type RunningOrderEditorViewProps = {
   entryName: string;
   legRule: LegRule;
+  // Time races only, shown under the prediction.
+  timeGoal: TimeGoal | null;
   runners: Runner[];
   form: RunningOrderForm;
   // `null` before the first save.
@@ -53,6 +56,7 @@ type RunningOrderEditorViewProps = {
 export function RunningOrderEditorView({
   entryName,
   legRule,
+  timeGoal,
   runners,
   form,
   status,
@@ -166,6 +170,9 @@ export function RunningOrderEditorView({
               : undefined
           }
         />
+        {timeGoal !== null && (
+          <p className={`text-subheadline text-slate-600 ${numbers}`}>{timeGoalText(timeGoal)}</p>
+        )}
       </section>
       <div className={group}>
         <button
@@ -200,4 +207,14 @@ export function RunningOrderEditorView({
       </div>
     </section>
   );
+}
+
+// 目標 75 周・制限時間 360 分・1周 2 km (wireframes/r7.html). Without a target,
+// only the time limit and the lap distance.
+function timeGoalText(goal: TimeGoal): string {
+  const parts = [`制限時間 ${goal.timeLimitMinutes} 分`, `1周 ${goal.lapDistanceKm} km`];
+  if (goal.targetLaps !== undefined) {
+    parts.unshift(`目標 ${goal.targetLaps} 周`);
+  }
+  return parts.join("・");
 }

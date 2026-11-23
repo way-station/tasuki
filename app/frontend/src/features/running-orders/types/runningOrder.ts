@@ -63,6 +63,13 @@ export type RunningOrderForm = {
 // description; time races have as many as the organizer adds.
 export type LegRule = { type: "distance"; distancesKm: number[] } | { type: "time" };
 
+// What a time race aims at, shown under the prediction on R7.
+export type TimeGoal = {
+  targetLaps?: number;
+  timeLimitMinutes: number;
+  lapDistanceKm: number;
+};
+
 // R7. Runners are picked from the entry, so R6 comes first when the race has
 // no entry yet.
 export type RunningOrderEditor =
@@ -70,6 +77,8 @@ export type RunningOrderEditor =
   | {
       entry: { id: string; name: string };
       legRule: LegRule;
+      // Time races only.
+      timeGoal: TimeGoal | null;
       // The entry's members.
       runners: Runner[];
       // `null` until the running order is saved for the first time.
