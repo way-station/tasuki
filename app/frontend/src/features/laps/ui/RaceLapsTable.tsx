@@ -7,13 +7,15 @@ import {
   numbers,
 } from "../../../shared/ui/classes.ts";
 import type { RunnerLapsView } from "../types/lap.ts";
+import { legsText } from "./legsText.ts";
 
 type RaceLapsTableProps = {
   runners: RunnerLapsView[];
 };
 
 // The laps of every runner on R2, for organizers. View only. One card per
-// runner with a table of laps per km (wireframes/r2.html, after Strava's splits).
+// runner with their legs, the mean of their laps, and a table of laps per km
+// (wireframes/r2.html, after Strava's splits).
 export function RaceLapsTable({ runners }: RaceLapsTableProps) {
   return (
     <section aria-label="走者のラップタイム" className={group}>
@@ -24,12 +26,31 @@ export function RaceLapsTable({ runners }: RaceLapsTableProps) {
             <li key={runner.rosterMemberId} className={card}>
               <span className="flex min-w-0 grow flex-col gap-0.5">
                 <span className="text-headline font-semibold">{runner.name}</span>
-                <span className="text-subheadline text-slate-600">まだ入力されていません</span>
+                <span className="text-subheadline text-slate-600">
+                  {[
+                    ...(runner.legs.length > 0 ? [legsText(runner.legs, false)] : []),
+                    "まだ入力されていません",
+                  ].join("・")}
+                </span>
               </span>
             </li>
           ) : (
             <li key={runner.rosterMemberId} className={`${card} ${cardStack}`}>
-              <span className="text-headline font-semibold">{runner.name}</span>
+              <div className="flex items-start gap-3">
+                <span className="flex min-w-0 grow flex-col gap-0.5">
+                  <span className="text-headline font-semibold">{runner.name}</span>
+                  {runner.legs.length > 0 && (
+                    <span className="text-subheadline text-slate-600">
+                      {legsText(runner.legs, false)}
+                    </span>
+                  )}
+                </span>
+                {runner.averageTime !== null && (
+                  <span className={`shrink-0 text-subheadline text-slate-600 ${numbers}`}>
+                    平均 {runner.averageTime}
+                  </span>
+                )}
+              </div>
               <table className={`w-full border-collapse ${numbers}`}>
                 <thead>
                   <tr>

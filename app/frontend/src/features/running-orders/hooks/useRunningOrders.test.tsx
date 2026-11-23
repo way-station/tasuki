@@ -35,7 +35,7 @@ describe("useRunningOrders", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.map((order) => [order.status, order.prediction])).toEqual([
-      ["confirmed", { type: "time", laps: 25, hasEmptyLegs: false }],
+      ["confirmed", { type: "time", laps: 25, emptyLegNumbers: [] }],
     ]);
   });
 

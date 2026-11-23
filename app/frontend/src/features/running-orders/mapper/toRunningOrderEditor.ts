@@ -3,6 +3,7 @@ import type {
   LegRule,
   RunningOrderEditor,
   RunningOrderListResponse,
+  TimeGoal,
 } from "../types/runningOrder.ts";
 import { toRunningOrderView } from "./toRunningOrderView.ts";
 
@@ -25,6 +26,7 @@ export function toRunningOrderEditor(
   return {
     entry: { id: entry.id, name: entry.name },
     legRule: toLegRule(race.description),
+    timeGoal: toTimeGoal(race.description),
     runners: entry.members.map((member) => ({
       rosterMemberId: member.roster_member_id,
       name: member.name,
@@ -37,4 +39,20 @@ function toLegRule(description: RaceResponse["description"]): LegRule {
   return description.type === "distance"
     ? { type: "distance", distancesKm: description.leg_distances_km ?? [] }
     : { type: "time" };
+}
+
+// The backend validates that a description matches its type, so a time race
+// has its time limit and lap distance.
+function toTimeGoal(description: RaceResponse["description"]): TimeGoal | null {
+  if (description.type !== "time") {
+    return null;
+  }
+  const goal: TimeGoal = {
+    timeLimitMinutes: description.time_limit_minutes ?? 0,
+    lapDistanceKm: description.lap_distance_km ?? 0,
+  };
+  if (description.target?.laps !== undefined) {
+    goal.targetLaps = description.target.laps;
+  }
+  return goal;
 }

@@ -12,7 +12,7 @@ import {
   panel,
   primaryButton,
 } from "../../../shared/ui/classes.ts";
-import type { RaceDetail } from "../types/race.ts";
+import type { RaceDetail, RaceManagementSummary } from "../types/race.ts";
 import { attendanceLabels, formatDate, formatDateTime, raceTypeLabels } from "./labels.ts";
 
 // The screens R2 links to (docs/design/screens.md).
@@ -35,6 +35,8 @@ const organizerSections: { section: RaceSection; label: string }[] = [
 type RaceDetailViewProps = {
   race: RaceDetail;
   isOrganizer: boolean;
+  // Organizers only. `undefined` while loading: the cards show no second line.
+  summary?: RaceManagementSummary;
   onOpen: (section: RaceSection) => void;
   // Answering attendance, from the participation feature. Shown instead of the
   // answer alone when given.
@@ -52,6 +54,7 @@ type RaceDetailViewProps = {
 export function RaceDetailView({
   race,
   isOrganizer,
+  summary,
   onOpen,
   attendance,
   runningOrder,
@@ -83,20 +86,30 @@ export function RaceDetailView({
           <nav aria-label="大会の管理" className={group}>
             <h2 className={groupHeading}>大会の管理</h2>
             <ul className={cards}>
-              {organizerSections.map(({ section, label: sectionLabel }) => (
-                <li key={section}>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(section)}
-                    className={`${card} w-full text-left`}
-                  >
-                    <span className="grow text-headline font-semibold">{sectionLabel}</span>
-                    <span aria-hidden="true" className="text-slate-600">
-                      ›
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {organizerSections.map(({ section, label: sectionLabel }) => {
+                const state = summary === undefined ? undefined : sectionState(section, summary);
+                return (
+                  <li key={section}>
+                    <button
+                      type="button"
+                      onClick={() => onOpen(section)}
+                      className={`${card} w-full text-left`}
+                    >
+                      <span className="flex min-w-0 grow flex-col gap-0.5">
+                        <span className="text-headline font-semibold">{sectionLabel}</span>
+                        {state !== undefined && (
+                          <span className={`text-subheadline text-slate-600 ${numbers}`}>
+                            {state}
+                          </span>
+                        )}
+                      </span>
+                      <span aria-hidden="true" className="text-slate-600">
+                        ›
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
           {runningOrder}
@@ -173,4 +186,31 @@ function RaceFacts({ race, showAnswer }: RaceFactsProps) {
       {race.text !== "" && <p className="text-body whitespace-pre-wrap">{race.text}</p>}
     </section>
   );
+}
+
+// The second line of a management card (wireframes/r2.html). Editing the
+// race has none.
+function sectionState(section: RaceSection, summary: RaceManagementSummary): string | undefined {
+  const { attending, undecided, notAnswered, notAttending } = summary.attendance;
+  switch (section) {
+    case "invitations":
+      return summary.invitedCount === 0
+        ? "まだ誰も招待していません"
+        : `${summary.invitedCount} 人を招待`;
+    case "attendance":
+      return summary.invitedCount === 0
+        ? "まだ誰も招待していません"
+        : `参加 ${attending}・保留 ${undecided}・未回答 ${notAnswered}・不参加 ${notAttending}`;
+    case "entry":
+      return summary.entry === null
+        ? "まだありません"
+        : `${summary.entry.name}・${summary.entry.memberCount} 人`;
+    case "running-order":
+      if (summary.runningOrder === null) {
+        return "まだありません";
+      }
+      return summary.runningOrder === "confirmed" ? "確定" : "下書き";
+    default:
+      return undefined;
+  }
 }

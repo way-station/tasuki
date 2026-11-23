@@ -1,11 +1,12 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { ApiClient } from "../api/client.ts";
 import { createFakeApiClient } from "../api/fakeApiClient.ts";
 import { TestProviders } from "../test/TestProviders.tsx";
 import { createAppRouter } from "./router.tsx";
 
-function renderAt(path: string) {
+function renderAt(path: string, stubs: Partial<ApiClient> = {}) {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
   // An organizer linked to a roster member may open every screen. What other
   // callers see is tested with the route guard (features/auth/container).
@@ -51,6 +52,7 @@ function renderAt(path: string) {
         roster_member: { id: "member-1", name: "Taro Yamada" },
       }),
     getInviteLink: () => Promise.resolve({ team_name: "Team" }),
+    ...stubs,
   });
   render(
     <TestProviders client={client}>
@@ -101,7 +103,6 @@ describe("createAppRouter", () => {
     renderAt("/races/123");
 
     const heading = await screen.findByRole("heading", { name: "Hakone" });
-    expect(screen.getByRole("banner")).toHaveTextContent("tasuki");
     expect(screen.getByRole("main")).toContainElement(heading);
   });
 
@@ -110,5 +111,73 @@ describe("createAppRouter", () => {
 
     const heading = await screen.findByRole("heading", { name: "ページが見つかりません" });
     expect(screen.getByRole("main")).toContainElement(heading);
+  });
+});
+
+describe("page frame", () => {
+  async function tabs() {
+    const bar = within(await screen.findByRole("navigation", { name: "メイン" }));
+    return bar.getAllByRole("link");
+  }
+
+  it("gives an organizer linked to a roster member four tabs, with the current one marked", async () => {
+    renderAt("/roster");
+
+    const links = await tabs();
+    expect(links.map((link) => link.textContent)).toEqual(["大会", "名簿", "承認", "自分"]);
+    expect(links[1]).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("navigation", { name: "戻る" })).not.toBeInTheDocument();
+  });
+
+  it("goes to the screen of a tab", async () => {
+    renderAt("/roster");
+
+    fireEvent.click((await tabs())[3]);
+
+    expect(await screen.findByRole("heading", { name: "Taro Yamada" })).toBeInTheDocument();
+  });
+
+  it("shows the number of waiting links on 承認", async () => {
+    const link = {
+      id: "link-1",
+      line_display_name: "taro_line",
+      roster_member: { id: "m1", name: "Taro" },
+      created_at: "2026-11-07T09:00:00Z",
+    };
+    renderAt("/", {
+      listPendingMemberLinks: () => Promise.resolve({ links: [link, { ...link, id: "link-2" }] }),
+    });
+
+    expect(await screen.findByRole("link", { name: "承認 2 件" })).toBeInTheDocument();
+  });
+
+  it("goes back from the race to the race list", async () => {
+    renderAt("/races/123");
+
+    const back = within(await screen.findByRole("navigation", { name: "戻る" }));
+    fireEvent.click(back.getByRole("link", { name: "大会" }));
+
+    expect(await screen.findByRole("heading", { name: "大会" })).toBeInTheDocument();
+  });
+
+  it("names the race on the way back from a race's screen", async () => {
+    renderAt("/races/123/entry");
+
+    const back = within(await screen.findByRole("navigation", { name: "戻る" }));
+    expect(await back.findByRole("link", { name: "Hakone" })).toHaveAttribute("href", "/races/123");
+  });
+
+  it("goes back from a member's profile to the roster", async () => {
+    renderAt("/roster/123");
+
+    const back = within(await screen.findByRole("navigation", { name: "戻る" }));
+    expect(back.getByRole("link", { name: "名簿" })).toHaveAttribute("href", "/roster");
+  });
+
+  it("has no frame on the joining and access screens", async () => {
+    renderAt("/login");
+
+    await screen.findByRole("heading", { name: "ログイン" });
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 });

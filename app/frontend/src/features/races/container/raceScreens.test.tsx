@@ -137,6 +137,58 @@ describe("R2 race detail", () => {
     expect(router.state.location.pathname).toBe("/races/race-1/edit");
   });
 
+  it("shows an organizer where each part of the race stands", async () => {
+    renderAt("/races/race-1", organizer, {
+      getRace: () => Promise.resolve(distanceRace),
+      listInvitations: () =>
+        Promise.resolve({
+          members: [
+            { roster_member_id: "m1", name: "Taro", invited: true, attendance: "attending" },
+            { roster_member_id: "m2", name: "Jiro", invited: true, attendance: null },
+          ],
+        }),
+      listEntries: () =>
+        Promise.resolve({
+          entries: [
+            { id: "e1", name: "Team A", members: [{ roster_member_id: "m1", name: "Taro" }] },
+          ],
+        }),
+      listRunningOrders: () =>
+        Promise.resolve({
+          running_orders: [
+            {
+              entry_id: "e1",
+              entry_name: "Team A",
+              status: "draft",
+              version: 1,
+              legs: [],
+              prediction: null,
+            },
+          ],
+        }),
+    });
+
+    const cards = within(await screen.findByRole("navigation", { name: "大会の管理" }));
+    expect(await cards.findByText("2 人を招待")).toBeInTheDocument();
+    expect(cards.getByText("参加 1・保留 0・未回答 1・不参加 0")).toBeInTheDocument();
+    expect(cards.getByText("Team A・1 人")).toBeInTheDocument();
+    expect(cards.getByRole("button", { name: /^走順/ })).toHaveTextContent("走順下書き");
+  });
+
+  it("says what is not there yet on the management cards", async () => {
+    renderAt("/races/race-1", organizer, {
+      getRace: () => Promise.resolve(distanceRace),
+      listInvitations: () => Promise.resolve({ members: [] }),
+      listEntries: () => Promise.resolve({ entries: [] }),
+      listRunningOrders: () => Promise.resolve({ running_orders: [] }),
+    });
+
+    const cards = within(await screen.findByRole("navigation", { name: "大会の管理" }));
+    expect(await cards.findAllByText("まだ誰も招待していません")).toHaveLength(2);
+    expect(cards.getAllByText("まだありません")).toHaveLength(2);
+    expect(cards.getByRole("button", { name: "大会を編集" })).toHaveTextContent(/^大会を編集›$/);
+  });
+
   it("shows a linked organizer who is not attending no answer to change", async () => {
     renderAt("/races/race-1", organizer, {
       getRace: () => Promise.resolve({ ...distanceRace, my_attendance: "not_attending" }),

@@ -104,7 +104,7 @@ describe("R2 running order", () => {
         .getAllByRole("row")
         .map((row) => row.textContent),
     ).toEqual(["区走者距離", "1区Taro5 km", "2区未定3 km"]);
-    expect(section).toHaveTextContent("予想タイム0:28:10空きの区を除いた予想です。");
+    expect(section).toHaveTextContent("予想タイム0:28:10空きの区（2区）を除いた予想です。");
   });
 
   it("shows a member who answered attending the confirmed order", async () => {
@@ -195,6 +195,42 @@ describe("R7 running order editor", () => {
     expect(
       screen.getByText("保存していない変更があります。保存すると予想が更新されます。"),
     ).toBeInTheDocument();
+  });
+
+  it("names the empty legs after the unsaved changes", async () => {
+    renderAt(
+      "/races/race-1/running-order",
+      organizer,
+      editorStubs(distanceRace, [order("draft", [taro, null])]),
+    );
+
+    fireEvent.change(await screen.findByLabelText("1区の走者"), { target: { value: "m2" } });
+
+    expect(
+      screen.getByText(
+        "保存していない変更があります。保存すると予想が更新されます。空きの区（2区）は除いています。",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a time race's goal under the prediction", async () => {
+    renderAt(
+      "/races/race-1/running-order",
+      organizer,
+      editorStubs(
+        { ...timeRace, description: { ...timeRace.description, target: { laps: 75 } } },
+        [],
+      ),
+    );
+
+    expect(await screen.findByText("目標 75 周・制限時間 180 分・1周 2 km")).toBeInTheDocument();
+  });
+
+  it("leaves the goal out for a distance race", async () => {
+    renderAt("/races/race-1/running-order", organizer, editorStubs(distanceRace, []));
+
+    expect(await screen.findByLabelText("1区の走者")).toBeInTheDocument();
+    expect(screen.queryByText(/制限時間/)).not.toBeInTheDocument();
   });
 
   it("cannot confirm while a leg is empty", async () => {

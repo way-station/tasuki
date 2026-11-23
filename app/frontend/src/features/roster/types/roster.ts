@@ -7,6 +7,8 @@ export type RosterMemberCreateBody = components["schemas"]["RosterMemberCreate"]
 export type RosterMemberDetailResponse = components["schemas"]["RosterMemberDetail"];
 export type InviteLinkCreatedResponse = components["schemas"]["InviteLinkCreated"];
 export type MemberLinkListResponse = components["schemas"]["MemberLinkList"];
+export type RaceResponse = components["schemas"]["Race"];
+export type RunningOrderListResponse = components["schemas"]["RunningOrderList"];
 
 // Whether a roster member has a user. A rejected link shows as "none".
 export type LinkStatus = RosterMemberResponse["link_status"];
@@ -37,6 +39,11 @@ export type InviteLinkView = {
 export type RaceLapsOfMemberView = {
   raceId: string;
   raceName: string;
+  // YYYY-MM-DD. From the race, so missing until it is loaded.
+  raceDate?: string;
+  // The legs the member runs in the race's running order, in leg order. Empty
+  // until the running order is loaded.
+  legNumbers: number[];
   laps: { id: string; time: string }[];
 };
 

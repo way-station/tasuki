@@ -251,6 +251,49 @@ describe("M2 member profile", () => {
     expect(screen.getByText("Hakone")).toBeInTheDocument();
   });
 
+  it("shows each race's date and the member's legs", async () => {
+    renderAt("/roster/m1", {
+      getRosterMember: () =>
+        Promise.resolve({
+          id: "m1",
+          name: "Taro",
+          left: false,
+          average_time: "3:28",
+          lap_count: 1,
+          laps_by_race: [
+            { race_id: "race-1", race_name: "Hakone", laps: [{ id: "l1", time: "3:20" }] },
+          ],
+        }),
+      getRace: () =>
+        Promise.resolve({
+          id: "race-1",
+          name: "Hakone",
+          version: 1,
+          description: { type: "distance", race_date: "2026-12-20", leg_distances_km: [5, 3, 5] },
+          can_submit_laps: false,
+        }),
+      listRunningOrders: () =>
+        Promise.resolve({
+          running_orders: [
+            {
+              entry_id: "e1",
+              entry_name: "Team A",
+              status: "confirmed",
+              version: 2,
+              legs: [
+                { leg_number: 1, distance_km: 5, runner: { roster_member_id: "m1", name: "Taro" } },
+                { leg_number: 2, distance_km: 3, runner: null },
+                { leg_number: 3, distance_km: 5, runner: { roster_member_id: "m1", name: "Taro" } },
+              ],
+              prediction: null,
+            },
+          ],
+        }),
+    });
+
+    expect(await screen.findByText("2026年12月20日（日）・1区・3区")).toBeInTheDocument();
+  });
+
   it("tells the organizer about an unknown member", async () => {
     renderAt("/roster/unknown", {
       getRosterMember: () => Promise.reject(problem(404, "not_found")),
