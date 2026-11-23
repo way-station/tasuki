@@ -6,6 +6,9 @@ export type RaceSummaryResponse = components["schemas"]["RaceSummary"];
 export type RaceResponse = components["schemas"]["Race"];
 export type RaceCreateBody = components["schemas"]["RaceCreate"];
 export type RaceUpdateBody = components["schemas"]["RaceUpdate"];
+export type InvitationListResponse = components["schemas"]["InvitationList"];
+export type EntryListResponse = components["schemas"]["EntryList"];
+export type RunningOrderListResponse = components["schemas"]["RunningOrderList"];
 
 export type RaceType = "distance" | "time";
 
@@ -74,6 +77,23 @@ export type RaceDetail = {
   myAttendance?: MyAttendance;
   runningOrderConfirmed?: boolean;
   canSubmitLaps: boolean;
+};
+
+// The second lines of R2's management cards for organizers
+// (wireframes/r2.html): where each part of the race stands.
+export type RaceManagementSummary = {
+  invitedCount: number;
+  // Of the invited members.
+  attendance: {
+    attending: number;
+    undecided: number;
+    notAnswered: number;
+    notAttending: number;
+  };
+  // The MVP allows one entry per race.
+  entry: { name: string; memberCount: number } | null;
+  // `null` until the running order is saved for the first time.
+  runningOrder: "draft" | "confirmed" | null;
 };
 
 // The input of the race form (R3), as typed. Both types' fields are kept, so
