@@ -1,1 +1,10 @@
 .env
+
+# Terraform: providers, state, and variable values. State and .tfvars can hold secrets and
+# private values (ADR-0021), and the repository is public.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
