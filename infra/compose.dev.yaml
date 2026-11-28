@@ -54,7 +54,30 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
 
+  # Production tools (ADR-0021), run once per command by infra/Makefile, so the host needs
+  # only Docker. The infra profile keeps them out of the Dev Containers' services.
+  # gcloud's sign-in lives in a volume, not in the host's ~/.config.
+  gcloud:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:593.0.0-alpine
+    profiles: [infra]
+    volumes:
+      - ..:/workspaces/tasuki:cached
+      - gcloud-config:/root/.config/gcloud
+    working_dir: /workspaces/tasuki/infra
+
+  # Terraform reads the Application Default Credentials that make adc-login puts in the
+  # same volume. Infrastructure as code comes after the manual setup, so there are no .tf
+  # files yet.
+  terraform:
+    image: hashicorp/terraform:1.17.2
+    profiles: [infra]
+    volumes:
+      - ..:/workspaces/tasuki:cached
+      - gcloud-config:/root/.config/gcloud
+    working_dir: /workspaces/tasuki/infra
+
 volumes:
+  gcloud-config:
   go-mod-cache:
   go-build-cache:
   frontend-node-modules:
