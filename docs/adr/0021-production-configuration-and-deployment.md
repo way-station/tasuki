@@ -66,7 +66,8 @@ The forces:
 **A small, capped monthly cost**
 
 - A small monthly cost for Cloud Run's internet egress is accepted. Everything else stays within free tiers.
-- The tasuki project gets a spend cap budget on Cloud Run of ¥100 a month. Budget alerts are sent by email at 50%, 90%, and 100% of the same amount.
+- The tasuki project gets a spend cap budget on Cloud Run of ¥100 a month. It emails the billing administrators and project owners at 50%, 80%, and 100% of the amount; these alerts cannot be changed.
+- The billing account is created in Japanese yen, because the amounts here are in yen and a billing account's currency cannot be changed later ([Currency](https://docs.cloud.google.com/billing/docs/resources/currency)).
 - The billing account is used only for tasuki, so no other project uses up its free tier.
 - Cloud Run keeps the settings of ADR-0018: request-based billing, minimum instances 0, and a limited maximum.
 - These are not turned on, because each costs money: Cloud NAT, a VPC connector, a load balancer, Cloud CDN, a reserved IP address, and Artifact Registry vulnerability scanning.
@@ -174,7 +175,8 @@ The forces:
 **毎月の費用は少額で、上限を付ける**
 
 - Cloud Run のインターネットへの送信にかかる、毎月の少額の費用は受け入れる。それ以外はすべて無料枠に収める。
-- tasuki のプロジェクトには、Cloud Run に月 ¥100 の spend cap の予算を付ける。予算アラートは、同じ金額の 50%、90%、100% でメールを送る。
+- tasuki のプロジェクトには、Cloud Run に月 ¥100 の spend cap の予算を付ける。金額の 50%、80%、100% で、請求先アカウントの管理者とプロジェクトのオーナーにメールが届く。このアラートは変えられない。
+- 請求先アカウントは日本円で作る。ここでの金額は円で、請求先アカウントの通貨は後から変えられないからである（[Currency](https://docs.cloud.google.com/billing/docs/resources/currency)）。
 - 請求先アカウントは tasuki だけに使う。ほかのプロジェクトが無料枠を使ってしまわないようにするためである。
 - Cloud Run は ADR-0018 の設定のままにする：リクエストごとの課金、最小インスタンス数 0、上限を付けた最大インスタンス数。
 - 次のものは、どれも費用がかかるので有効にしない：Cloud NAT、VPC コネクタ、ロードバランサ、Cloud CDN、予約した IP アドレス、Artifact Registry の脆弱性スキャン。
