@@ -50,7 +50,7 @@ Details: [`app/backend/TECH.md`](app/backend/TECH.md), [`app/frontend/TECH.md`](
 | --- | --- |
 | [`app/frontend`](app/frontend) | Vite + React + TypeScript |
 | [`app/backend`](app/backend) | Go + chi |
-| [`infra`](infra) | Dockerfiles, docker compose files, local port settings |
+| [`infra`](infra) | Dockerfiles, docker compose files, local port settings, and the tools for setting up production (gcloud, Terraform). See [`infra/README.md`](infra/README.md) |
 | [`.github`](.github) | CI workflows and PR labeling |
 
 ## Getting started
