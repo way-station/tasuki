@@ -1,5 +1,7 @@
-// Command seed creates the development team's row, which the server needs to start
-// (docs/design/api.md). It reads DATABASE_URL and TEAM_ID; run it with make db-seed.
+// Command seed creates the team's row, which the server needs to start
+// (docs/design/api.md). It reads DATABASE_URL, TEAM_ID, and TEAM_NAME; run it with
+// make db-seed, locally and once against production before its first start.
+// An existing row is left as it is.
 package main
 
 import (
@@ -21,9 +23,9 @@ func main() {
 }
 
 func run() error {
-	databaseURL, teamID := os.Getenv("DATABASE_URL"), os.Getenv("TEAM_ID")
-	if databaseURL == "" || teamID == "" {
-		return errors.New("DATABASE_URL and TEAM_ID are required")
+	databaseURL, teamID, teamName := os.Getenv("DATABASE_URL"), os.Getenv("TEAM_ID"), os.Getenv("TEAM_NAME")
+	if databaseURL == "" || teamID == "" || teamName == "" {
+		return errors.New("DATABASE_URL, TEAM_ID, and TEAM_NAME are required")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -32,7 +34,7 @@ func run() error {
 		return err
 	}
 	defer client.Close()
-	if err := postgres.CreateTeamIfMissing(ctx, client, shared.TeamID(teamID), "Development team"); err != nil {
+	if err := postgres.CreateTeamIfMissing(ctx, client, shared.TeamID(teamID), teamName); err != nil {
 		return err
 	}
 	fmt.Println("team", teamID, "is ready")

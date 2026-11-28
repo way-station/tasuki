@@ -48,8 +48,8 @@ db-reset:
 	$(MIGRATE) drop -f
 	$(MIGRATE) up
 
-# Creates the development team's row (TEAM_ID), which the server needs to start. Run it
-# after db-reset.
+# Creates the team's row (TEAM_ID, named TEAM_NAME), which the server needs to start. Run it
+# after db-reset, and once against production before its first start.
 db-seed:
 	go run ./cmd/seed
 
