@@ -67,6 +67,7 @@ The forces:
 
 - A small monthly cost for Cloud Run's internet egress is accepted. Everything else stays within free tiers.
 - The tasuki project gets a spend cap budget on Cloud Run of ¥100 a month. It emails the billing administrators and project owners at 50%, 80%, and 100% of the amount; these alerts cannot be changed.
+- The whole billing account gets an alerts-only budget of ¥100 a month, with alerts at 50%, 90%, and 100%. The spend cap watches only Cloud Run, so this one tells us when Artifact Registry, Secret Manager, or anything else starts to cost money. It does not stop spending.
 - The billing account is created in Japanese yen, because the amounts here are in yen and a billing account's currency cannot be changed later ([Currency](https://docs.cloud.google.com/billing/docs/resources/currency)).
 - The billing account is used only for tasuki, so no other project uses up its free tier.
 - Cloud Run keeps the settings of ADR-0018: request-based billing, minimum instances 0, and a limited maximum.
@@ -176,6 +177,7 @@ The forces:
 
 - Cloud Run のインターネットへの送信にかかる、毎月の少額の費用は受け入れる。それ以外はすべて無料枠に収める。
 - tasuki のプロジェクトには、Cloud Run に月 ¥100 の spend cap の予算を付ける。金額の 50%、80%、100% で、請求先アカウントの管理者とプロジェクトのオーナーにメールが届く。このアラートは変えられない。
+- 請求先アカウント全体には、月 ¥100 の、知らせるだけの予算を付ける。アラートは 50%、90%、100% で送る。spend cap は Cloud Run しか見ないので、Artifact Registry、Secret Manager、そのほかに費用がかかり始めたことを、こちらで知る。支出は止めない。
 - 請求先アカウントは日本円で作る。ここでの金額は円で、請求先アカウントの通貨は後から変えられないからである（[Currency](https://docs.cloud.google.com/billing/docs/resources/currency)）。
 - 請求先アカウントは tasuki だけに使う。ほかのプロジェクトが無料枠を使ってしまわないようにするためである。
 - Cloud Run は ADR-0018 の設定のままにする：リクエストごとの課金、最小インスタンス数 0、上限を付けた最大インスタンス数。
