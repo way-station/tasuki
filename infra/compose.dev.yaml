@@ -22,6 +22,7 @@ services:
       DATABASE_URL: postgres://app:tasuki@postgres:5432/tasuki?sslmode=disable
       # The development team; make db-seed creates its row (docs/design/api.md).
       TEAM_ID: 01900000-0000-7000-8000-000000000001
+      TEAM_NAME: Development team
       # The browser opens the Vite dev server, which forwards /api here (ADR-0014).
       FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
       # Development only (ADR-0009): log in as any LINE user with POST /api/v1/dev/login.
