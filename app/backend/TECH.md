@@ -88,7 +88,7 @@ The application reads **only environment variables**; it never loads `.env` itse
 | `DATABASE_URL` | yes | — | PostgreSQL connection string. Pool sizes go in its parameters (`pool_max_conns`, `pool_min_conns`, `pool_max_conn_lifetime`, `pool_max_conn_idle_time`; ADR-0015) |
 | `PORT` | no | `8080` | HTTP port |
 | `FRONTEND_ORIGIN` | yes | — | The origin the browser opens the frontend on, such as `https://tasuki.example` (scheme and host, nothing after). Requests that change data must carry it as `Origin` (ADR-0014). The Dev Container sets `http://localhost:5173`, and `make up` sets `http://localhost:8080` |
-| `TEAM_ID` | yes | — | The MVP's one team, as the UUID of its `teams` row (ADR-0005). The backend refuses to start when the row is missing. The Dev Container and `make up` set `01900000-0000-7000-8000-000000000001`, which `make db-seed` creates |
+| `TEAM_ID` | yes | — | The MVP's one team, as the UUID of its `teams` row (ADR-0005). The backend refuses to start when the row is missing. The Dev Container and `make up` set `01900000-0000-7000-8000-000000000001`, which `make db-seed` creates with the name in `TEAM_NAME` (read only by `make db-seed`) |
 | `FRONTEND_DIR` | no | — | The built frontend to serve; set to `/frontend` in the production image (ADR-0018) |
 | `ORGANIZER_LINE_USER_IDS` | no | — | Organizers, as comma-separated LINE user IDs (ADR-0006). The Dev Container sets `dev-organizer` |
 | `DEV_LOGIN_ENABLED` | no | — | Only `true` turns on `POST /api/v1/dev/login` (ADR-0009). Set only in `infra/compose.dev.yaml`; never in production |
@@ -105,7 +105,7 @@ Who provides the values:
 | --- | --- |
 | Dev Container | `environment` in `infra/compose.dev.yaml` |
 | Production image run locally (`make up`) | `environment` in `infra/compose.yaml` |
-| Production | The hosting platform's environment variables / secrets. Before the first start, create the team's row by hand (`INSERT INTO teams (id, name) VALUES ('<TEAM_ID>', '<team name>');`) |
+| Production | The hosting platform's environment variables / secrets. Before the first start, create the team's row with `make db-seed` against production (`DATABASE_URL`, `TEAM_ID`, `TEAM_NAME`; `docs/guides/production-setup.md`) |
 
 Host port overrides go in `infra/.env` (copy `infra/.env.example`); docker compose reads it automatically. Never commit `.env`.
 
@@ -166,7 +166,7 @@ The PostgreSQL schema is changed only by migrations in `migrations/` (golang-mig
 | `make db-migrate` | Applies every migration not applied yet |
 | `make db-rollback` | Undoes the last migration |
 | `make db-reset` | Drops everything in the database, then applies every migration (local only) |
-| `make db-seed` | Creates the development team's row (`TEAM_ID`), which the backend needs to start. Run it after `db-migrate` or `db-reset` (local only) |
+| `make db-seed` | Creates the team's row (`TEAM_ID`, named `TEAM_NAME`), which the backend needs to start. Run it after `db-migrate` or `db-reset`, and once against production before its first start. An existing row is left as it is |
 | `make db-new NAME=create_users` | Creates the next pair of files, `00000N_create_users.up.sql` and `.down.sql` |
 
 - Versions are zero-padded to six digits, so sqlc and golang-migrate read the files in the same order (ADR-0015).
@@ -376,7 +376,7 @@ app/backend/
 | `DATABASE_URL` | ○ | — | PostgreSQL の接続文字列。プールの大きさはそのパラメータで指定する（`pool_max_conns`、`pool_min_conns`、`pool_max_conn_lifetime`、`pool_max_conn_idle_time`、ADR-0015） |
 | `PORT` | — | `8080` | HTTP ポート |
 | `FRONTEND_ORIGIN` | ○ | — | ブラウザが frontend を開くオリジン。例：`https://tasuki.example`（スキームとホストだけで、後ろに何も付けない）。データを変えるリクエストは、これを `Origin` として持つ必要がある（ADR-0014）。Dev Container は `http://localhost:5173`、`make up` は `http://localhost:8080` を設定する |
-| `TEAM_ID` | ○ | — | MVP のただ一つのチーム。`teams` の行の UUID（ADR-0005）。行がなければ backend は起動しない。Dev Container と `make up` は `01900000-0000-7000-8000-000000000001` を設定し、`make db-seed` がその行を作る |
+| `TEAM_ID` | ○ | — | MVP のただ一つのチーム。`teams` の行の UUID（ADR-0005）。行がなければ backend は起動しない。Dev Container と `make up` は `01900000-0000-7000-8000-000000000001` を設定し、`make db-seed` が `TEAM_NAME` の名前でその行を作る（`TEAM_NAME` を読むのは `make db-seed` だけ） |
 | `FRONTEND_DIR` | — | — | 配信するビルド済みの frontend。本番用イメージでは `/frontend`（ADR-0018） |
 | `ORGANIZER_LINE_USER_IDS` | — | — | 幹事。LINE のユーザー ID をカンマ区切りで（ADR-0006）。Dev Container では `dev-organizer` |
 | `DEV_LOGIN_ENABLED` | — | — | `true` のときだけ `POST /api/v1/dev/login` を有効にする（ADR-0009）。設定するのは `infra/compose.dev.yaml` だけで、本番には書かない |
@@ -393,7 +393,7 @@ app/backend/
 | --- | --- |
 | Dev Container | `infra/compose.dev.yaml` の `environment` |
 | 本番用イメージをローカルで実行（`make up`） | `infra/compose.yaml` の `environment` |
-| 本番 | ホスティング先の環境変数・シークレットの設定。初めて起動する前に、チームの行を手で作る（`INSERT INTO teams (id, name) VALUES ('<TEAM_ID>', '<チーム名>');`） |
+| 本番 | ホスティング先の環境変数・シークレットの設定。初めて起動する前に、本番に向けて `make db-seed` を実行し、チームの行を作る（`DATABASE_URL`、`TEAM_ID`、`TEAM_NAME`。`docs/guides/production-setup.md`） |
 
 ホスト側のポートを変える場合は `infra/.env` に書きます（`infra/.env.example` をコピー）。docker compose が自動で読み込みます。`.env` はコミットしないでください。
 
@@ -454,7 +454,7 @@ PostgreSQL のスキーマは、`migrations/` のマイグレーションでだ�
 | `make db-migrate` | まだ適用していないマイグレーションをすべて適用する |
 | `make db-rollback` | 最後のマイグレーションを 1 つ戻す |
 | `make db-reset` | DB の中身をすべて消してから、すべてのマイグレーションを適用し直す（ローカル専用） |
-| `make db-seed` | backend の起動に要る開発用のチームの行（`TEAM_ID`）を作る。`db-migrate` か `db-reset` の後に実行する（ローカル専用） |
+| `make db-seed` | backend の起動に要るチームの行（`TEAM_ID`、名前は `TEAM_NAME`）を作る。`db-migrate` か `db-reset` の後と、本番の初回の起動の前に 1 回実行する。すでにある行はそのまま |
 | `make db-new NAME=create_users` | 次の番号のファイルの組 `00000N_create_users.up.sql` と `.down.sql` を作る |
 
 - バージョン番号は 6 桁でゼロ埋めする。sqlc と golang-migrate がファイルを同じ順番で読むようにするため（ADR-0015）
